@@ -31,10 +31,54 @@ class FakeAppServerClient:
 
     def request(self, method, params):  # noqa: ANN001, ANN201
         key = (method, params.get("threadId") or params.get("cursor") or "first")
-        return self.responses[key]
+        response = self.responses[key]
+        if isinstance(response, Exception):
+            raise response
+        return response
 
 
 class CodexTurnChangesTests(TempDirTestCase):
+    def test_only_exact_unavailable_owner_error_skips_attribution(self) -> None:
+        cases = (
+            ("thread/read failed: thread not loaded: root", True),
+            ("thread/read failed: thread not loaded: another-thread", False),
+            ("thread/read failed: permission denied", False),
+            ("timed out waiting for app-server message", False),
+        )
+        for message, unavailable_owner in cases:
+            with self.subTest(message=message):
+                responses = {
+                    ("thread/read", "root"): codex_turn_changes.FeedbackTurnError(message),
+                }
+                with patch.object(
+                    codex_turn_changes, "AppServerClient",
+                    side_effect=lambda **kwargs: FakeAppServerClient(responses, **kwargs),
+                ), self.assertRaises(codex_turn_changes.CodexTurnChangesError) as caught:
+                    codex_turn_changes.collect_codex_turn_changes("root")
+                self.assertEqual(
+                    isinstance(caught.exception, codex_turn_changes.CodexOwnerThreadUnavailableError),
+                    unavailable_owner,
+                )
+
+    def test_unavailable_descendant_still_fails_complete_discovery(self) -> None:
+        responses = {
+            ("thread/read", "root"): {"thread": {
+                "id": "root", "turns": [{"id": "turn", "startedAt": 100, "items": []}],
+            }},
+            ("thread/list", "first"): {"data": [
+                {"id": "child", "parentThreadId": "root", "createdAt": 110},
+            ]},
+            ("thread/read", "child"): codex_turn_changes.FeedbackTurnError(
+                "thread/read failed: thread not loaded: child"
+            ),
+        }
+        with patch.object(
+            codex_turn_changes, "AppServerClient",
+            side_effect=lambda **kwargs: FakeAppServerClient(responses, **kwargs),
+        ), self.assertRaises(codex_turn_changes.CodexTurnChangesError) as caught:
+            codex_turn_changes.collect_codex_turn_changes("root")
+        self.assertNotIsInstance(caught.exception, codex_turn_changes.CodexOwnerThreadUnavailableError)
+
     def test_collects_parent_and_subagent_paths(self) -> None:
         root_path = str(self.temp_path / "root.txt")
         child_path = str(self.temp_path / "child.txt")
@@ -948,6 +992,45 @@ class CodexMultiRepoStopTests(TempDirTestCase):
         self.assertNotIn("decision", output)
         self.assertIn("repository discovery is incomplete", output["systemMessage"])
         self.assertIn("No repositories were finalized", output["systemMessage"])
+
+    def test_unavailable_owner_never_retries_or_finalizes_shared_repo(self) -> None:
+        repo, remote = self.make_published_repo("repo")
+        path = repo / "pending.txt"
+        path.write_text("pending\n", encoding="utf-8")
+        run_command(["git", "-C", str(repo), "add", "pending.txt"])
+        run_command(["git", "-C", str(repo), "commit", "-m", "pending"])
+        commit = run_command(["git", "-C", str(repo), "rev-parse", "HEAD"]).stdout.strip()
+        path.write_text("concurrent edit\n", encoding="utf-8")
+        before_status = run_command(["git", "-C", str(repo), "status", "--porcelain"]).stdout
+        published = run_command(["git", "-C", str(remote), "rev-parse", "HEAD"]).stdout
+        state = {str(repo.resolve()): stop.RepoFinalization(
+            root=str(repo.resolve()), paths={"pending.txt"}, phase="committed", commit=commit,
+        )}
+
+        with patch.dict(os.environ, {"HOME": str(self.temp_path / "home")}):
+            stop.save_codex_transaction("thread", state, discovery_started_at=100)
+            transaction = stop.codex_transaction_path("thread").read_bytes()
+            with patch.object(stop, "collect_codex_turn_changes", side_effect=
+                stop.CodexOwnerThreadUnavailableError("thread/read failed: thread not loaded: thread")
+            ), patch.object(stop, "repositories_from_paths") as discover_repos, patch.object(
+                stop, "notify_local_production"
+            ) as notify:
+                # The desktop may omit the continuation marker on every retry.
+                for extra in ({}, {}, {"stop_hook_active": False}, {"stop_hook_active": True}):
+                    output = stop.process_codex_repositories(
+                        str(repo), {"session_id": "thread", "hook_event_name": "Stop", **extra}
+                    )
+                    self.assertNotIn("decision", output)
+                    self.assertIn("No repositories were finalized", output["systemMessage"])
+                    self.assertIn("does not require a retry", output["systemMessage"])
+            discover_repos.assert_not_called()
+            notify.assert_not_called()
+            self.assertEqual(stop.codex_transaction_path("thread").read_bytes(), transaction)
+
+        self.assertEqual(run_command(["git", "-C", str(repo), "status", "--porcelain"]).stdout, before_status)
+        self.assertEqual(run_command(["git", "-C", str(repo), "rev-parse", "HEAD"]).stdout.strip(), commit)
+        self.assertEqual(run_command(["git", "-C", str(remote), "rev-parse", "HEAD"]).stdout, published)
+        self.assertEqual(path.read_text(encoding="utf-8"), "concurrent edit\n")
 
     def test_pushes_rewritten_equivalent_head_from_pending_transaction(self) -> None:
         repo, remote = self.make_published_repo("repo")
