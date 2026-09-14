@@ -20,12 +20,14 @@ from typing import Any, Iterable, Iterator
 
 try:
     from hooks.scripts.codex_turn_changes import (
+        CodexOwnerThreadUnavailableError,
         CodexShellDiscoveryError,
         CodexTurnChangesError,
         collect_codex_turn_changes,
     )
 except ModuleNotFoundError:  # Direct script execution adds this directory to sys.path.
     from codex_turn_changes import (
+        CodexOwnerThreadUnavailableError,
         CodexShellDiscoveryError,
         CodexTurnChangesError,
         collect_codex_turn_changes,
@@ -1026,6 +1028,16 @@ def process_codex_repositories(
         changes = (
             collect_codex_turn_changes(thread_id, replay_before=replay_before)
             if replay_before is not None else collect_codex_turn_changes(thread_id)
+        )
+    except CodexOwnerThreadUnavailableError as exc:
+        log("codex", f"skip unavailable-owner-thread thread={thread_id} error={exc}")
+        # Do not ask an agent in an inaccessible side conversation to repair
+        # App Server visibility, or fall back to publishing its shared cwd.
+        # Preserve the checkpoint and any pending transaction for a later read.
+        return warning(
+            "Automatic Git finalization was skipped because this conversation is "
+            "not available to Codex App Server. No repositories were finalized; "
+            "pending work was preserved. This notice does not require a retry."
         )
     except CodexShellDiscoveryError as exc:
         return maybe_continue(

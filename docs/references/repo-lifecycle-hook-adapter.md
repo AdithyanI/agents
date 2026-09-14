@@ -107,6 +107,17 @@ All repo lifecycle hooks are Python. Do not add shell compatibility shims.
   the hook returns actionable incomplete-finalization feedback instead of
   publishing only the primary repo. A repeated continuation emits a warning
   rather than starting an unbounded retry loop.
+- If the owning `thread/read` specifically returns `thread not loaded` for the
+  stopping conversation, skip automatic finalization with a non-blocking notice.
+  Desktop side conversations may be inaccessible to the separate App Server
+  process used by the hook; an agent continuation cannot repair that visibility.
+  This exception does not rely on `stop_hook_active`, which may be absent on
+  repeated desktop hook invocations. Preserve pending transactions and their
+  discovery checkpoints, perform no Git or production mutations, and do not
+  claim publication succeeded. Missing descendant threads, other App Server
+  errors, malformed history, and repository check failures retain their normal
+  failure handling. Do not resume or start turns just to make a conversation
+  visible to the hook.
 - The transaction records a discovery timestamp before reading task activity.
   Recovery includes the boundary turn and all newer parent/subagent activity,
   even when the latest turn merely retries finalization. This checkpoint is

@@ -26,6 +26,10 @@ class CodexShellDiscoveryError(CodexTurnChangesError):
     """Shell discovery was incomplete and must not silently skip repositories."""
 
 
+class CodexOwnerThreadUnavailableError(CodexTurnChangesError):
+    """The stopping conversation is not accessible to this App Server process."""
+
+
 @dataclass(frozen=True)
 class CodexTurnChanges:
     """Attributed file changes for one Codex turn and its subagent tree."""
@@ -53,7 +57,16 @@ def collect_codex_turn_changes(
 
     try:
         with AppServerClient(timeout_seconds=timeout_seconds) as client:
-            owner = _read_thread(client, normalized_thread_id)
+            try:
+                owner = _read_thread(client, normalized_thread_id)
+            except FeedbackTurnError as exc:
+                # Desktop side conversations may not be exposed to a separate
+                # App Server. Retrying the agent cannot load that conversation.
+                # Classify only the owning read: missing descendants still mean
+                # incomplete discovery for an otherwise accessible task.
+                if str(exc) == f"thread/read failed: thread not loaded: {normalized_thread_id}":
+                    raise CodexOwnerThreadUnavailableError(str(exc)) from exc
+                raise
             owner_turn = _latest_turn(owner)
             owner_session_id = _text(owner.get("sessionId")) or normalized_thread_id
             turn_started_at = _integer(owner_turn.get("startedAt"))
