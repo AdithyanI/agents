@@ -993,44 +993,110 @@ class CodexMultiRepoStopTests(TempDirTestCase):
         self.assertIn("repository discovery is incomplete", output["systemMessage"])
         self.assertIn("No repositories were finalized", output["systemMessage"])
 
-    def test_unavailable_owner_never_retries_or_finalizes_shared_repo(self) -> None:
+    def test_unavailable_owner_finalizes_primary_and_preserves_siblings_until_recovery(self) -> None:
         repo, remote = self.make_published_repo("repo")
-        path = repo / "pending.txt"
-        path.write_text("pending\n", encoding="utf-8")
-        run_command(["git", "-C", str(repo), "add", "pending.txt"])
-        run_command(["git", "-C", str(repo), "commit", "-m", "pending"])
-        commit = run_command(["git", "-C", str(repo), "rev-parse", "HEAD"]).stdout.strip()
-        path.write_text("concurrent edit\n", encoding="utf-8")
-        before_status = run_command(["git", "-C", str(repo), "status", "--porcelain"]).stdout
-        published = run_command(["git", "-C", str(remote), "rev-parse", "HEAD"]).stdout
-        state = {str(repo.resolve()): stop.RepoFinalization(
-            root=str(repo.resolve()), paths={"pending.txt"}, phase="committed", commit=commit,
+        sibling, sibling_remote = self.make_published_repo("sibling")
+        (sibling / "pending.txt").write_text("pending\n", encoding="utf-8")
+        run_command(["git", "-C", str(sibling), "add", "pending.txt"])
+        run_command(["git", "-C", str(sibling), "commit", "-m", "pending"])
+        sibling_commit = run_command(["git", "-C", str(sibling), "rev-parse", "HEAD"]).stdout.strip()
+        (sibling / "pending.txt").write_text("concurrent edit\n", encoding="utf-8")
+        sibling_status = run_command(["git", "-C", str(sibling), "status", "--porcelain"]).stdout
+        published = run_command(["git", "-C", str(sibling_remote), "rev-parse", "HEAD"]).stdout
+        (repo / "formatted.txt").write_text("unformatted\n", encoding="utf-8")
+        write_executable(
+            repo / "scripts/check-fast.sh",
+            "#!/usr/bin/env bash\n"
+            "if [[ $(cat formatted.txt) != formatted ]]; then\n"
+            "  printf 'formatted\\n' > formatted.txt\n  exit 1\nfi\n"
+            "[[ $(git show :formatted.txt) == formatted ]]\n",
+        )
+        state = {str(sibling.resolve()): stop.RepoFinalization(
+            root=str(sibling.resolve()), paths={"pending.txt"}, phase="committed", commit=sibling_commit,
         )}
-
         with patch.dict(os.environ, {"HOME": str(self.temp_path / "home")}):
             stop.save_codex_transaction("thread", state, discovery_started_at=100)
-            transaction = stop.codex_transaction_path("thread").read_bytes()
             with patch.object(stop, "collect_codex_turn_changes", side_effect=
                 stop.CodexOwnerThreadUnavailableError("thread/read failed: thread not loaded: thread")
-            ), patch.object(stop, "repositories_from_paths") as discover_repos, patch.object(
+            ), patch.object(stop, "preflight_repo_check", wraps=stop.preflight_repo_check) as checks, patch.object(
                 stop, "notify_local_production"
             ) as notify:
-                # The desktop may omit the continuation marker on every retry.
                 for extra in ({}, {}, {"stop_hook_active": False}, {"stop_hook_active": True}):
                     output = stop.process_codex_repositories(
-                        str(repo), {"session_id": "thread", "hook_event_name": "Stop", **extra}
+                        str(repo / "scripts"), {"session_id": "thread", "hook_event_name": "Stop", **extra}
                     )
                     self.assertNotIn("decision", output)
-                    self.assertIn("No repositories were finalized", output["systemMessage"])
-                    self.assertIn("does not require a retry", output["systemMessage"])
-            discover_repos.assert_not_called()
-            notify.assert_not_called()
-            self.assertEqual(stop.codex_transaction_path("thread").read_bytes(), transaction)
+                    self.assertIn(str(repo.resolve()), output["systemMessage"])
+                    self.assertIn("Other repositories were not checked", output["systemMessage"])
+                self.assertEqual(checks.call_count, 2)
+                notify.assert_called_once_with("codex", str(repo.resolve()), stop.head_commit(str(repo)))
+            self.assertEqual(stop.load_codex_discovery_checkpoint("thread"), 100)
+            preserved = stop.load_codex_transaction("thread")
+            self.assertEqual(set(preserved), set(state))
+            self.assertEqual(preserved[str(sibling.resolve())].commit, sibling_commit)
+            self.assertEqual(preserved[str(sibling.resolve())].phase, "committed")
+            self.assertEqual(run_command(["git", "-C", str(sibling), "status", "--porcelain"]).stdout, sibling_status)
+            self.assertEqual(run_command(["git", "-C", str(sibling_remote), "rev-parse", "HEAD"]).stdout, published)
+            self.assertEqual(run_command(["git", "-C", str(remote), "show", "HEAD:formatted.txt"]).stdout, "formatted\n")
+            with patch.object(stop, "collect_codex_turn_changes", return_value=self.changes([])):
+                recovered = stop.process_codex_repositories(str(repo), {"session_id": "thread"})
+            self.assertIsNone(recovered)
+            self.assertEqual(stop.load_codex_transaction("thread"), {})
+            self.assertIsNone(stop.load_codex_discovery_checkpoint("thread"))
+        self.assertEqual(run_command(["git", "-C", str(sibling_remote), "show", "HEAD:pending.txt"]).stdout, "concurrent edit\n")
 
-        self.assertEqual(run_command(["git", "-C", str(repo), "status", "--porcelain"]).stdout, before_status)
-        self.assertEqual(run_command(["git", "-C", str(repo), "rev-parse", "HEAD"]).stdout.strip(), commit)
-        self.assertEqual(run_command(["git", "-C", str(remote), "rev-parse", "HEAD"]).stdout, published)
-        self.assertEqual(path.read_text(encoding="utf-8"), "concurrent edit\n")
+    def test_unavailable_owner_pushes_existing_primary_commit(self) -> None:
+        repo, remote = self.make_published_repo("repo")
+        (repo / "existing.txt").write_text("existing\n", encoding="utf-8")
+        run_command(["git", "-C", str(repo), "add", "existing.txt"])
+        run_command(["git", "-C", str(repo), "commit", "-m", "existing"])
+        with patch.dict(os.environ, {"HOME": str(self.temp_path / "home")}), patch.object(
+            stop, "collect_codex_turn_changes", side_effect=stop.CodexOwnerThreadUnavailableError("unavailable")
+        ), patch.object(stop, "notify_local_production") as notify:
+            output = stop.process_codex_repositories(str(repo), {"session_id": "thread"})
+            self.assertEqual(stop.load_codex_transaction("thread"), {})
+        self.assertNotIn("decision", output)
+        notify.assert_called_once()
+        self.assertEqual(run_command(["git", "-C", str(remote), "show", "HEAD:existing.txt"]).stdout, "existing\n")
+
+    def test_unavailable_owner_preserves_check_and_push_failures_for_retry(self) -> None:
+        repo, remote = self.make_published_repo("repo")
+        published = run_command(["git", "-C", str(remote), "rev-parse", "HEAD"]).stdout
+        write_executable(repo / "scripts/check-fast.sh", "#!/usr/bin/env bash\nexit 1\n")
+        with patch.dict(os.environ, {"HOME": str(self.temp_path / "home")}), patch.object(
+            stop, "collect_codex_turn_changes", side_effect=stop.CodexOwnerThreadUnavailableError("unavailable")
+        ), patch.object(stop, "notify_local_production") as notify:
+            failed_check = stop.process_codex_repositories(str(repo), {"session_id": "thread"})
+            self.assertEqual(failed_check["decision"], "block")
+            self.assertIn("Fast checks failed", failed_check["reason"])
+            self.assertEqual(run_command(["git", "-C", str(repo), "rev-parse", "HEAD"]).stdout, published)
+            write_executable(repo / "scripts/check-fast.sh", "#!/usr/bin/env bash\nexit 0\n")
+            with patch.object(stop, "push_committed_repo", return_value=(
+                subprocess.CompletedProcess(["git", "push"], 1, "", "temporary failure"),
+                ["git", "push"], "git push failed",
+            )):
+                failed_push = stop.process_codex_repositories(str(repo), {"session_id": "thread"})
+            self.assertEqual(failed_push["decision"], "block")
+            self.assertIn("git push failed", failed_push["reason"])
+            self.assertEqual(stop.load_codex_transaction("thread")[str(repo.resolve())].phase, "committed")
+            self.assertEqual(run_command(["git", "-C", str(remote), "rev-parse", "HEAD"]).stdout, published)
+            notify.assert_not_called()
+            recovered = stop.process_codex_repositories(str(repo), {"session_id": "thread"})
+            self.assertNotIn("decision", recovered)
+            self.assertEqual(stop.load_codex_transaction("thread"), {})
+            self.assertIsNotNone(stop.load_codex_discovery_checkpoint("thread"))
+            notify.assert_called_once()
+        self.assertEqual(run_command(["git", "-C", str(remote), "rev-parse", "HEAD"]).stdout,
+                         run_command(["git", "-C", str(repo), "rev-parse", "HEAD"]).stdout)
+
+    def test_unavailable_owner_without_starting_repository_is_nonblocking(self) -> None:
+        with patch.dict(os.environ, {"HOME": str(self.temp_path / "home")}), patch.object(
+            stop, "collect_codex_turn_changes", side_effect=stop.CodexOwnerThreadUnavailableError("unavailable")
+        ), patch.object(stop, "finalize_codex_repositories") as finalize:
+            output = stop.process_codex_repositories(str(self.temp_path), {"session_id": "thread"})
+        finalize.assert_not_called()
+        self.assertNotIn("decision", output)
+        self.assertIn("not a Git repository", output["systemMessage"])
 
     def test_pushes_rewritten_equivalent_head_from_pending_transaction(self) -> None:
         repo, remote = self.make_published_repo("repo")

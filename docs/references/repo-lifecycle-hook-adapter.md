@@ -102,22 +102,30 @@ All repo lifecycle hooks are Python. Do not add shell compatibility shims.
   even a read command can select a repo with pending changes. Unreferenced dirty
   siblings are untouched; clean candidates are skipped. Computed paths absent
   from command text/cwd still need explicit transaction registration.
-- Missing task identity or failed activity discovery stops finalization before
+- Missing task identity or failed activity discovery (except the unavailable-owner
+  case below) stops finalization before
   any Git mutation. Pending transactions remain available for a complete retry;
   the hook returns actionable incomplete-finalization feedback instead of
   publishing only the primary repo. A repeated continuation emits a warning
   rather than starting an unbounded retry loop.
 - If the owning `thread/read` specifically returns `thread not loaded` for the
-  stopping conversation, skip automatic finalization with a non-blocking notice.
+  stopping conversation, finalize only the Git repository containing the Stop
+  payload's `cwd` (the starting repository). Use the same repository locks,
+  stable-tree checks, formatter retries, commit/push, and production notification
+  path as normal Codex finalization. The fallback includes all pending changes
+  in that repository and existing unpushed commits; it cannot attribute edits
+  between conversations sharing that worktree.
   Desktop side conversations may be inaccessible to the separate App Server
   process used by the hook; an agent continuation cannot repair that visibility.
   This exception does not rely on `stop_hook_active`, which may be absent on
-  repeated desktop hook invocations. Preserve pending transactions and their
-  discovery checkpoints, perform no Git or production mutations, and do not
-  claim publication succeeded. Missing descendant threads, other App Server
-  errors, malformed history, and repository check failures retain their normal
-  failure handling. Do not resume or start turns just to make a conversation
-  visible to the hook.
+  repeated desktop hook invocations. Preserve the discovery checkpoint and all
+  other repositories' pending records so a later complete discovery can recover
+  them. Update only the starting repository's progress and report the limited
+  scope; never claim complete multi-repository publication. If `cwd` is outside
+  Git, emit a non-blocking skip notice. Missing descendant threads, other App
+  Server errors, malformed history, and repository check/push failures retain
+  their normal failure handling. Do not resume or start turns just to make a
+  conversation visible to the hook.
 - The transaction records a discovery timestamp before reading task activity.
   Recovery includes the boundary turn and all newer parent/subagent activity,
   even when the latest turn merely retries finalization. This checkpoint is

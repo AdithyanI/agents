@@ -1030,15 +1030,8 @@ def process_codex_repositories(
             if replay_before is not None else collect_codex_turn_changes(thread_id)
         )
     except CodexOwnerThreadUnavailableError as exc:
-        log("codex", f"skip unavailable-owner-thread thread={thread_id} error={exc}")
-        # Do not ask an agent in an inaccessible side conversation to repair
-        # App Server visibility, or fall back to publishing its shared cwd.
-        # Preserve the checkpoint and any pending transaction for a later read.
-        return warning(
-            "Automatic Git finalization was skipped because this conversation is "
-            "not available to Codex App Server. No repositories were finalized; "
-            "pending work was preserved. This notice does not require a retry."
-        )
+        log("codex", f"fallback unavailable-owner-thread thread={thread_id} error={exc}")
+        return finalize_codex_primary_repository(cwd, payload, thread_id, pending)
     except CodexShellDiscoveryError as exc:
         return maybe_continue(
             payload,
@@ -1107,9 +1100,61 @@ def process_codex_repositories(
         save_codex_transaction(thread_id, {}, clear_discovery=True)
         return None
 
+    return finalize_codex_repositories(cwd, payload, thread_id, repositories)
+
+
+def finalize_codex_primary_repository(
+    cwd: str,
+    payload: dict[str, Any],
+    thread_id: str,
+    pending: dict[str, RepoFinalization],
+) -> dict[str, Any]:
+    """Finalize only the starting repository when the owner thread is unavailable."""
+    root = repo_root(cwd)
+    if not root:
+        return warning(
+            "This conversation is unavailable to Codex App Server and its starting "
+            "directory is not a Git repository. No repositories were finalized; "
+            "pending work was preserved. This notice does not require a retry."
+        )
+    root = str(Path(root).resolve())
+    repositories = {root: pending.get(root) or RepoFinalization(root=root)}
+    deferred = {key: item for key, item in pending.items() if key != root}
+    notice = (
+        "Conversation activity is unavailable; automatic Git finalization is limited "
+        f"to the starting repository: {root}. Other repositories were not checked "
+        "or published, and their pending records were preserved."
+    )
+    output = finalize_codex_repositories(
+        cwd, payload, thread_id, repositories,
+        deferred_repositories=deferred, discovery_complete=False,
+    )
+    if output:
+        field = "reason" if output.get("decision") == "block" else "systemMessage"
+        return {**output, field: notice + "\n\n" + str(output.get(field) or "")}
+    return warning(notice + " Starting-repository finalization completed.")
+
+
+def finalize_codex_repositories(
+    cwd: str,
+    payload: dict[str, Any],
+    thread_id: str,
+    repositories: dict[str, RepoFinalization],
+    *,
+    deferred_repositories: dict[str, RepoFinalization] | None = None,
+    discovery_complete: bool = True,
+) -> dict[str, Any] | None:
+    """Check, commit, and push selected repositories, preserving out-of-scope work."""
+    def save_progress() -> None:
+        save_codex_transaction(
+            thread_id,
+            {**(deferred_repositories or {}), **repositories},
+            clear_discovery=discovery_complete,
+        )
+
     attributed_path_count = sum(len(item.paths) for item in repositories.values())
     if len(repositories) > MAX_CODEX_REPOSITORIES:
-        save_codex_transaction(thread_id, repositories, clear_discovery=True)
+        save_progress()
         return maybe_continue(
             payload,
             codex_failure_reason(
@@ -1122,7 +1167,7 @@ def process_codex_repositories(
             cwd=cwd,
         )
 
-    save_codex_transaction(thread_id, repositories, clear_discovery=True)
+    save_progress()
     with lock_codex_repositories(list(repositories)):
         failures: list[str] = []
         for item in list(repositories.values()):
@@ -1158,7 +1203,7 @@ def process_codex_repositories(
                 # newly consolidated paths are checked and committed.
                 item.phase = "pending"
         if failures:
-            save_codex_transaction(thread_id, repositories)
+            save_progress()
             return maybe_continue(
                 payload,
                 codex_failure_reason("I could not inspect every affected repository.", failures),
@@ -1166,7 +1211,7 @@ def process_codex_repositories(
             )
         attributed_path_count = sum(len(item.paths) for item in repositories.values())
         if attributed_path_count > MAX_CODEX_ATTRIBUTED_PATHS:
-            save_codex_transaction(thread_id, repositories)
+            save_progress()
             return maybe_continue(
                 payload,
                 codex_failure_reason(
@@ -1218,7 +1263,7 @@ def process_codex_repositories(
                 repositories.pop(item.root, None)
 
         if failures:
-            save_codex_transaction(thread_id, repositories)
+            save_progress()
             return maybe_continue(
                 payload,
                 codex_failure_reason("I could not stage the complete Codex turn safely.", failures),
@@ -1226,7 +1271,7 @@ def process_codex_repositories(
             )
 
         pending_items = staged_pending_items
-        save_codex_transaction(thread_id, repositories)
+        save_progress()
 
         stable = False
         validated_trees: dict[str, str] = {}
@@ -1247,7 +1292,7 @@ def process_codex_repositories(
                     continue
                 pass_trees[item.root] = tree
             if tree_failures:
-                save_codex_transaction(thread_id, repositories)
+                save_progress()
                 return maybe_continue(
                     payload,
                     codex_failure_reason(
@@ -1310,7 +1355,7 @@ def process_codex_repositories(
                 if after_tree != pass_trees[item.root]:
                     changed_during_checks.add(item.root)
             if restage_failures:
-                save_codex_transaction(thread_id, repositories)
+                save_progress()
                 return maybe_continue(
                     payload,
                     codex_failure_reason(
@@ -1320,7 +1365,7 @@ def process_codex_repositories(
                     cwd=cwd,
                 )
             if sum(len(item.paths) for item in repositories.values()) > MAX_CODEX_ATTRIBUTED_PATHS:
-                save_codex_transaction(thread_id, repositories)
+                save_progress()
                 return maybe_continue(
                     payload,
                     codex_failure_reason(
@@ -1329,7 +1374,7 @@ def process_codex_repositories(
                     ),
                     cwd=cwd,
                 )
-            save_codex_transaction(thread_id, repositories)
+            save_progress()
             # Formatters commonly repair files and exit nonzero to request a
             # recheck. Restage and retry those changes inside this transaction;
             # the repaired tree still needs a passing, stable check.
@@ -1381,7 +1426,7 @@ def process_codex_repositories(
                 break
             if not staged:
                 repositories.pop(item.root, None)
-                save_codex_transaction(thread_id, repositories)
+                save_progress()
                 continue
             unexpected_staged = staged - item.paths
             if unexpected_staged:
@@ -1424,7 +1469,7 @@ def process_codex_repositories(
                 if non_actionable and label == "nothing to commit":
                     item.phase = "committed"
                     item.commit = unpushed_head(item.root) or head_commit(item.root)
-                    save_codex_transaction(thread_id, repositories)
+                    save_progress()
                     continue
                 failures.append(
                     command_failure_reason(
@@ -1437,7 +1482,7 @@ def process_codex_repositories(
                 break
             item.phase = "committed"
             item.commit = head_commit(item.root)
-            save_codex_transaction(thread_id, repositories)
+            save_progress()
 
         if failures:
             return maybe_continue(
@@ -1458,7 +1503,7 @@ def process_codex_repositories(
                     f"current={current_head or '<missing>'}",
                 )
                 item.commit = current_head
-                save_codex_transaction(thread_id, repositories)
+                save_progress()
             push, command, failure_title = push_committed_repo(root)
             if push is None:
                 failures.append(f"Repository {root}: {failure_title}.")
@@ -1476,7 +1521,7 @@ def process_codex_repositories(
                 break
             notify_local_production("codex", root, item.commit)
             repositories.pop(root, None)
-            save_codex_transaction(thread_id, repositories)
+            save_progress()
             log("codex", f"ok turn-repo-pushed thread={thread_id} repo={root} commit={item.commit}")
 
         if failures:
@@ -1486,7 +1531,7 @@ def process_codex_repositories(
                 cwd=cwd,
             )
 
-    save_codex_transaction(thread_id, {})
+    save_progress()
     return None
 
 
