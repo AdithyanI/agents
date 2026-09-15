@@ -21,6 +21,14 @@ external_migration = false
 [notice.external_config_migration_prompts]
 home = true
 
+# Optional Azure provider. Subscription access remains the default; selecting
+# a provider and model is separate from registering this connection.
+[model_providers.azure]
+name = "Azure OpenAI"
+base_url = "https://aipodcasting-openai.openai.azure.com/openai/v1"
+env_key = "AZURE_OPENAI_API_KEY"
+wire_api = "responses"
+
 [tui]
 theme = "catppuccin-macchiato"
 status_line = ["model-with-reasoning", "context-remaining", "current-dir", "codex-version", "context-window-size", "session-id", "fast-mode"]

@@ -1,0 +1,107 @@
+# Azure Astra in Codex
+
+## Configuration and ownership
+
+Azure Astra is an optional connection. The user's subscription remains the
+desktop default, as explicitly requested on 2026-09-15. Registering a provider
+does not select it or add a verified provider switch to the desktop model picker.
+
+- Subscription: Microsoft Azure Sponsorship.
+- Existing resource: `aipodcasting-openai`, resource group `aipodcasting`,
+  region `swedencentral`.
+- Endpoint: `https://aipodcasting-openai.openai.azure.com/openai/v1`.
+- Existing deployment: `gpt-6-astra`, model version `2026-09-03`,
+  `GlobalStandard`. This setup does not create or change Azure deployments.
+- Provider definition: `codex/config/global.config.toml`.
+- Optional profile: `codex/config/azure-astra.config.toml`, rendered to
+  `~/.codex/azure-astra.config.toml`.
+
+Azure model requests bill the Azure resource's subscription. Sponsorship credit
+eligibility and remaining balance must be checked in Azure billing; successful
+inference alone does not prove that credits covered a request.
+
+## Native credential materialization
+
+The existing shared canonical secret `litellm--azure-openai-api-key` is the key
+for this Azure resource. Reuse it without copying its value into a second
+canonical family. The primary secret owner stays unchanged.
+
+`codex/config/secrets.env.map` maps that secret to `AZURE_OPENAI_API_KEY` in
+Codex's native `~/.codex/.env`. This generated file is owner-only (`0600`) and
+works for GUI launches without shell environment inheritance. It contains
+credentials and must never be printed, committed, or hand-maintained.
+
+Materialize on each machine that will use Azure, and again after key rotation:
+
+```bash
+~/GitHub/scripts/sync/materialize_machine_env.py \
+  --secret-scope shared \
+  --mapping-file ~/GitHub/agents/codex/config/secrets.env.map \
+  --output-file ~/.codex/.env \
+  --apply
+~/GitHub/agents/codex/scripts/sync-config.sh --apply
+```
+
+The materializer owns the complete `.env` file. Add future native Codex secret
+mappings to the same map; don't overwrite unrelated manually maintained values
+without migrating their ownership first. Normal configuration sync does not
+materialize secrets or require Azure credentials when using the subscription.
+
+## Choosing Azure
+
+For an explicit terminal session, use `codex --profile azure-astra`.
+
+For the macOS app, activation is a separate user choice. Once requested:
+
+1. Set top-level `model_provider = "azure"` and `model = "gpt-6-astra"` in
+   canonical `codex/config/global.config.toml`, then run the config sync and
+   control-plane checks. These global defaults also affect ordinary CLI runs.
+2. Have the user finish active work, quit and reopen the desktop app, then
+   start a new local task. Do not terminate the app from an active agent task.
+3. Verify the new task uses Azure. Existing tasks may retain their provider;
+   don't infer their billing from the model label alone.
+
+To return to the subscription, remove those top-level model/provider defaults
+from the canonical template, sync/check, and restart before creating a task.
+Retain the `azure` provider table and optional profile. The ChatGPT login is
+independent of the Azure key and should not be overwritten with an Azure key.
+
+The named CLI profile is not a verified desktop profile selector. Do not claim
+that Azure and subscription entries coexist in the desktop model dropdown.
+
+## Protocol and validation
+
+Use the Responses API (`wire_api = "responses"`) and the Azure deployment name
+as `model`. The `/openai/v1` endpoint does not require an `api-version` query
+parameter. Don't mix this route with the older dated-preview endpoint example.
+
+Validate both a minimal Responses request and an isolated request through the
+Codex engine bundled with the desktop app. Disable lifecycle hooks and external
+integrations during the smoke test, and keep scratch work under this repo's
+`tmp/`. Runtime verification is separate from desktop UI activation, which is
+deferred while the user keeps the subscription default.
+
+Verified on 2026-09-15:
+
+- A direct, non-stored Azure Responses request returned `AZURE_ASTRA_OK` from
+  `gpt-6-astra`.
+- `/Applications/ChatGPT.app/Contents/Resources/codex` version
+  `0.154.0-alpha.6.2` completed a read-only `pwd` tool call and returned
+  `AZURE_ASTRA_CODEX_OK` using this provider and deployment. The smoke process
+  had `AZURE_OPENAI_API_KEY` removed from its inherited environment, proving
+  native `.env` credential loading. User configuration, lifecycle hooks, apps,
+  and web search were disabled for the isolated check.
+- The live config registered `azure` while leaving the default provider unset
+  (`openai`); `~/.codex/.env` had mode `0600`.
+- `scripts/check-fast.sh` passed, including Codex structural/runtime validation.
+- Desktop UI activation and Azure credit deduction were not tested.
+
+Azure Astra currently lacks mid-turn steering and mid-conversation reasoning
+changes supported by the OpenAI route. Availability of hosted Codex features
+must be checked separately; a working model request does not prove parity.
+
+Sources checked 2026-09-15:
+
+- [Microsoft's Codex setup guide](https://learn.microsoft.com/en-us/azure/foundry/openai/how-to/codex)
+- [Azure Astra model capabilities](https://learn.microsoft.com/en-us/azure/foundry/foundry-models/concepts/models-sold-directly-by-azure#gpt-6)
+- [Codex desktop model configuration](https://learn.chatgpt.com/docs/models#configure-your-default-local-model)
