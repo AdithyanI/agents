@@ -112,6 +112,35 @@ class CodexControlPlaneCheckTests(TempDirTestCase):
         self.assertNotEqual(result.returncode, 0)
         self.assertIn("client-owned thread selection", result.stderr)
 
+    def test_profile_check_ignores_only_model_availability_nux(self) -> None:
+        root, home, adi = self._make_codex_repo_fixture()
+        self._render_repo_configs(root, home)
+        profile = 'model = "gpt-6-astra"\nmodel_provider = "azure"\n'
+        cache = '\n[tui.model_availability_nux]\n"gpt-6-astra" = 2\n'
+        write_text(root / "codex/config/azure-astra.config.toml", profile)
+        runtime = home / ".codex/azure-astra.config.toml"
+
+        for fallback in ("", "1"):
+            env = {"HOME": str(home), "CODEX_FORCE_TOML_FALLBACK": fallback}
+            with self.subTest(fallback=fallback, drift="none"):
+                write_text(runtime, profile + cache)
+                result = run_command(self._check_command(root, home, adi), env=env)
+                self.assertIn("OK: Codex control plane validation passed", result.stdout)
+
+            for label, contents in (
+                ("model", profile.replace("gpt-6-astra", "gpt-5.5") + cache),
+                ("provider", profile.replace('"azure"', '"openai"') + cache),
+                ("tui", profile + '\n[tui]\nnotifications = false\n' + cache),
+                ("adjacent table", profile + cache + '\n[tui.model_availability_nux_other]\ncount = 2\n'),
+            ):
+                with self.subTest(fallback=fallback, drift=label):
+                    write_text(runtime, contents)
+                    result = run_command(
+                        self._check_command(root, home, adi), env=env, check=False
+                    )
+                    self.assertNotEqual(result.returncode, 0)
+                    self.assertIn("Codex profile is out of sync", result.stderr)
+
     def test_check_script_rejects_legacy_embedded_profiles(self) -> None:
         root, home, adi = self._make_codex_repo_fixture()
         write_text(

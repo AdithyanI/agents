@@ -61,6 +61,10 @@ Use [Codex Control Plane](/Users/dobby/GitHub/agents/docs/architecture/codex-con
 
 - `~/.codex/AGENTS.md` from `config/global.agents.md`
 - managed `config.toml` sections sourced from canonical files in `~/GitHub/agents`
+- standalone `*.config.toml` profiles from `codex/config/`; only the
+  `tui.model_availability_nux` subtree is runtime-owned model-picker onboarding
+  state. Profile sync preserves it and drift checks exclude it; all other
+  profile settings remain managed and checked.
 - global `hooks.json` from `hooks/registry.json`
 - any generated wrappers needed for hook or apply flows
 

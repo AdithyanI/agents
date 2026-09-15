@@ -777,6 +777,18 @@ if global_config.exists():
                 "Re-run codex/scripts/sync-config.sh --apply"
             )
 
+def managed_profile_config(path: Path) -> dict:
+    data = load_toml(path)
+    tui = data.get("tui")
+    if isinstance(tui, dict):
+        # Codex writes model-picker onboarding counts into the active profile.
+        # All other profile settings, including other tui keys, remain managed.
+        tui.pop("model_availability_nux", None)
+        if not tui:
+            data.pop("tui")
+    return data
+
+
 global_config_dir = global_config.parent
 for profile_template in sorted(canonical_dir.glob("*.config.toml")):
     if profile_template.name == "global.config.toml":
@@ -788,7 +800,7 @@ for profile_template in sorted(canonical_dir.glob("*.config.toml")):
             "Re-run codex/scripts/sync-config.sh --apply"
         )
     try:
-        if profile_runtime.read_text(encoding="utf-8") != profile_template.read_text(encoding="utf-8"):
+        if managed_profile_config(profile_runtime) != managed_profile_config(profile_template):
             fail(
                 f"Codex profile is out of sync: {profile_runtime}. "
                 "Re-run codex/scripts/sync-config.sh --apply"

@@ -579,6 +579,16 @@ class HooksControlPlaneTests(TempDirTestCase):
             '[profiles.autofix.features]\napps = false\n'
             '[plugins."build-ios-apps@openai-curated"]\nenabled = true\n',
         )
+        profile = 'model = "gpt-6-astra"\nmodel_provider = "azure"\n'
+        profile_cache = '[tui.model_availability_nux]\n"gpt-6-astra" = 2\n'
+        write_text(root / "codex/config/azure-astra.config.toml", profile)
+        write_text(
+            home / ".codex/azure-astra.config.toml",
+            'model = "gpt-5.5"\nmodel_provider = "openai"\n'
+            '\n[tui]\nnotifications = false\n\n'
+            + profile_cache
+            + '\n[tui.model_availability_nux_other]\ncount = 99\n',
+        )
 
         run_command(
             [
@@ -619,6 +629,14 @@ class HooksControlPlaneTests(TempDirTestCase):
         self.assertNotIn("notify =", rendered_config)
         self.assertNotIn('profile = "autofix"', rendered_config)
         self.assertNotIn("[profiles.autofix]", rendered_config)
+        self.assertEqual(
+            (home / ".codex/azure-astra.config.toml").read_text(encoding="utf-8"),
+            profile + "\n" + profile_cache + "\n",
+        )
+        self.assertEqual(
+            (root / "codex/config/azure-astra.config.toml").read_text(encoding="utf-8"),
+            profile,
+        )
 
         hooks = read_json(home / ".codex/hooks.json")
         self.assertEqual(

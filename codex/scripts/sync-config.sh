@@ -1205,11 +1205,54 @@ sync_global() {
   cleanup_agent_role_dir "Global Agent Roles" "$GLOBAL_AGENTS_DIR"
 }
 
+render_profile_config() {
+  local profile_template="$1"
+  local target_file="$2"
+  local rendered_file="$3"
+
+  python3 - "$profile_template" "$target_file" "$rendered_file" <<'PY'
+from __future__ import annotations
+
+import re
+import sys
+from pathlib import Path
+
+template, runtime, rendered = map(Path, sys.argv[1:])
+section_re = re.compile(r"^\s*\[([^]]+)]\s*(?:#.*)?$")
+
+
+def split_runtime_state(text: str) -> tuple[str, str]:
+    managed: list[str] = []
+    state: list[str] = []
+    in_runtime_state = False
+    for line in text.splitlines(keepends=True):
+        match = section_re.match(line.rstrip("\n"))
+        if match:
+            section = match.group(1)
+            in_runtime_state = (
+                section == "tui.model_availability_nux"
+                or section.startswith("tui.model_availability_nux.")
+            )
+        elif line.lstrip().startswith("[["):
+            in_runtime_state = False
+        (state if in_runtime_state else managed).append(line)
+    return "".join(managed), "".join(state)
+
+
+# Preserve only Codex's model-picker onboarding state. Runtime edits to model,
+# provider, other tui settings, or any other profile config are replaced.
+managed, _ = split_runtime_state(template.read_text(encoding="utf-8"))
+_, state = split_runtime_state(runtime.read_text(encoding="utf-8") if runtime.is_file() else "")
+rendered.write_text(managed.rstrip() + "\n\n" + state if state else managed, encoding="utf-8")
+PY
+}
+
 sync_profile_configs() {
   local target_dir
   local profile_template
   local target_file
   local profile_name
+  local rendered_file
 
   target_dir="$(dirname "$GLOBAL_CONFIG")"
   ensure_parent_dir "${target_dir}/config.toml"
@@ -1221,13 +1264,15 @@ sync_profile_configs() {
     require_readable_file "$profile_template"
     ensure_no_conflict_markers "$profile_template"
     target_file="${target_dir}/${profile_name}"
+    rendered_file="${TMP_DIR}/${profile_name}"
+    render_profile_config "$profile_template" "$target_file" "$rendered_file"
 
     log ""
     log "=== Codex Profile (${target_file}) ==="
-    show_diff "$target_file" "$profile_template"
+    show_diff "$target_file" "$rendered_file"
 
     if (( APPLY == 1 )); then
-      install_rendered_file "$profile_template" "$target_file"
+      install_rendered_file "$rendered_file" "$target_file"
     fi
   done
   shopt -u nullglob
