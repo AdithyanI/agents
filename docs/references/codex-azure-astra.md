@@ -49,7 +49,29 @@ materialize secrets or require Azure credentials when using the subscription.
 
 ## Choosing Azure
 
-For an explicit terminal session, use `codex --profile azure-astra`.
+For an explicit terminal session, use `codex-azure`, the thin launcher at
+`~/GitHub/scripts/bin/codex-azure` linked into `~/bin/codex-azure`. It runs
+`codex --profile azure-astra` with all additional arguments forwarded:
+
+```bash
+codex-azure
+codex-azure "Review this project"
+codex-azure exec "Summarize the current changes"
+```
+
+The Azure selection applies only to that invocation. It does not edit global
+configuration, restart the desktop app, or change the normal `codex` command.
+Codex owns interactive output, `exec --json`, error handling, and exit codes;
+the launcher adds no separate output protocol or credential handling.
+
+Inside the terminal session, run `/status` and verify `Model provider: azure`.
+The model name `gpt-6-astra` alone does not establish which provider handles
+requests. Normal `codex` sessions use the default OpenAI provider. The launcher
+was verified with a real Astra response and an `exec` header reporting
+`provider: azure`; the user also confirmed the interactive `/status` display.
+
+On another machine, after syncing both repos and configuring Azure credentials,
+install the command with `ln -s ~/GitHub/scripts/bin/codex-azure ~/bin/codex-azure`.
 
 For the macOS app, activation is a separate user choice. Once requested:
 
