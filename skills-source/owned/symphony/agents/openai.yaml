@@ -1,4 +1,0 @@
-interface:
-  display_name: "Symphony"
-  short_description: "Load and update local solo-dev Symphony work items."
-  default_prompt: "Use $symphony to handle Symphony work item <id>, load it through the task client, and update lifecycle state directly."

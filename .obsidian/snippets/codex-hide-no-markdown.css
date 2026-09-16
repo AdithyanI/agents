@@ -125,18 +125,8 @@
   display: none !important;
 }
 
-.nav-files-container .tree-item-self[data-path="skills-source/owned/symphony/agents"],
-.nav-files-container .tree-item-self[data-path^="skills-source/owned/symphony/agents/"] {
-  display: none !important;
-}
-
 .nav-files-container .tree-item-self[data-path="skills-source/owned/imagegen/scripts"],
 .nav-files-container .tree-item-self[data-path^="skills-source/owned/imagegen/scripts/"] {
-  display: none !important;
-}
-
-.nav-files-container .tree-item-self[data-path="skills-source/owned/symphony/scripts"],
-.nav-files-container .tree-item-self[data-path^="skills-source/owned/symphony/scripts/"] {
   display: none !important;
 }
 

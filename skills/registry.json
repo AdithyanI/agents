@@ -28,16 +28,6 @@
       "upstream_ref": "vercel-labs/skills:skills/find-skills@main"
     },
     {
-      "skill": "symphony",
-      "origin": "owned",
-      "scope": "repo",
-      "repos": [
-        "symphony"
-      ],
-      "source_path": "skills-source/owned/symphony",
-      "upstream_ref": "-"
-    },
-    {
       "skill": "pretty-mermaid",
       "origin": "owned",
       "scope": "dormant",
@@ -125,8 +115,7 @@
       "repos": [
         "adi",
         "agents",
-        "dobby-gateway",
-        "symphony"
+        "dobby-gateway"
       ],
       "source_path": "skills-source/owned/codex-app-server",
       "upstream_ref": "-"

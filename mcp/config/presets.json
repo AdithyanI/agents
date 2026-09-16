@@ -9,8 +9,7 @@
           "clients": "all",
           "repos": [
             "~/GitHub/agents",
-            "~/GitHub/frontier-lab-intelligence",
-            "~/GitHub/symphony"
+            "~/GitHub/frontier-lab-intelligence"
           ]
         }
       ]
