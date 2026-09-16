@@ -281,6 +281,12 @@ as above; selecting a local catalog avoids that Azure refresh request.
   The saved-profile smoke reported cached input tokens. The desktop-default
   follow-up verifies the saved global settings without a profile or protocol
   override; its separate verification record is linked below.
+- A fresh ephemeral two-turn desktop app-server check on 2026-09-16 also passed
+  native file editing, shell assertions, hosted search, and recall of a random
+  conversation-only marker on the follow-up. The parent independently reran the
+  arithmetic checks. Caching and the 258,400-token effective window remained
+  present. Hooks and unrelated integrations were disabled for this small probe;
+  it is not a long-session or full-feature parity benchmark.
 - Switching protocols does not duplicate every model request. Search actions
   have additional tool charges and returned content uses tokens. Credit
   coverage and comparative long-session cost were not verified.

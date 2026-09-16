@@ -137,3 +137,9 @@ as an active project only if new implementation work is required.
 
 - 2026-09-16: [DONE] Archived all four project files; confirmed the active copy
   was removed. Final post-archive fast checks and `git diff --check` passed.
+
+- 2026-09-16: [DONE] At the user's request, ran a fresh ephemeral two-turn
+  desktop app-server probe against saved Azure defaults. File editing, shell
+  assertions, hosted search, follow-up context recall, and caching passed. Added
+  sanitized evidence to the existing desktop verification record. No additional
+  configuration change or service was needed; long-session parity is unmeasured.

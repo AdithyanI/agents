@@ -84,5 +84,111 @@
     "Mac app UI activation requires user restart and a new task; running app was not quit.",
     "Explicit catalogs use snapshots; documented ignore-user-config invocation allows native subscription refresh.",
     "No long-session compaction, latency, quality or billing benchmark."
-  ]
+  ],
+  "post_enablement_two_turn_probe": {
+    "checked_at_utc": "2026-09-16T15:51:36.973130+00:00",
+    "runtime": "Codex Desktop/0.154.0-alpha.6.2 (Mac OS 27.0.0; arm64) dumb (azure_compatibility_probe; 1.0)",
+    "effective_settings": {
+      "model": "gpt-6-astra",
+      "modelProvider": "azure",
+      "reasoningEffort": "medium",
+      "serviceTier": null
+    },
+    "ephemeral": true,
+    "saved_model_provider_protocol_search_settings_used": true,
+    "unrelated_hooks_apps_plugins_mcp_disabled": true,
+    "file_edit_and_independent_assertions_passed": true,
+    "conversation_marker_recalled": true,
+    "turns": [
+      {
+        "turn_id": "01a0aaea-2d9d-7b33-8aa1-dd8f3bb930a6",
+        "status": "completed",
+        "error": null,
+        "item_types": [
+          "userMessage",
+          "agentMessage",
+          "commandExecution",
+          "fileChange",
+          "commandExecution",
+          "webSearch",
+          "agentMessage"
+        ],
+        "answers": [
+          "I\u2019ll fix `add`, run the two assertions, and make one web search for the official Microsoft documentation.\n",
+          "Both Python assertions passed.\n\nhttps://learn.microsoft.com/en-us/azure/foundry/openai/how-to/web-search"
+        ],
+        "commands": [
+          {
+            "command": "/bin/zsh -lc 'cat math_helper.py'",
+            "exitCode": 0
+          },
+          {
+            "command": "/bin/zsh -lc \"python3 -B -c 'from math_helper import add; assert add(7,4)==11; assert add(-2,3)==1; print(\\\"Both assertions passed.\\\")'\"",
+            "exitCode": 0
+          }
+        ],
+        "usage": [
+          {
+            "total": {
+              "totalTokens": 88771,
+              "inputTokens": 88516,
+              "cachedInputTokens": 62966,
+              "cacheWriteInputTokens": 21216,
+              "outputTokens": 255,
+              "reasoningOutputTokens": 40
+            },
+            "last": {
+              "totalTokens": 25413,
+              "inputTokens": 25346,
+              "cachedInputTokens": 21090,
+              "cacheWriteInputTokens": 126,
+              "outputTokens": 67,
+              "reasoningOutputTokens": 40
+            },
+            "modelContextWindow": 258400
+          }
+        ]
+      },
+      {
+        "turn_id": "01a0aaea-8b03-7c42-aac1-029455e3d978",
+        "status": "completed",
+        "error": null,
+        "item_types": [
+          "userMessage",
+          "agentMessage"
+        ],
+        "answers": [
+          "[verification marker] \u2014 add(7,4)==11: passed; add(-2,3)==1: passed."
+        ],
+        "commands": [],
+        "usage": [
+          {
+            "total": {
+              "totalTokens": 112080,
+              "inputTokens": 111791,
+              "cachedInputTokens": 84182,
+              "cacheWriteInputTokens": 23207,
+              "outputTokens": 289,
+              "reasoningOutputTokens": 40
+            },
+            "last": {
+              "totalTokens": 23309,
+              "inputTokens": 23275,
+              "cachedInputTokens": 21216,
+              "cacheWriteInputTokens": 1991,
+              "outputTokens": 34,
+              "reasoningOutputTokens": 0
+            },
+            "modelContextWindow": 258400
+          }
+        ]
+      }
+    ],
+    "followup_cached_input_percent": 91.15,
+    "limitations": [
+      "Two-turn synthetic probe only; no long-session compaction, process restart/resume, image, connector/MCP, latency or billing benchmark.",
+      "Hooks, apps, native plugins and global MCPs were disabled for the temporary probe; their behavior was not tested."
+    ],
+    "validation": "Repo fast check and git diff --check passed."
+  }
 }
