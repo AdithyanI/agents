@@ -1177,6 +1177,17 @@ sync_global() {
   local hooks_original="$GLOBAL_HOOKS"
   local hooks_rendered="${TMP_DIR}/hooks.json"
 
+  # Build the profile's local catalog before installing a profile that needs it.
+  # Runtime model/cache contents never become canonical repo inputs.
+  local catalog_mode="--dry-run"
+  if (( APPLY == 1 )); then
+    catalog_mode="--apply"
+  fi
+  python3 "${SCRIPT_DIR}/sync-azure-model-catalog.py" \
+    --canonical-dir "$CANONICAL_DIR" \
+    --runtime-dir "$(dirname "$GLOBAL_CONFIG")" \
+    "$catalog_mode"
+
   require_readable_file "$CANONICAL_GLOBAL_TEMPLATE"
   require_readable_file "$BUNDLED_SKILLS_POLICY"
   require_readable_file "$MCP_REGISTRY"

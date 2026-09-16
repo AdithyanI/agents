@@ -103,6 +103,11 @@ for repo in "${REPO_FILTERS[@]}"; do
   REPO_ARGS+=(--repo "$repo")
 done
 
+python3 "${SCRIPT_DIR}/sync-azure-model-catalog.py" \
+  --canonical-dir "$CANONICAL_DIR" \
+  --runtime-dir "$(dirname "$GLOBAL_CONFIG")" \
+  --check
+
 PYTHONPATH="$ROOT_DIR" python3 - "$CANONICAL_DIR" "$GLOBAL_CONFIG" "$GLOBAL_HOOKS" "$GLOBAL_AUTH" "$GLOBAL_MCP_CREDENTIALS" "$REGISTRY_FILE" "$MCP_REGISTRY_FILE" "$HOOKS_REGISTRY_FILE" "$PLUGIN_REGISTRY_FILE" "${REPO_FILTERS[@]}" <<'PY'
 from __future__ import annotations
 

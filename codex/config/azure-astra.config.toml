@@ -4,3 +4,11 @@
 model = "gpt-6-astra"
 model_provider = "azure"
 model_reasoning_effort = "medium"
+
+# Generated locally by sync-config.sh; resolved relative to this profile file.
+# Standard Responses exposes Azure's hosted web_search tool.
+model_catalog_json = "model-catalogs/azure-astra.json"
+web_search = "live"
+
+[features]
+standalone_web_search = false
