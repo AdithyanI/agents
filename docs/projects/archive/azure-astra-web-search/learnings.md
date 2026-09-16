@@ -25,3 +25,9 @@
   authenticated `codex exec --ignore-user-config` invocation and reapply sync.
 - Desktop activation needs global settings, a process restart, and a new task.
   Verify the bundled engine without repeating provider/protocol overrides.
+- A completed search event and a plausible URL are insufficient retrieval proof.
+  Require actual source snippets and citation annotations from the direct API,
+  then source text from Codex. Preserve failed attempts alongside successful
+  retries, and distinguish search from page opening. The later September 16
+  recheck recovered search without changing configuration, while page opening
+  remained empty; no root cause was established.

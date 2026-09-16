@@ -143,3 +143,12 @@ as an active project only if new implementation work is required.
   assertions, hosted search, follow-up context recall, and caching passed. Added
   sanitized evidence to the existing desktop verification record. No additional
   configuration change or service was needed; long-session parity is unmeasured.
+
+- 2026-09-16: [DONE] Investigated a later empty-result report without changing
+  saved configuration. Direct Azure search returned 11 readable results and three
+  citation annotations; a fresh desktop-bundled Codex process returned a source
+  quotation. Search in the affected task recovered on retry, including the
+  original batched query, but native page opening still returned no content.
+  Added `resources/retrieval-verification.json` and corrected the evidence rule:
+  earlier event-plus-URL smoke records prove dispatch, not usable retrieval.
+  Root cause remains unknown; no new implementation or active tracker was needed.

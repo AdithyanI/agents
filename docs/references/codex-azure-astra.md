@@ -282,10 +282,25 @@ The generator writes atomically and refuses invalid catalogs instead of
 replacing the last valid output. The normal check validates the saved catalog
 structurally; it does not require equality with the mutable source cache.
 
-If search fails, check the installed version, effective provider, and actual
-native `web_search` event. A URL alone is not evidence of search. Compare a direct
-Azure Responses search request with Codex before changing Azure resources, and
-resume the [enablement project record](../projects/archive/azure-astra-web-search/tasks.md).
+If search fails, check the installed version and effective provider. Neither a
+completed native `web_search` event nor a plausible URL proves usable retrieval.
+Compare these three layers before changing Azure resources:
+
+1. Send a direct Azure Responses request with `tools: [{"type":"web_search"}]`
+   and `include: ["web_search_call.action.sources", "web_search_call.results"]`.
+   For this reasoning deployment, require nonempty result titles, URLs and
+   snippets, plus `url_citation` annotations on the answer. A completed action
+   without readable results is not a passing connectivity check.
+2. Run a fresh ephemeral Codex process with the saved settings, hooks and
+   unrelated integrations disabled. Ask it to return an actual result title,
+   URL and short source quotation, or explicitly report `SEARCH_EMPTY`.
+3. Repeat in the affected task. Check search and page opening separately; success
+   in one does not establish the other. Preserve empty responses in the evidence
+   rather than silently counting only successful retries.
+
+Reopen the [enablement project record](../projects/archive/azure-astra-web-search/tasks.md)
+if new implementation is required. Do not restart the user's app or change
+provider/protocol settings merely because one request returned empty output.
 The original Azure remote catalog can return `missing field models`; Azure's
 catalog response shape differs from Codex's. Populate the source through OpenAI
 as above; selecting a local catalog avoids that Azure refresh request.
@@ -323,6 +338,23 @@ The [project verification record](../projects/archive/azure-astra-web-search/res
 contains the initial CLI-only smoke outcomes and configuration-isolation evidence.
 The [desktop follow-up record](../projects/archive/azure-astra-web-search/resources/desktop-verification.json)
 covers the subsequently authorized global default and explicit subscription override.
+
+### September 16 retrieval recheck
+
+The [retrieval verification](../projects/archive/azure-astra-web-search/resources/retrieval-verification.json)
+records a later investigation of empty tool responses. The saved Azure settings
+and credentials were already present; no runtime configuration or Azure resource
+was changed. A direct Astra search returned 11 source results with snippets and
+three citation annotations. A fresh desktop-bundled Codex process returned a
+source quotation through native search. The affected task initially returned
+empty search responses, then returned readable results for both a single query
+and the original batched query on retry. Native page opening still returned no
+readable content; direct HTTPS fetching worked. The cause of the empty responses
+was not established, and these successful checks do not prove lasting recovery.
+
+The earlier archived smoke tests recorded search events and expected URLs only.
+They established dispatch, but their saved evidence was insufficient to establish
+that the agent received usable source content. Use the stronger checks above.
 
 ## Protocol and validation
 
