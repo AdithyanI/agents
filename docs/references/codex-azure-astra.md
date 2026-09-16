@@ -21,6 +21,29 @@ Azure model requests bill the Azure resource's subscription. Sponsorship credit
 eligibility and remaining balance must be checked in Azure billing; successful
 inference alone does not prove that credits covered a request.
 
+### Estimating today's usage when billing is unavailable
+
+An empty Cost Management/Consumption response or HTTP 429 is not proof of zero
+spend. Offer a clearly labeled usage estimate before sponsorship credits; do not
+stop at unavailable billing. Earlier September 16 spend answers used estimates.
+
+- Define the day in the user's timezone, then convert the interval to UTC.
+- Read Azure Monitor `ProcessedPromptTokens` and `GeneratedTokens` (`Total`),
+  plus `AzureOpenAIContextTokensCacheMatchRate` (`Average`), at `PT1M`, split by
+  `ModelDeploymentName`. Estimate cached input by multiplying each minute's input
+  by that minute's cache percentage. Report missing cache coverage explicitly.
+- Fetch current rates from `https://prices.azure.com/api/retail/prices`, filtering
+  `contains(meterName, 'astra') and armRegionName eq 'swedencentral'` (likewise for
+  other deployed models). Do not assume `serviceName eq 'Azure OpenAI'` or an
+  Astra product-name filter returns the meters. Select the actual deployment's
+  tier/context class and distinguish cached reads, cache writes, input and output.
+- Minute-average cache ratios are not exact token-weighted billing. If cache
+  writes are unavailable, show the base-input estimate and the estimate treating
+  all uncached input as cache writes; these are scenarios, not rigorous bounds.
+  State any context-rate assumptions and excluded search/tool charges.
+- These metrics cover the deployment, not exclusively Codex. Actual credit
+  deductions and remaining balance require sponsorship billing confirmation.
+
 ## Native credential materialization
 
 The existing shared canonical secret `litellm--azure-openai-api-key` is the key
