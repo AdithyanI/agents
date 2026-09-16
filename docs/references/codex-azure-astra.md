@@ -92,6 +92,30 @@ independent of the Azure key and should not be overwritten with an Azure key.
 The named CLI profile is not a verified desktop profile selector. Do not claim
 that Azure and subscription entries coexist in the desktop model dropdown.
 
+## Priority processing
+
+Verified against Azure on 2026-09-16: this deployment's `gpt-6-astra` model
+version `2026-09-03` does not support Priority Processing. An authorized
+`az rest --method put` attempt using management API `2026-05-15-preview` and
+`properties.serviceTier = "Priority"` returned HTTP 400,
+`InvalidResourceProperties`:
+
+> The model 'gpt-6-astra' version '2026-09-03' does not support Priority service tier.
+
+A subsequent management API read confirmed the deployment remained `Running`
+with provisioning state `Succeeded`, unchanged model, SKU/capacity, safety
+policy, upgrade policy, and no configured service tier. No Codex settings were
+changed. Do not enable a Codex Fast preference as a workaround for this
+deployment's unsupported service tier.
+
+For a supported model, Azure can select priority at the deployment level or
+through the Responses API's `service_tier = "priority"`. These are different
+field names and casing: the current [ARM deployment schema](https://learn.microsoft.com/en-us/azure/templates/microsoft.cognitiveservices/accounts/deployments)
+uses `properties.serviceTier = "Priority"`. Verify the saved deployment and
+the response's actual `service_tier` before claiming priority is active;
+requests can fall back to standard processing. See [Azure Priority Processing](https://learn.microsoft.com/en-us/azure/foundry/openai/concepts/priority-processing)
+for supported model versions, pricing, and fallback conditions.
+
 ## Protocol and validation
 
 Use the Responses API (`wire_api = "responses"`) and the Azure deployment name
