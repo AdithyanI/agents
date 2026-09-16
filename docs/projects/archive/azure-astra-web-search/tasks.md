@@ -25,17 +25,17 @@ with verified subscription isolation and a documented way to undo the trial.
 
 ## Done When
 
-- [ ] The canonical Azure profile and its derived runtime catalog are applied.
-- [ ] A real request through `codex-azure` searches using the native tool.
-- [ ] The subscription path retains the normal catalog and Lite behavior.
-- [ ] Rollback, refresh, limits, and future diagnosis are documented.
-- [ ] Required checks pass and this completed enablement tracker is archived.
+- [x] The canonical Azure profile and its derived runtime catalog are applied.
+- [x] A real request through `codex-azure` searches using the native tool.
+- [x] The subscription path retains the normal catalog and Lite behavior.
+- [x] Rollback, refresh, limits, and future diagnosis are documented.
+- [x] Required checks pass and this completed enablement tracker is archived.
 
 ## Milestones
 
-- [ ] M1 — Implement reproducible profile-scoped catalog generation and apply it.
-- [ ] M2 — Validate native search, profile isolation, context metadata, and rollback.
-- [ ] M3 — Finish the operational reference and archive the project record.
+- [x] M1 — Implement reproducible profile-scoped catalog generation and apply it.
+- [x] M2 — Validate native search, profile isolation, context metadata, and rollback.
+- [x] M3 — Finish the operational reference and archive the project record.
 
 ## Decisions
 
@@ -53,9 +53,9 @@ with verified subscription isolation and a documented way to undo the trial.
 
 | Status | Work Item | Role | Resource |
 | --- | --- | --- | --- |
-| in_progress | Apply the scoped catalog and profile settings | parent | `codex/config/azure-astra.config.toml` |
-| todo | Verify actual Azure search and subscription isolation | parent | `resources/verification.json` |
-| todo | Document rollback, refresh, and resume; archive | parent | `docs/references/codex-azure-astra.md` |
+| done | Apply the scoped catalog and profile settings | parent | `codex/config/azure-astra.config.toml` |
+| done | Verify actual Azure search and subscription isolation | parent | `resources/verification.json` |
+| done | Archive the documented enablement and run final checks | parent | `docs/references/codex-azure-astra.md` |
 
 ## Validation / Test Plan
 
@@ -70,10 +70,10 @@ with verified subscription isolation and a documented way to undo the trial.
 
 ## Backlog / Remaining Work
 
-- [ ] Implement and apply the minimal catalog generator.
-- [ ] Complete focused checks and native runtime verification.
-- [ ] Update the operational reference with rollback and future triage.
-- [ ] Record lessons and archive the complete project directory.
+- [x] Implement and apply the minimal catalog generator.
+- [x] Complete focused checks and native runtime verification.
+- [x] Update the operational reference with rollback and future triage.
+- [x] Record lessons and archive the complete project directory.
 
 ## Resume If Search Regresses
 
@@ -87,3 +87,26 @@ as an active project only if new implementation work is required.
 
 - 2026-09-16: [IN-PROGRESS] Created tracker after explicit authorization; no
   saved web-search configuration had been changed during earlier research.
+- 2026-09-16: [DONE] Applied the canonical Azure profile through config sync.
+  Generator preserves the normal cache and all fields except Astra's Lite flag.
+  Relative catalog resolution worked from an unrelated temporary working directory.
+- 2026-09-16: [DONE] The saved `codex-azure` profile completed shell execution
+  and two native searches, returning the official Microsoft documentation URL.
+  Usage: 44,136 input, 19,849 cached input, 157 output tokens. These are smoke
+  totals, not a steady-state efficiency benchmark.
+- 2026-09-16: [DONE] `codex-openai` retained provider `openai`, normal Lite
+  metadata, and working native search. Original unprofiled `codex` retained
+  provider `azure` and completed shell execution. Global and subscription
+  config hashes are unchanged. The generated catalog differs from the normal
+  catalog only in Astra's flag; context limits remain identical.
+- 2026-09-16: [DONE] Seven focused tests and all 276 control-plane tests passed;
+  repo fast checks, Codex structural validation, shell syntax, and diff checks
+  passed. Added generator regression tests to the permanent fast gate.
+- 2026-09-16: [DONE] Documented rationale, ownership, refresh, rollback,
+  known catalog-refresh warning, and unbenchmarked behavior in the Azure
+  reference. Reviewed `learnings.md`; no cross-repo ownership change occurred.
+- 2026-09-16: [DONE] Archived all three project files with the project helper;
+  confirmed `source_removed: true` and no active directory remains. The final
+  post-archive fast check passed, including the new catalog tests and live
+  Codex structural validation. Enablement is complete; resume only for a new
+  regression or an explicitly requested extended comparison.

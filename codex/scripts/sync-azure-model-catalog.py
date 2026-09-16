@@ -78,8 +78,8 @@ def main() -> int:
         source = args.runtime_dir / "models_cache.json"
         if not source.is_file():
             raise ValueError(
-                f"missing source catalog {source}; start codex-openai to populate Codex's "
-                "normal model catalog, then rerun codex/scripts/sync-config.sh --apply"
+                f"missing source catalog {source}; populate Codex's normal model catalog "
+                "in an OpenAI session, then rerun codex/scripts/sync-config.sh --apply"
             )
         models = read_models(source)
         model = next(item for item in models if item["slug"] == MODEL)

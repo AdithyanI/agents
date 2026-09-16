@@ -16,6 +16,8 @@ Canonical personal Codex control-plane assets live here.
 - `../config/global.agents.md`: shared machine-wide guidance source for `~/.codex/AGENTS.md` and `~/.claude/CLAUDE.md`.
 - `scripts/`: canonical Codex-specific automation scripts.
   - includes Ghostty/Codex helper scripts and any thin helper invoked by Keyboard Maestro for Codex workflows.
+  - `scripts/sync-azure-model-catalog.py` derives the Azure profile's local model
+    catalog during config sync; runtime catalog contents remain outside git.
 - `shell/`: Codex-specific shell and Ghostty integration fragments.
 
 ## Rules

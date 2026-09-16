@@ -149,6 +149,132 @@ the response's actual `service_tier` before claiming priority is active;
 requests can fall back to standard processing. See [Azure Priority Processing](https://learn.microsoft.com/en-us/azure/foundry/openai/concepts/priority-processing)
 for supported model versions, pricing, and fallback conditions.
 
+## Web search in the Azure profile
+
+Enabled by explicit request on 2026-09-16, only in the existing `azure-astra`
+profile. The user wanted Azure search while retaining an easy comparison and
+rollback path. This is a tested Codex compatibility workaround, not a standard
+Azure portal switch.
+
+### Why the override exists
+
+The current Astra catalog selects `use_responses_lite = true`. Codex's Lite
+request path omits hosted Responses tools and relies on a separate search
+endpoint. Enabling `supports_standalone_web_search` on our Azure provider exposed
+the tool but its `/openai/v1/alpha/search` request returned 404. Setting
+`web_search = "live"` alone did not make search available.
+
+Our existing Azure endpoint successfully accepts `tools: [{"type":"web_search"}]`
+inside a standard Responses request. The Azure backend uses Grounding with Bing
+Search; no new deployment, Foundry project, MCP, or service was provisioned.
+The original [Codex issue #4881](https://github.com/openai/codex/issues/4881)
+describes an older limitation and does not establish current Azure API support.
+See [Microsoft's current web-search guide](https://learn.microsoft.com/en-us/azure/foundry/openai/how-to/web-search)
+and [Codex's hosted-tool gating](https://github.com/openai/codex/blob/rust-v0.154.0/codex-rs/core/src/tools/spec_plan.rs).
+
+### Ownership and effective settings
+
+- Canonical settings: `codex/config/azure-astra.config.toml`.
+- Runtime profile: `~/.codex/azure-astra.config.toml`.
+- Generated catalog: `~/.codex/model-catalogs/azure-astra.json`, resolved relative
+  to the runtime profile file by Codex.
+- Generator: `codex/scripts/sync-azure-model-catalog.py`, invoked by the normal
+  `codex/scripts/sync-config.sh --apply` workflow before installing profiles.
+- Source: Codex's machine-local `~/.codex/models_cache.json`. The generator copies
+  its model entries and changes only Astra's `use_responses_lite` to `false`.
+  It preserves context limits, model instructions, tool metadata, and all other
+  models. Neither catalog belongs in git; the normal cache is never modified.
+
+The Azure profile supplies:
+
+```toml
+model_catalog_json = "model-catalogs/azure-astra.json"
+web_search = "live"
+
+[features]
+standalone_web_search = false
+```
+
+`wire_api = "responses"` was already configured on the provider. The model-catalog
+flag is the additional setting that selects standard rather than Lite requests.
+`model_catalog_json` loads at process startup; start a new session when changing
+it. This is profile isolation, not an automatic rule for every Azure request.
+Do not select the subscription provider inside the Azure profile and assume the
+catalog override disappears.
+
+### Switch paths or roll back
+
+| Command | Provider and search behavior |
+| --- | --- |
+| `codex-azure` | Azure Astra, standard Responses, Azure-hosted search |
+| `codex-openai` | ChatGPT subscription, normal model catalog and Codex search |
+| `codex --model gpt-6-astra -c 'model_provider="azure"'` | Original Azure path using the normal catalog; bypasses the Azure profile |
+
+Ordinary `codex` also uses that original Azure path under the current global
+default. The desktop's global Azure default does not select `azure-astra`:
+this change does not activate search in existing desktop tasks or alter the
+subscription profile. Use separate new sessions for comparisons.
+
+For a persistent rollback, remove `model_catalog_json` and the
+`features.standalone_web_search` override from the canonical Azure profile,
+then run `codex/scripts/sync-config.sh --apply`. Do not hand-edit the rendered
+profile: the next sync would restore the canonical version. The unused derived
+catalog can remain locally; it has no effect without the profile reference.
+
+### Refresh and diagnose
+
+After a Codex update, or if search/tool behavior regresses:
+
+1. Check `codex --version` and `/status` in the affected session. Confirm which
+   launcher/profile and provider started it.
+2. Let a normal `codex-openai` session populate the current source model catalog.
+   On a new machine, do this before materializing the Azure catalog. If the
+   subscription profile has not been installed yet, use
+   `codex -c 'model_provider="openai"' -c 'forced_login_method="chatgpt"'` instead.
+3. Run `codex/scripts/sync-config.sh --apply`, then
+   `codex/scripts/check-codex-control-plane.sh`. The generator writes atomically
+   and refuses invalid catalogs instead of replacing the last valid output.
+4. Start a new `codex-azure` session and require an actual native `web_search`
+   event. A plausible answer or a URL alone is not evidence of search.
+5. If it still fails, use the original Azure command above and resume the
+   [enablement project record](../projects/archive/azure-astra-web-search/tasks.md).
+   Compare a direct Azure Responses search request with Codex before changing
+   Azure resources. Record the exact error without logging credentials.
+
+The normal control-plane check validates the saved catalog structurally. It
+does not require byte equality with the live source cache: ordinary catalog
+refreshes must not create spurious machine-health failures. Applying sync
+refreshes the derived snapshot; it does not fetch remote model metadata itself.
+The original Azure path can log `failed to decode models response: missing field
+models` when refreshing its catalog, because Azure returns a different catalog
+shape. The original-path smoke still completed successfully using fallback
+metadata. Populate the source cache through the subscription path as above;
+the derived-catalog profile avoids that refresh request.
+
+### Trade-offs and evidence
+
+- This changes the request protocol, not the model. The generated catalog keeps
+  the current 272,000-token window and 95% effective budget (258,400 tokens).
+  It does not enable the model's maximum advertised context length.
+- Both direct Azure Astra probes returned `reasoning.context = "all_turns"`,
+  with and without an explicit context value. The older Codex source comment
+  assuming standard Responses defaults to `current_turn` was not true for this
+  deployment. See [Azure reasoning behavior](https://learn.microsoft.com/en-us/azure/foundry/openai/how-to/reasoning).
+- Native search and shell execution passed with the saved Azure profile in
+  CLI 0.154.0; earlier isolated tests also passed with desktop engine
+  0.154.0-alpha.6.2. The saved-profile smoke reported cached input tokens.
+- Switching protocols does not duplicate every model request. Search actions
+  have additional tool charges and returned content uses tokens. Credit
+  coverage and comparative long-session cost were not verified.
+- Microsoft currently treats `external_web_access` as `false`; the Codex
+  `"live"` setting does not promise unrestricted live fetching on Azure.
+- The snapshot requires refresh after relevant model/Codex changes. Long coding
+  sessions, compaction, resume behavior, latency, and quality parity remain
+  unbenchmarked. These are reasons to retain the original path for comparison.
+
+The [project verification record](../projects/archive/azure-astra-web-search/resources/verification.json)
+contains the synthetic smoke outcomes and configuration-isolation evidence.
+
 ## Protocol and validation
 
 Use the Responses API (`wire_api = "responses"`) and the Azure deployment name
@@ -158,7 +284,7 @@ parameter. Don't mix this route with the older dated-preview endpoint example.
 Validate both a minimal Responses request and an isolated request through the
 Codex engine bundled with the desktop app. Disable lifecycle hooks and external
 integrations during the smoke test, and keep scratch work under this repo's
-`tmp/`. Runtime verification is separate from desktop UI activation, which is
+`tmp/`. Runtime verification is separate from desktop UI activation, which
 requires a restart of the user's app after the global default changes.
 
 Installed-build history checks on 2026-09-16 (`0.154.0-alpha.6.2`):
