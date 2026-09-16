@@ -2,8 +2,9 @@
 
 ## Goal
 
-Enable Azure-hosted web search only in the existing `azure-astra` Codex profile,
-with verified subscription isolation and a documented way to undo the trial.
+Enable Azure-hosted web search in the existing `azure-astra` Codex profile and,
+following the explicit follow-up request, the Mac app/shared global default,
+with verified subscription isolation and a documented rollback.
 
 ## Context / Constraints
 
@@ -11,13 +12,16 @@ with verified subscription isolation and a documented way to undo the trial.
   standard-Responses workaround in the Azure profile and requested a resumable
   project record in case it regresses.
 - `codex-azure` selects `azure-astra`; `codex-openai` selects `chatgpt`.
-- Keep the global/desktop default and subscription profile unchanged. A CLI
-  profile is not automatically selected by the desktop's provider default.
+- Initial scope was CLI-only. The user subsequently authorized applying the
+  same workaround to the desktop/shared default. A CLI profile is not
+  automatically selected by the desktop provider default. Keep the existing
+  subscription path usable through an explicit normal-catalog/search override.
 - Derive a machine-local model catalog from Codex's existing catalog; change
   only Astra's `use_responses_lite` to `false`. Never commit runtime catalog
   contents, credentials, or conversation history.
 - Keep `web_search = "live"` and disable `features.standalone_web_search` only
-  in the Azure profile. Its separate `/alpha/search` endpoint returned 404.
+  for the global Azure default and Azure profile. Its separate `/alpha/search`
+  endpoint returned 404. Restore standalone search in the subscription profile.
 - Prior temporary tests succeeded in CLI 0.154.0 and desktop engine
   0.154.0-alpha.6.2: native search, shell execution, and input caching worked.
   Azure returned `reasoning.context = "all_turns"` with and without an explicit
@@ -35,7 +39,8 @@ with verified subscription isolation and a documented way to undo the trial.
 
 - [x] M1 — Implement reproducible profile-scoped catalog generation and apply it.
 - [x] M2 — Validate native search, profile isolation, context metadata, and rollback.
-- [x] M3 — Finish the operational reference and archive the project record.
+- [x] M3 — Finish the operational reference and archive the initial project record.
+- [x] M4 — Apply and verify the subsequently requested desktop/global default.
 
 ## Decisions
 
@@ -51,11 +56,15 @@ with verified subscription isolation and a documented way to undo the trial.
 
 ## Current Batch
 
+Desktop-default follow-up completed; earlier validation records describe the
+initial CLI-only phase.
+
 | Status | Work Item | Role | Resource |
 | --- | --- | --- | --- |
 | done | Apply the scoped catalog and profile settings | parent | `codex/config/azure-astra.config.toml` |
 | done | Verify actual Azure search and subscription isolation | parent | `resources/verification.json` |
-| done | Archive the documented enablement and run final checks | parent | `docs/references/codex-azure-astra.md` |
+| done | Archive the initial enablement | parent | `docs/references/codex-azure-astra.md` |
+| done | Apply and verify the desktop/global default, then re-archive | parent | `resources/desktop-verification.json` |
 
 ## Validation / Test Plan
 
@@ -110,3 +119,21 @@ as an active project only if new implementation work is required.
   post-archive fast check passed, including the new catalog tests and live
   Codex structural validation. Enablement is complete; resume only for a new
   regression or an explicitly requested extended comparison.
+
+- 2026-09-16: [IN-PROGRESS] Reopened the whole tracker for the explicit Mac app
+  default request. Applied the same existing Azure catalog/search settings
+  globally and explicit normal catalog/search settings in `chatgpt`. No new
+  launcher or service was added. Documented snapshot refresh and rollback.
+
+- 2026-09-16: [DONE] The desktop bundled engine loaded the saved global settings
+  without profile/model/provider/search/protocol overrides, loaded native Azure
+  credentials, and completed one hosted search. `codex-openai` completed one
+  native search with its explicit normal catalog/search overrides. Context
+  metadata is unchanged and only Astra's protocol flag differs between catalogs.
+- 2026-09-16: [DONE] Codex structural/runtime validation passed. The first fast
+  check correctly caught archived links while the tracker was temporarily active;
+  final validation runs after returning the complete directory to the archive.
+  Desktop UI activation remains the user's restart/new-task check.
+
+- 2026-09-16: [DONE] Archived all four project files; confirmed the active copy
+  was removed. Final post-archive fast checks and `git diff --check` passed.

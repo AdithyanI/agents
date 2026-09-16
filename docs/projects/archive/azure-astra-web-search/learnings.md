@@ -5,7 +5,7 @@
   A 2025 issue or an exposed tool name was not enough to determine current support.
 - A model-catalog flag is a protocol compatibility override, not a free upgrade
   or a smaller/larger model selection. Keep it scoped to the user's chosen
-  profile and preserve all other metadata when generating the local catalog.
+  scope and preserve all other metadata when generating the local catalog.
 - Public source comments can lag deployed behavior: Codex's standard-Responses
   comment said `current_turn`, but both live Azure Astra probes returned
   `all_turns`. Record observed behavior with its date and model.
@@ -15,6 +15,13 @@
 - `codex debug models` is available in CLI 0.154.0 for catalog inspection;
   `--bundled` avoids refresh. Do not dump full catalogs into chat or git: they
   contain large model instructions. Extract only the metadata needed.
-- Preserve the original cache and global/subscription configuration. Validate
+- Preserve the original cache and account-provider behavior. Validate
   generated output structurally during health checks; normal cache updates
   alone should not be treated as configuration drift.
+
+- A global catalog override reaches subscription profiles unless explicitly
+  overridden there. The `chatgpt` profile therefore restores normal cache metadata
+  and standalone search. This also pins its model metadata: refresh via an
+  authenticated `codex exec --ignore-user-config` invocation and reapply sync.
+- Desktop activation needs global settings, a process restart, and a new task.
+  Verify the bundled engine without repeating provider/protocol overrides.

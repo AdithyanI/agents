@@ -3,3 +3,9 @@
 
 model_provider = "openai"
 forced_login_method = "chatgpt"
+
+# Restore normal model metadata and Codex search over the global Azure defaults.
+model_catalog_json = "models_cache.json"
+
+[features]
+standalone_web_search = true

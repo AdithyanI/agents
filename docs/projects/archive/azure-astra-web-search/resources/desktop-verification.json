@@ -1,0 +1,88 @@
+{
+  "desktop_default": {
+    "timestamp_utc": "2026-09-16T15:39:24.149841+00:00",
+    "entrypoint": "/Applications/ChatGPT.app/Contents/Resources/codex",
+    "profile_override": false,
+    "model_provider_protocol_search_overrides": false,
+    "native_dotenv_auth": true,
+    "exit_code": 0,
+    "search_count": 1,
+    "search_events": [
+      {
+        "id": "ws_01ccffe14a322b34016aaab826d82081968bb3b68a38be42d7",
+        "type": "web_search",
+        "query": "site.learn.microsoft.com azure openai web search tool",
+        "action": {
+          "type": "search",
+          "query": "site.learn.microsoft.com azure openai web search tool",
+          "queries": [
+            "site.learn.microsoft.com azure openai web search tool"
+          ]
+        }
+      }
+    ],
+    "answer": "https://learn.microsoft.com/en-us/azure/foundry/openai/how-to/web-search",
+    "usage": [
+      {
+        "input_tokens": 24764,
+        "cached_input_tokens": 0,
+        "cache_write_input_tokens": 20576,
+        "output_tokens": 70,
+        "reasoning_output_tokens": 35
+      }
+    ],
+    "errors": []
+  },
+  "subscription": {
+    "timestamp_utc": "2026-09-16T15:39:34.562613+00:00",
+    "entrypoint": "/Users/dobby/bin/codex-openai",
+    "profile_override": true,
+    "model_provider_protocol_search_overrides": false,
+    "native_dotenv_auth": false,
+    "exit_code": 0,
+    "search_count": 1,
+    "search_events": [
+      {
+        "id": "exec-18f578e2-6101-4ccc-bc30-b1a146345740",
+        "type": "web_search",
+        "query": "site.learn.microsoft.com Azure OpenAI web search tool",
+        "action": {
+          "type": "search",
+          "query": "site.learn.microsoft.com Azure OpenAI web search tool"
+        }
+      }
+    ],
+    "answer": "https://learn.microsoft.com/en-us/azure/foundry/openai/how-to/web-search",
+    "usage": [
+      {
+        "input_tokens": 42742,
+        "cached_input_tokens": 19200,
+        "cache_write_input_tokens": 0,
+        "output_tokens": 78,
+        "reasoning_output_tokens": 0
+      }
+    ],
+    "errors": []
+  },
+  "configuration": {
+    "global_provider": "azure",
+    "global_model": "gpt-6-astra",
+    "global_catalog": "model-catalogs/azure-astra.json",
+    "global_standalone_search": false,
+    "subscription_provider": "openai",
+    "subscription_catalog": "models_cache.json",
+    "subscription_standalone_search": true,
+    "only_astra_protocol_flag_differs": true,
+    "context_window": 272000
+  },
+  "validation": {
+    "codex_control_plane": "passed",
+    "fast_check": "passed after archive; git diff --check also passed",
+    "scope": "Configuration and documentation only; no new renderer or service."
+  },
+  "limitations": [
+    "Mac app UI activation requires user restart and a new task; running app was not quit.",
+    "Explicit catalogs use snapshots; documented ignore-user-config invocation allows native subscription refresh.",
+    "No long-session compaction, latency, quality or billing benchmark."
+  ]
+}

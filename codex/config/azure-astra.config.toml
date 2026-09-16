@@ -1,4 +1,4 @@
-# Optional Azure Astra overlay. This does not change the desktop app default.
+# Explicit Azure Astra overlay; the desktop now shares these search defaults.
 # Use with: codex --profile azure-astra
 
 model = "gpt-6-astra"
