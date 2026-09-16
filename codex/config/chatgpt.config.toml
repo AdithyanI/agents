@@ -1,4 +1,5 @@
 # Optional profile for ChatGPT-account Codex runs.
-# Use with: codex --profile chatgpt
+# Use with: codex-openai (or codex --profile chatgpt)
 
 model_provider = "openai"
+forced_login_method = "chatgpt"

@@ -4,8 +4,8 @@
 
 Azure Astra is the global default, as requested on 2026-09-16, for newly loaded
 local Codex runtimes including the macOS app. Quit and reopen the app after
-syncing configuration. Use `codex --profile chatgpt` for an explicit subscription
-session. No desktop provider-picker integration is assumed.
+syncing configuration. Use `codex-openai` (or `codex --profile chatgpt`) for an
+explicit subscription session. No desktop provider-picker integration is assumed.
 
 - Subscription: Microsoft Azure Sponsorship.
 - Existing resource: `aipodcasting-openai`, resource group `aipodcasting`,
@@ -73,6 +73,39 @@ was verified with a real Astra response and an `exec` header reporting
 
 On another machine, after syncing both repos and configuring Azure credentials,
 install the command with `ln -s ~/GitHub/scripts/bin/codex-azure ~/bin/codex-azure`.
+
+## Choosing the Codex subscription in the terminal
+
+Use `codex-openai`, the matching launcher at
+`~/GitHub/scripts/bin/codex-openai` linked into `~/bin/codex-openai`:
+
+```bash
+codex-openai
+codex-openai "Review this project"
+codex-openai exec "Summarize the current changes"
+```
+
+It runs `codex --profile chatgpt` and forwards the remaining arguments. The
+canonical `codex/config/chatgpt.config.toml` selects `model_provider = "openai"`
+and `forced_login_method = "chatgpt"`, requiring the saved ChatGPT subscription
+login. It does not use the Azure key or select OpenAI Platform API-key billing.
+Model and reasoning choices remain available through Codex's normal controls.
+
+Both launchers can run at the same time. Each selects its own process's profile;
+ordinary `codex` and newly loaded desktop runtimes keep the global Azure default.
+For a new subscription session, verify `/status` reports provider `openai` and
+the ChatGPT account. For authentication administration use `codex login status`
+or `codex login` directly: the installed CLI does not accept `--profile` for
+login commands. A mismatched login method causes Codex to log out and exit;
+sign in with ChatGPT again rather than placing an API key in the login store.
+
+On another machine, sync both repos, apply the managed Codex profiles, and run:
+
+```bash
+ln -s ~/GitHub/scripts/bin/codex-openai ~/bin/codex-openai
+```
+
+## Selecting the desktop default
 
 For the macOS app, the global Azure selection was applied on 2026-09-16:
 
