@@ -140,6 +140,15 @@ All repo lifecycle hooks are Python. Do not add shell compatibility shims.
   needed. Explicit fast checks and staged-tree stability replace mutable
   commit-hook execution before rebase/push. A successful pull-rebase reruns the
   repo fast check and must leave a clean repository before the push is retried.
+- Before Codex preflight, the shared hook repairs extra blank lines at EOF when
+  `git diff --cached --check` reports them. It honors Git whitespace configuration
+  and attributes, preserves line endings and file mode, and skips binary files,
+  symlinks, and files with unstaged or concurrent edits. Only the rejected EOF
+  suffix is removed; in-line spaces, including Markdown hard breaks, are preserved.
+  Repairs enter the existing restage/recheck loop and are logged as
+  `autofix blank-at-eof`. No agent continuation is needed when the repaired tree
+  passes. Intentional EOF whitespace can be exempted using Git's `whitespace`
+  attribute; language-specific formatting remains the repository's responsibility.
 - A repo check may fix files and exit nonzero to request another pass. Codex
   restages those changes and retries within the existing three-pass
   consolidation loop without returning formatter-only errors to the task.

@@ -119,7 +119,8 @@ flowchart TD
     E --> F["map exact paths to Git worktrees"]
     F --> G["lock all affected repositories in sorted order"]
     G --> H["consolidate all staged + working-tree changes"]
-    H --> I["run every repo scripts/check-fast.sh in parallel"]
+    H --> W["repair Git-rejected EOF blank lines"]
+    W --> I["run every repo scripts/check-fast.sh in parallel"]
     I --> V{"check failed without changes or with no retries left?"}
     V -->|"yes"| L["return aggregate feedback to the source task"]
     V -->|"no"| J{"files changed during checks?"}

@@ -9,6 +9,7 @@ import json
 import os
 import re
 import shutil
+import stat
 import subprocess
 import sys
 import tempfile
@@ -919,10 +920,82 @@ def codex_failure_reason(title: str, failures: list[str]) -> str:
     return truncate_text("\n".join(lines), MAX_REASON_CHARS)
 
 
+def repair_staged_blank_eof(root: str) -> None:
+    """Repair Git-rejected EOF blank lines; the consolidation loop restages them.
+
+    Honor the repository's whitespace attributes/config and only truncate an
+    unchanged regular worktree file. Never normalize in-line whitespace (which
+    can carry meaning in Markdown, strings, fixtures, and other file formats).
+    """
+    env = {**os.environ, "LC_ALL": "C"}
+    git = ["git", "--literal-pathspecs"]
+
+    def inspect(args: list[str]) -> subprocess.CompletedProcess[bytes]:
+        return subprocess.run(
+            git + args, cwd=root, env=env, capture_output=True,
+            timeout=GIT_STATUS_TIMEOUT_SEC,
+        )
+
+    check_args = ["diff", "--cached", "--no-color", "--no-ext-diff", "--no-textconv", "--check"]
+    diagnostic = re.compile(rb"^[^+\n].*:\d+: new blank line at EOF\.$", re.MULTILINE)
+    check = inspect(check_args)
+    if check.returncode != 2 or not diagnostic.search(check.stdout):
+        return
+    files = inspect([
+        "diff", "--cached", "--no-ext-diff", "--no-textconv", "--no-renames",
+        "--numstat", "-z", "--diff-filter=AM",
+    ])
+    if files.returncode != 0:
+        return
+    repo = Path(root).resolve()
+    for record in files.stdout.split(b"\0"):
+        if not record:
+            continue
+        added, _deleted, raw_path = record.split(b"\t", 2)
+        if added == b"-":  # Git considers this a binary file.
+            continue
+        name = os.fsdecode(raw_path)
+        path = repo / name
+        try:
+            if path.resolve() != path:  # Includes symlinked parent directories.
+                continue
+            if not stat.S_ISREG(path.lstat().st_mode):
+                continue
+            # Keep the same file descriptor through inspection and truncation.
+            flags = os.O_RDWR | os.O_NOFOLLOW | os.O_NONBLOCK
+            with os.fdopen(os.open(path, flags), "r+b") as handle:
+                if not stat.S_ISREG(os.fstat(handle.fileno()).st_mode):
+                    continue
+                original = handle.read()
+                if b"\0" in original:
+                    continue
+                lines = original.splitlines(keepends=True)
+                while lines and not lines[-1].strip(b" \t\r\n"):
+                    lines.pop()
+                repaired = b"".join(lines)
+                if repaired == original:
+                    continue
+                file_check = inspect(check_args + ["--", name])
+                if file_check.returncode != 2 or not diagnostic.search(file_check.stdout):
+                    continue
+                # Do not fold unstaged edits into a repair or act on stale bytes.
+                if inspect(["diff", "--quiet", "--no-ext-diff", "--no-textconv", "--", name]).returncode != 0:
+                    continue
+                handle.seek(0)
+                if handle.read() != original or path.stat() != os.fstat(handle.fileno()):
+                    continue
+                handle.truncate(len(repaired))
+                log("codex", f"autofix blank-at-eof repo={root!r} path={name!r}")
+        except OSError as exc:
+            # A failed repair never weakens the repo check or discards its error.
+            log("codex", f"autofix blank-at-eof skipped path={name!r} error={exc}")
+
+
 def preflight_repo_check(item: RepoFinalization) -> tuple[str, subprocess.CompletedProcess[str] | None]:
     script = Path(item.root) / "scripts/check-fast.sh"
     if not script.is_file():
         return item.root, None
+    repair_staged_blank_eof(item.root)
     return item.root, run(
         ["bash", "scripts/check-fast.sh"],
         item.root,

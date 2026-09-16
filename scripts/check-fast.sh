@@ -14,6 +14,9 @@ scripts/check-skills-registry.sh --staged-ok
 scripts/check-plugins-registry.sh --staged-ok
 python3 -m unittest tests.control_plane.test_project_archive tests.control_plane.test_skills_sync
 python3 -m unittest \
+  tests.control_plane.test_stop_whitespace \
+  tests.control_plane.test_codex_multi_repo_stop.CodexMultiRepoStopTests.test_git_eof_whitespace_is_repaired_rechecked_and_published_without_feedback \
+  tests.control_plane.test_codex_multi_repo_stop.CodexMultiRepoStopTests.test_git_eof_repair_does_not_bypass_a_real_failure \
   tests.control_plane.test_hooks_control_plane.HooksControlPlaneTests.test_stop_publication_notifies_local_production_asynchronously \
   tests.control_plane.test_hooks_control_plane.HooksControlPlaneTests.test_stop_publication_skips_non_main_branch \
   tests.control_plane.test_hooks_control_plane.HooksControlPlaneTests.test_stop_publication_notify_failure_does_not_fail_git_finalization

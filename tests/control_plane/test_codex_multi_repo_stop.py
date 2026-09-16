@@ -462,6 +462,46 @@ class CodexMultiRepoStopTests(TempDirTestCase):
     def test_autofix_failure_is_rechecked_and_published_without_feedback(self) -> None:
         self.assert_autofix_failure_recovers(stage_fix=False)
 
+    def test_git_eof_whitespace_is_repaired_rechecked_and_published_without_feedback(self) -> None:
+        repo, remote = self.make_published_repo("repo")
+        path = repo / "episode.srt"
+        path.write_text("1\n00:00:00,000 --> 00:00:01,000\nWords.\n\n", encoding="utf-8")
+        write_executable(repo / "scripts/check-fast.sh", "#!/bin/sh\ngit diff --cached --check\n")
+        with (
+            patch.object(stop, "collect_codex_turn_changes", return_value=self.changes([path])),
+            patch.object(stop, "preflight_repo_check", wraps=stop.preflight_repo_check) as checks,
+        ):
+            output = stop.process_codex_repositories(
+                str(repo), {"session_id": "thread", "hook_event_name": "Stop"}
+            )
+        self.assertIsNone(output)
+        self.assertEqual(checks.call_count, 2)
+        self.assertEqual(
+            run_command(["git", "-C", str(remote), "show", "HEAD:episode.srt"]).stdout,
+            "1\n00:00:00,000 --> 00:00:01,000\nWords.\n",
+        )
+        self.assertEqual(run_command(["git", "-C", str(repo), "status", "--porcelain"]).stdout, "")
+        self.assertEqual(stop.load_codex_transaction("thread"), {})
+
+    def test_git_eof_repair_does_not_bypass_a_real_failure(self) -> None:
+        repo, remote = self.make_published_repo("repo")
+        path = repo / "episode.srt"
+        path.write_text("Words.\n\n", encoding="utf-8")
+        write_executable(
+            repo / "scripts/check-fast.sh",
+            "#!/bin/sh\ngit diff --cached --check || exit $?\necho 'type check failed' >&2\nexit 1\n",
+        )
+        before = run_command(["git", "-C", str(remote), "rev-parse", "HEAD"]).stdout
+        with patch.object(stop, "collect_codex_turn_changes", return_value=self.changes([path])):
+            output = stop.process_codex_repositories(
+                str(repo), {"session_id": "thread", "hook_event_name": "Stop"}
+            )
+        self.assertEqual(output["decision"], "block")
+        self.assertIn("type check failed", output["reason"])
+        for root in (repo, remote):
+            self.assertEqual(run_command(["git", "-C", str(root), "rev-parse", "HEAD"]).stdout, before)
+        self.assertEqual(path.read_text(encoding="utf-8"), "Words.\n")
+
     def test_self_staging_autofix_is_rechecked_before_publication(self) -> None:
         self.assert_autofix_failure_recovers(stage_fix=True)
 
