@@ -141,6 +141,57 @@ class CodexControlPlaneCheckTests(TempDirTestCase):
                     self.assertNotEqual(result.returncode, 0)
                     self.assertIn("Codex profile is out of sync", result.stderr)
 
+    def test_global_selection_allows_only_a_paired_custom_provider_default(self) -> None:
+        root, home, adi = self._make_codex_repo_fixture()
+        self._render_repo_configs(root, home)
+        global_template = root / "codex/config/global.config.toml"
+        custom_provider = '\n[model_providers.azure]\nname = "Azure"\n'
+        paired_default = 'model = "gpt-6-astra"\nmodel_provider = "azure"\n'
+        cases = (
+            ("paired custom provider", paired_default + custom_provider, True),
+            ("model alone", 'model = "gpt-6-astra"\n' + custom_provider, False),
+            ("provider alone", 'model_provider = "azure"\n' + custom_provider, False),
+            ("undefined provider", paired_default, False),
+            ("blank model", paired_default.replace('"gpt-6-astra"', '""') + custom_provider, False),
+            ("openai model pin", (paired_default + custom_provider).replace("azure", "openai"), False),
+            ("reasoning effort", paired_default + 'model_reasoning_effort = "high"\n' + custom_provider, False),
+            ("service tier", paired_default + 'service_tier = "fast"\n' + custom_provider, False),
+            ("fast mode", paired_default + custom_provider + '\n[features]\nfast_mode = true\n', False),
+        )
+        for fallback in ("", "1"):
+            for label, contents, allowed in cases:
+                with self.subTest(fallback=fallback, selection=label):
+                    write_text(global_template, contents)
+                    result = run_command(
+                        self._check_command(root, home, adi),
+                        env={"HOME": str(home), "CODEX_FORCE_TOML_FALLBACK": fallback},
+                        check=False,
+                    )
+                    if allowed:
+                        self.assertEqual(result.returncode, 0, result.stderr)
+                    else:
+                        self.assertNotEqual(result.returncode, 0)
+                        self.assertIn("client-owned thread selection", result.stderr)
+
+    def test_paired_custom_provider_is_still_rejected_in_repo_defaults(self) -> None:
+        root, home, adi = self._make_codex_repo_fixture()
+        write_json(
+            root / "codex/config/repo-bootstrap.json",
+            {
+                "defaults": {
+                    "model": "gpt-6-astra",
+                    "model_provider": "azure",
+                    "model_providers": {"azure": {"name": "Azure"}},
+                },
+                "repos": [{"path": str(adi)}],
+            },
+        )
+        result = run_command(
+            self._check_command(root, home, adi), env={"HOME": str(home)}, check=False
+        )
+        self.assertNotEqual(result.returncode, 0)
+        self.assertIn("defaults set client-owned thread selection", result.stderr)
+
     def test_check_script_rejects_legacy_embedded_profiles(self) -> None:
         root, home, adi = self._make_codex_repo_fixture()
         write_text(

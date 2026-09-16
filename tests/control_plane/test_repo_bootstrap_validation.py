@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+import re
+
 from tests.control_plane.support import (
     REPO_ROOT,
     TempDirTestCase,
@@ -33,7 +35,17 @@ class RepoBootstrapRegistryValidationTests(TempDirTestCase):
         )
         scopes = [registry.get("defaults", {}), *registry.get("repos", [])]
 
+        # Global custom-provider defaults may pin the matching deployment;
+        # repository defaults and entries still leave all selection to clients.
+        provider_match = re.search(r'(?m)^model_provider = "([^\"]+)"$', global_config)
+        if provider_match:
+            provider = provider_match.group(1)
+            self.assertNotEqual(provider, "openai")
+            self.assertIn(f"[model_providers.{provider}]", global_config)
+            self.assertRegex(global_config, r'(?m)^model = "[^\"]+"$')
         for key in client_owned_keys:
+            if provider_match and key in {"model", "model_provider"}:
+                continue
             self.assertNotRegex(global_config, rf"(?m)^\s*{key}\s*=")
         self.assertNotIn("fast_mode", global_config)
         self.assertNotIn("default-service-tier", global_config)

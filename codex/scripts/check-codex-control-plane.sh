@@ -480,7 +480,23 @@ def client_owned_selection_keys(values: dict) -> list[str]:
 
 
 def validate_client_owned_global_selection(config_path: Path) -> None:
-    forbidden = client_owned_selection_keys(load_toml(config_path))
+    values = load_toml(config_path)
+    forbidden = client_owned_selection_keys(values)
+    provider = values.get("model_provider")
+    model = values.get("model")
+    providers = values.get("model_providers")
+    if (
+        isinstance(provider, str)
+        and provider.strip()
+        and provider != "openai"
+        and isinstance(model, str)
+        and model.strip()
+        and isinstance(providers, dict)
+        and isinstance(providers.get(provider), dict)
+    ):
+        # A deliberately selected custom provider needs its matching deployment
+        # as a global default. This exception never applies to repo registries.
+        forbidden = [key for key in forbidden if key not in {"model", "model_provider"}]
     if forbidden:
         fail(
             f"{config_path} sets client-owned thread selection: {', '.join(forbidden)}"

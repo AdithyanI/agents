@@ -1,6 +1,9 @@
 # Canonical portable baseline for ~/.codex/config.toml
 # Keep this focused on stable settings only.
 
+model = "gpt-6-astra"
+model_provider = "azure"
+
 cli_auth_credentials_store = "file"
 mcp_oauth_credentials_store = "file"
 approval_policy = "never"
@@ -21,8 +24,7 @@ external_migration = false
 [notice.external_config_migration_prompts]
 home = true
 
-# Optional Azure provider. Subscription access remains the default; selecting
-# a provider and model is separate from registering this connection.
+# Azure Astra is the default. Use --profile chatgpt for subscription access.
 [model_providers.azure]
 name = "Azure OpenAI"
 base_url = "https://aipodcasting-openai.openai.azure.com/openai/v1"

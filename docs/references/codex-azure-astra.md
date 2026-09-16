@@ -2,9 +2,10 @@
 
 ## Configuration and ownership
 
-Azure Astra is an optional connection. The user's subscription remains the
-desktop default, as explicitly requested on 2026-09-15. Registering a provider
-does not select it or add a verified provider switch to the desktop model picker.
+Azure Astra is the global default, as requested on 2026-09-16, for newly loaded
+local Codex runtimes including the macOS app. Quit and reopen the app after
+syncing configuration. Use `codex --profile chatgpt` for an explicit subscription
+session. No desktop provider-picker integration is assumed.
 
 - Subscription: Microsoft Azure Sponsorship.
 - Existing resource: `aipodcasting-openai`, resource group `aipodcasting`,
@@ -66,14 +67,14 @@ the launcher adds no separate output protocol or credential handling.
 
 Inside the terminal session, run `/status` and verify `Model provider: azure`.
 The model name `gpt-6-astra` alone does not establish which provider handles
-requests. Normal `codex` sessions use the default OpenAI provider. The launcher
+requests. Normal `codex` sessions now also use the global Azure default. The launcher
 was verified with a real Astra response and an `exec` header reporting
 `provider: azure`; the user also confirmed the interactive `/status` display.
 
 On another machine, after syncing both repos and configuring Azure credentials,
 install the command with `ln -s ~/GitHub/scripts/bin/codex-azure ~/bin/codex-azure`.
 
-For the macOS app, activation is a separate user choice. Once requested:
+For the macOS app, the global Azure selection was applied on 2026-09-16:
 
 1. Set top-level `model_provider = "azure"` and `model = "gpt-6-astra"` in
    canonical `codex/config/global.config.toml`, then run the config sync and
@@ -101,7 +102,20 @@ Validate both a minimal Responses request and an isolated request through the
 Codex engine bundled with the desktop app. Disable lifecycle hooks and external
 integrations during the smoke test, and keep scratch work under this repo's
 `tmp/`. Runtime verification is separate from desktop UI activation, which is
-deferred while the user keeps the subscription default.
+requires a restart of the user's app after the global default changes.
+
+Installed-build history checks on 2026-09-16 (`0.154.0-alpha.6.2`):
+
+- A saved synthetic OpenAI task resumed without a provider override still used
+  `openai`, even when the app-server default was `azure`. A default change does
+  not establish that existing tasks have migrated.
+- The installed server's default `thread/list` under Azure omitted the eight
+  OpenAI tasks returned by the same query under OpenAI. This differs from the
+  current public manual's claim that an omitted provider filter includes all
+  providers. The macOS client's actual filter behavior must be checked after
+  restart; do not promise that every old task stays visible in its default view.
+- These checks used a disposable test conversation; existing user tasks were
+  not rewritten or deleted.
 
 Verified on 2026-09-15:
 
