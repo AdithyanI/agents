@@ -16,7 +16,7 @@ MODEL = "gpt-6-astra"
 CATALOG = Path("model-catalogs/azure-astra.json")
 
 
-def read_models(path: Path) -> list[dict]:
+def read_models(path: Path, *, require_astra: bool = True) -> list[dict]:
     data = json.loads(path.read_text(encoding="utf-8"))
     models = data.get("models") if isinstance(data, dict) else None
     if not isinstance(models, list) or not models:
@@ -24,7 +24,7 @@ def read_models(path: Path) -> list[dict]:
     slugs = [item.get("slug") if isinstance(item, dict) else None for item in models]
     if any(not isinstance(slug, str) or not slug for slug in slugs):
         raise ValueError(f"{path}: each model must have a non-empty slug")
-    if len(set(slugs)) != len(slugs) or slugs.count(MODEL) != 1:
+    if len(set(slugs)) != len(slugs) or (require_astra and slugs.count(MODEL) != 1):
         raise ValueError(f"{path}: expected unique models including {MODEL}")
     return models
 
@@ -81,7 +81,17 @@ def main() -> int:
                 f"missing source catalog {source}; populate Codex's normal model catalog "
                 "in an OpenAI session, then rerun codex/scripts/sync-config.sh --apply"
             )
-        models = read_models(source)
+        models = read_models(source, require_astra=False)
+        if not any(item["slug"] == MODEL for item in models):
+            # Older terminal clients can refresh the shared cache without Astra.
+            # That does not invalidate the already working Azure snapshot. Keep
+            # it intact; a fresh install still requires a capable source client.
+            saved = read_models(target)
+            astra = next(item for item in saved if item["slug"] == MODEL)
+            if astra.get("use_responses_lite") is not False:
+                raise ValueError(f"{target}: {MODEL} must use standard Responses")
+            print(f"Azure source cache omits {MODEL}; retained validated catalog: {target}")
+            return 0
         model = next(item for item in models if item["slug"] == MODEL)
         if not isinstance(model.get("use_responses_lite"), bool):
             raise ValueError(f"{source}: {MODEL} no longer declares use_responses_lite; review the workaround")

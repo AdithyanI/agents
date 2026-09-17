@@ -120,6 +120,8 @@ python3 "${SCRIPT_DIR}/sync-azure-model-catalog.py" \
   --runtime-dir "$(dirname "$GLOBAL_CONFIG")" \
   --check
 
+python3 "${SCRIPT_DIR}/provider_selection.py" check "$CANONICAL_DIR" "$GLOBAL_CONFIG"
+
 PYTHONPATH="$ROOT_DIR" python3 - "$CANONICAL_DIR" "$GLOBAL_CONFIG" "$GLOBAL_HOOKS" "$GLOBAL_AUTH" "$GLOBAL_MCP_CREDENTIALS" "$REGISTRY_FILE" "$MCP_REGISTRY_FILE" "$HOOKS_REGISTRY_FILE" "$PLUGIN_REGISTRY_FILE" "${REPO_FILTERS[@]}" <<'PY'
 from __future__ import annotations
 

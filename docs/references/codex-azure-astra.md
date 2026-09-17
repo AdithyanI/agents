@@ -2,10 +2,11 @@
 
 ## Configuration and ownership
 
-Azure Astra is the global default, as requested on 2026-09-16, for newly loaded
-local Codex runtimes including the macOS app. Quit and reopen the app after
-syncing configuration. Use `codex-openai` (or `codex --profile chatgpt`) for an
-explicit subscription session. No desktop provider-picker integration is assumed.
+Since September 17, 2026 each Mac independently selects Azure or the Codex
+subscription through the [provider menu and CLI](codex-provider-switch.md).
+The choice applies to new ordinary terminal sessions and newly loaded desktop
+runtimes. Reopen the desktop app and start a new task after switching.
+Shared sync preserves this local choice; existing tasks retain their provider.
 
 - Subscription: Microsoft Azure Sponsorship.
 - Existing resource: `aipodcasting-openai`, resource group `aipodcasting`,
@@ -116,7 +117,7 @@ the launcher adds no separate output protocol or credential handling.
 
 Inside the terminal session, run `/status` and verify `Model provider: azure`.
 The model name `gpt-6-astra` alone does not establish which provider handles
-requests. Normal `codex` sessions now also use the global Azure default. The launcher
+requests. Normal `codex` sessions use this Mac's locally selected default. The launcher
 was verified with a real Astra response and an `exec` header reporting
 `provider: azure`; the user also confirmed the interactive `/status` display.
 
@@ -141,7 +142,7 @@ login. It does not use the Azure key or select OpenAI Platform API-key billing.
 Model and reasoning choices remain available through Codex's normal controls.
 
 Both launchers can run at the same time. Each selects its own process's profile;
-ordinary `codex` and newly loaded desktop runtimes keep the global Azure default.
+ordinary `codex` and newly loaded desktop runtimes use this Mac's selected default.
 For a new subscription session, verify `/status` reports provider `openai` and
 the ChatGPT account. For authentication administration use `codex login status`
 or `codex login` directly: the installed CLI does not accept `--profile` for
@@ -156,23 +157,16 @@ ln -s ~/GitHub/scripts/bin/codex-openai ~/bin/codex-openai
 
 ## Selecting the desktop default
 
-For the macOS app, the global Azure selection was applied on 2026-09-16:
+Use the native **Codex Provider** menu or `codex-provider azure --apply` /
+`codex-provider subscription --apply`. The choice is persisted only on this Mac
+and survives shared sync. Installation, local state, rollback, and verification
+are documented in [Codex provider switch](codex-provider-switch.md).
 
-1. Set top-level `model_provider = "azure"` and `model = "gpt-6-astra"` in
-   canonical `codex/config/global.config.toml`, then run the config sync and
-   control-plane checks. These global defaults also affect ordinary CLI runs.
-2. Have the user finish active work, quit and reopen the desktop app, then
-   start a new local task. Do not terminate the app from an active agent task.
-3. Verify the new task uses Azure. Existing tasks may retain their provider;
-   don't infer their billing from the model label alone.
-
-To return to the subscription, remove those top-level model/provider defaults
-from the canonical template, sync/check, and restart before creating a task.
-Retain the `azure` provider table and optional profile. The ChatGPT login is
-independent of the Azure key and should not be overwritten with an Azure key.
-
-The named CLI profile is not a verified desktop profile selector. Do not claim
-that Azure and subscription entries coexist in the desktop model dropdown.
+After changing the choice, finish active work, quit and reopen Codex, and start
+a new local task. Do not terminate Codex from its own active agent task.
+Existing tasks can retain their provider; verify the actual provider rather
+than relying on the model name. The menu controls configuration; it does not
+add Azure/subscription entries to Codex's own model dropdown.
 
 ## Priority processing
 
@@ -202,7 +196,7 @@ for supported model versions, pricing, and fallback conditions.
 
 Enabled by explicit request on 2026-09-16 in the existing `azure-astra`
 profile, then extended by request to the shared desktop/CLI default. New app
-processes and ordinary `codex` use Azure Astra with hosted search. Restart the
+processes and ordinary `codex` use Azure Astra with hosted search when this Mac selects Azure. Restart the
 Mac app and start a new task to try it. This is a tested Codex compatibility
 workaround, not a standard Azure portal switch.
 
@@ -224,8 +218,9 @@ and [Codex's hosted-tool gating](https://github.com/openai/codex/blob/rust-v0.15
 
 ### Ownership and effective settings
 
-- Canonical settings: `codex/config/global.config.toml` and
-  `codex/config/azure-astra.config.toml`.
+- Shared provider definition: `codex/config/global.config.toml`.
+- Provider-specific settings: `codex/config/azure-astra.config.toml` and
+  `codex/config/chatgpt.config.toml`; local selection is outside Git.
 - Runtime settings: `~/.codex/config.toml` and `~/.codex/azure-astra.config.toml`.
 - Subscription override: `codex/config/chatgpt.config.toml` explicitly loads
   `models_cache.json` and sets `features.standalone_web_search = true`, preserving
@@ -239,7 +234,7 @@ and [Codex's hosted-tool gating](https://github.com/openai/codex/blob/rust-v0.15
   It preserves context limits, model instructions, tool metadata, and all other
   models. Neither catalog belongs in git; the normal cache is never modified.
 
-Both the global default and explicit Azure profile supply:
+Both a locally selected Azure default and the explicit Azure profile supply:
 
 ```toml
 model_catalog_json = "model-catalogs/azure-astra.json"
@@ -260,7 +255,7 @@ does not clear the inherited Azure catalog/search settings.
 
 | Entry point | Provider and search behavior |
 | --- | --- |
-| New Mac app task after restart, or ordinary `codex` | Azure Astra, standard Responses, Azure-hosted search |
+| New Mac app task after restart, or ordinary `codex` | This Mac's selected provider and corresponding search configuration |
 | `codex-azure` | Explicit Azure Astra profile with the same search setup |
 | `codex-openai` | ChatGPT subscription, normal cached model metadata and Codex search |
 
@@ -276,8 +271,9 @@ codex -c 'model_catalog_json="models_cache.json"' -c 'features.standalone_web_se
 
 To undo the hosted-search workaround persistently, set
 `model_catalog_json = "models_cache.json"` and
-`features.standalone_web_search = true` in both canonical `global.config.toml`
-and `azure-astra.config.toml`, then run `codex/scripts/sync-config.sh --apply`.
+`features.standalone_web_search = true` in canonical `azure-astra.config.toml`,
+then run `codex/scripts/sync-config.sh --apply`. The local provider layer derives
+the Azure desktop defaults from that profile.
 Restart the app. This restores the normal protocol using the cached catalog;
 the generated Azure catalog becomes unused. Do not merely delete the canonical
 global key: this renderer preserves unlisted runtime keys. This rollback still
@@ -307,6 +303,11 @@ Restart the app or start a new CLI process after the refresh.
 The generator writes atomically and refuses invalid catalogs instead of
 replacing the last valid output. The normal check validates the saved catalog
 structurally; it does not require equality with the mutable source cache.
+An older terminal CLI can refresh the shared source cache without Astra. In that
+specific case, sync retains an existing validated Azure catalog and reports it.
+A missing or invalid Azure catalog still fails; refresh with the desktop-bundled
+engine before applying on a new machine. Duplicate/malformed source entries
+remain errors. No model metadata is invented or copied back into the normal cache.
 
 If search fails, check the installed version and effective provider. Neither a
 completed native `web_search` event nor a plausible URL proves usable retrieval.

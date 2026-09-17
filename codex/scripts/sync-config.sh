@@ -1,5 +1,6 @@
 #!/usr/bin/env bash
 set -euo pipefail
+ORIGINAL_ARGS=("$@")
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 CONTROL_PLANE_DIR="$(cd "$SCRIPT_DIR/.." && pwd)"
@@ -136,6 +137,11 @@ while [[ $# -gt 0 ]]; do
       ;;
   esac
 done
+
+if (( APPLY == 1 )) && [[ "${CODEX_CONFIG_LOCK_HELD:-}" != "$GLOBAL_CONFIG" ]]; then
+  cleanup
+  exec python3 "${SCRIPT_DIR}/provider_selection.py" lock "$GLOBAL_CONFIG" bash "$0" "${ORIGINAL_ARGS[@]}"
+fi
 
 if (( SYNC_GLOBAL == 0 )); then
   die "Nothing selected. Use default/all or --global-only."
@@ -1210,6 +1216,7 @@ sync_global() {
   prepare_work_file "$original" "$rendered"
   sanitize_machine_specific_entries "$rendered"
   render_global_config "$rendered" "$CANONICAL_GLOBAL_TEMPLATE" "$MCP_REGISTRY" "$PLUGIN_REGISTRY"
+  python3 "${SCRIPT_DIR}/provider_selection.py" render "$CANONICAL_DIR" "$original" "$rendered"
   ensure_system_skills_disabled "$rendered" "$BUNDLED_SKILLS_POLICY"
   render_codex_hooks "$HOOKS_REGISTRY" "$hooks_rendered"
 
@@ -1223,6 +1230,7 @@ sync_global() {
   if (( APPLY == 1 )); then
     install_rendered_file "$rendered" "$original"
     install_rendered_file "$hooks_rendered" "$hooks_original"
+    python3 "${SCRIPT_DIR}/provider_selection.py" remember "$CANONICAL_DIR" "$original"
   fi
 
   cleanup_agent_role_dir "Global Agent Roles" "$GLOBAL_AGENTS_DIR"

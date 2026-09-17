@@ -23,10 +23,15 @@ def main() -> int:
 
     try:
         config = tomllib.loads((args.canonical_dir / "global.config.toml").read_text())
-        provider = config.get("model_provider", "openai")
-        env_key = config.get("model_providers", {}).get(provider, {}).get("env_key")
+        # Shared profiles remain usable regardless of this machine's default.
+        providers = {config.get("model_provider", "openai")}
+        for profile in args.canonical_dir.glob("*.config.toml"):
+            providers.add(tomllib.loads(profile.read_text()).get("model_provider", "openai"))
         mapping = args.canonical_dir / "secrets.env.map"
-        if env_key:
+        for provider in providers:
+            env_key = config.get("model_providers", {}).get(provider, {}).get("env_key")
+            if not env_key:
+                continue
             keys = set()
             if mapping.is_file():
                 keys = {

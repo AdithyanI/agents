@@ -61,6 +61,7 @@ Use [Codex Control Plane](/Users/dobby/GitHub/agents/docs/architecture/codex-con
 
 - `~/.codex/AGENTS.md` from `config/global.agents.md`
 - managed `config.toml` sections sourced from canonical files in `~/GitHub/agents`
+- the active provider bundle selected by this Mac's `~/.local/state/codex-control-plane/provider`; that choice is machine-local, while both provider profile definitions remain shared. See [provider switch](codex-provider-switch.md).
 - standalone `*.config.toml` profiles from `codex/config/`; only the
   `tui.model_availability_nux` subtree is runtime-owned model-picker onboarding
   state. Profile sync preserves it and drift checks exclude it; all other

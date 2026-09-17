@@ -1,0 +1,129 @@
+{
+  "macbook": {
+    "proof": [
+      {
+        "selected": "subscription",
+        "engine": {
+          "profile": null,
+          "config": {
+            "model": "gpt-6-astra",
+            "model_provider": "openai",
+            "model_catalog_json": "/Users/adi/.codex/models_cache.json",
+            "forced_login_method": "chatgpt"
+          },
+          "standalone_search": true,
+          "thread_provider": "openai",
+          "thread_model": "gpt-6-astra",
+          "account_type": "chatgpt",
+          "inference_requests": 0
+        },
+        "menu": {
+          "config_in_sync": true,
+          "error": null,
+          "items": [
+            {
+              "checked": false,
+              "enabled": false,
+              "title": "Provider on this Mac"
+            },
+            {
+              "checked": true,
+              "enabled": true,
+              "title": "Codex subscription"
+            },
+            {
+              "checked": false,
+              "enabled": true,
+              "title": "Azure credits"
+            },
+            {
+              "checked": false,
+              "enabled": false,
+              "title": "Applies to this Mac only"
+            },
+            {
+              "checked": false,
+              "enabled": false,
+              "title": "Desktop app + default terminal sessions"
+            },
+            {
+              "checked": false,
+              "enabled": false,
+              "title": "Reopen Codex and start a new task."
+            },
+            {
+              "checked": false,
+              "enabled": true,
+              "title": "Quit Codex Provider"
+            }
+          ],
+          "selected": "subscription",
+          "title": "Codex: Subscription"
+        }
+      },
+      {
+        "selected": "azure",
+        "engine": {
+          "profile": null,
+          "config": {
+            "model": "gpt-6-astra",
+            "model_provider": "azure",
+            "model_catalog_json": "/Users/adi/.codex/model-catalogs/azure-astra.json",
+            "forced_login_method": null
+          },
+          "standalone_search": false,
+          "thread_provider": "azure",
+          "thread_model": "gpt-6-astra",
+          "account_type": null,
+          "inference_requests": 0
+        },
+        "menu": {
+          "config_in_sync": true,
+          "error": null,
+          "items": [
+            {
+              "checked": false,
+              "enabled": false,
+              "title": "Provider on this Mac"
+            },
+            {
+              "checked": false,
+              "enabled": true,
+              "title": "Codex subscription"
+            },
+            {
+              "checked": true,
+              "enabled": true,
+              "title": "Azure credits"
+            },
+            {
+              "checked": false,
+              "enabled": false,
+              "title": "Applies to this Mac only"
+            },
+            {
+              "checked": false,
+              "enabled": false,
+              "title": "Desktop app + default terminal sessions"
+            },
+            {
+              "checked": false,
+              "enabled": false,
+              "title": "Reopen Codex and start a new task."
+            },
+            {
+              "checked": false,
+              "enabled": true,
+              "title": "Quit Codex Provider"
+            }
+          ],
+          "selected": "azure",
+          "title": "Codex: Azure"
+        }
+      }
+    ],
+    "credentials_and_hooks_unchanged": true,
+    "restored_selection": "azure"
+  },
+  "native_visual_limit": "Final screen capture was black; inspected the running native menu structure and helper state instead."
+}

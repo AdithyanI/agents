@@ -21,6 +21,10 @@ Canonical personal Codex control-plane assets live here.
     the control-plane check verifies the generated native environment as well.
   - `scripts/sync-azure-model-catalog.py` derives the shared Azure default/profile model
     catalog during config sync; runtime catalog contents remain outside git.
+  - `scripts/provider_selection.py` applies a machine-local provider choice after
+    the shared baseline. Use `../scripts/codex-provider.py` or the native menu;
+    never put an active provider choice back in shared config. See
+    `../docs/references/codex-provider-switch.md`.
 - `shell/`: Codex-specific shell and Ghostty integration fragments.
 
 ## Rules

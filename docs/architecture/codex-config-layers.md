@@ -57,6 +57,7 @@ flowchart TD
 
 - `codex/scripts/sync-config.sh` writes the managed baseline into `~/.codex/config.toml`.
 - It preserves machine-specific and runtime-specific state that should not live in git.
+- It applies this Mac's Azure/subscription choice from `~/.local/state/codex-control-plane/provider` after the shared baseline. The [provider menu and CLI](../references/codex-provider-switch.md) manage that local choice; shared skills/plugins/profile definitions remain synchronized.
 - It renders global-scope native Codex plugin entries from `plugins/registry.json`.
 - It writes disabled bundled-skill entries from `bundled-skills-policy.json`.
 - It renders global `~/.codex/hooks.json` from `hooks/registry.json`.

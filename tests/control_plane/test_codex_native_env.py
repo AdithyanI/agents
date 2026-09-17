@@ -68,6 +68,14 @@ class CodexNativeEnvTests(TempDirTestCase):
         self.run_env("--apply")
         self.assertFalse(self.runtime.exists())
 
+    def test_azure_profile_requires_mapping_even_with_subscription_default(self) -> None:
+        self.template.write_text('[model_providers.azure]\nenv_key = "AZURE_OPENAI_API_KEY"\n')
+        write_text(self.canonical / "azure-astra.config.toml", 'model_provider = "azure"\n')
+        self.mapping.unlink()
+        result = self.run_env("--apply", check=False)
+        self.assertNotEqual(result.returncode, 0)
+        self.assertIn("requires AZURE_OPENAI_API_KEY", result.stderr)
+
     def test_missing_scripts_dependency_is_actionable(self) -> None:
         self.materializer.unlink()
         result = self.run_env("--apply", check=False)

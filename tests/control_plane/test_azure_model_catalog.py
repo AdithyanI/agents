@@ -59,11 +59,23 @@ class AzureModelCatalogTests(TempDirTestCase):
         self.run_catalog("--apply")
         self.assertEqual(json.loads(self.target.read_text())["models"][0]["context_window"], 300000)
         before = self.target.read_bytes()
-        write_json(self.source, {"models": self.models[1:]})
+        write_json(self.source, {"models": [self.models[0], self.models[0]]})
         result = self.run_catalog("--apply", check=False)
         self.assertNotEqual(result.returncode, 0)
         self.assertIn("including gpt-6-astra", result.stderr)
         self.assertEqual(self.target.read_bytes(), before)
+
+    def test_old_cli_cache_without_astra_retains_valid_snapshot_only(self) -> None:
+        self.run_catalog("--apply")
+        before = self.target.read_bytes()
+        write_json(self.source, {"models": self.models[1:]})
+        result = self.run_catalog("--apply")
+        self.assertIn("retained validated catalog", result.stdout)
+        self.assertEqual(self.target.read_bytes(), before)
+        self.target.unlink()
+        self.assertNotEqual(self.run_catalog("--apply", check=False).returncode, 0)
+        write_json(self.target, {"models": self.models})
+        self.assertNotEqual(self.run_catalog("--apply", check=False).returncode, 0)
 
     def test_check_rejects_missing_or_disabled_workaround(self) -> None:
         self.assertNotEqual(self.run_catalog("--check", check=False).returncode, 0)
