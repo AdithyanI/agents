@@ -32,7 +32,7 @@ private enum HelperResult {
 // The helper is the only writer of provider state. AppKit work stays on the
 // main thread; the subprocess and decoding run on a serial background queue.
 private final class ProviderMenu: NSObject, NSApplicationDelegate, NSMenuDelegate {
-    private let statusItem = NSStatusBar.system.statusItem(withLength: NSStatusItem.variableLength)
+    private let statusItem = NSStatusBar.system.statusItem(withLength: NSStatusItem.squareLength)
     private let menu = NSMenu()
     private let worker = DispatchQueue(label: "io.adithyan.codex-provider.helper", qos: .userInitiated)
     private var subscriptionItem: NSMenuItem!
@@ -82,6 +82,11 @@ private final class ProviderMenu: NSObject, NSApplicationDelegate, NSMenuDelegat
         quit.target = self
         menu.addItem(quit)
         statusItem.menu = menu
+        let icon = NSImage(systemSymbolName: "arrow.triangle.2.circlepath", accessibilityDescription: "Codex provider")?
+            .withSymbolConfiguration(NSImage.SymbolConfiguration(pointSize: 16, weight: .medium))
+        icon?.isTemplate = true
+        statusItem.button?.image = icon
+        statusItem.button?.imagePosition = .imageOnly
         statusItem.button?.setAccessibilityLabel("Codex provider")
         render()
         run("status")
@@ -118,13 +123,7 @@ private final class ProviderMenu: NSObject, NSApplicationDelegate, NSMenuDelegat
     }
 
     private func render() {
-        let current: String
-        switch state?.selected {
-        case "azure": current = "Azure"
-        case "subscription": current = "Subscription"
-        default: current = "…"
-        }
-        statusItem.button?.title = "Codex: \(current)"
+        statusItem.button?.title = ""
         let fullName = state?.selected == "azure" ? "Azure credits" : "Codex subscription"
         statusItem.button?.toolTip = state == nil ? "Choose the Codex provider for this Mac" : "\(fullName) on this Mac"
         statusItem.button?.setAccessibilityValue(state == nil ? "Loading" : fullName)
@@ -242,6 +241,8 @@ private final class ProviderMenu: NSObject, NSApplicationDelegate, NSMenuDelegat
     private func printInspection() {
         let result: [String: Any] = [
             "title": statusItem.button?.title ?? "",
+            "has_icon": statusItem.button?.image != nil,
+            "tooltip": statusItem.button?.toolTip ?? "",
             "selected": state?.selected as Any? ?? NSNull(),
             "config_in_sync": state?.config_in_sync as Any? ?? NSNull(),
             "error": lastError as Any? ?? NSNull(),

@@ -9,6 +9,9 @@ default, not the billing provider of every running task.
 
 ## Usage and install
 
+Click the circular arrows icon in the menu bar to choose a provider. Hover over
+the icon to see this Mac's current selection; the menu also marks it with a check.
+
 ```bash
 codex-provider status --plain
 codex-provider azure --apply
