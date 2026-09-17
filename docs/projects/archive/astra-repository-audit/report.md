@@ -29,6 +29,16 @@ made no live changes to application repos, canonical guidance, skill scope,
 runtime configuration, services, or data. Its outputs are the report, evidence,
 and prepared proposals in this project directory.
 
+**Closeout repair:** The subsequent Stop hook retry exposed a harness bug: four
+read-only discoveries were treated as repositories requiring publication even
+though their Git metadata was absent and no changes or commits were attributed
+to them. A focused fix in the canonical Stop hook now skips only those proven
+inert candidates, preserves all surviving files, and still blocks uncertain
+failures or recorded work. It also prevents an invalid nested Git marker from
+redirecting publication into an enclosing repository. The shared guidance
+proposals remain unapplied. Follow-up checks are recorded in
+[validation](resources/validation.json).
+
 ## Findings That Matter Most
 
 1. **Some instructions directly cause early stopping.** AIP's integration guide

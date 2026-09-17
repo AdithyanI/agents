@@ -22,14 +22,14 @@ Audit every discoverable repository on this machine and prepare an evidence-back
 - [x] Shared global guidance and playbook revisions are concrete, reviewable, and mapped to retained operational contracts.
 - [x] A staged rollout plan identifies the first changes, validation, owners, and success criteria.
 - [x] Report completeness and links are checked; applicable local documentation checks pass or residual failures are explained.
-- [ ] Learnings are finalized and this complete project directory is archived with the active path removed.
+- [x] Learnings are finalized and this complete project directory is archived with the active path removed.
 
 ## Milestones
 
 - [x] Inventory — discover and classify repositories; reconcile with the managed registry.
 - [x] Repository audit — inspect every primary repo and classify all secondary checkouts.
 - [x] Synthesis — prioritize shared and repo-specific changes; prepare guidance proposals.
-- [ ] Validation and closeout — verify coverage and evidence, archive deliverables, and report results.
+- [x] Validation and closeout — verify coverage and evidence, archive deliverables, and report results.
 
 ## Decisions
 
@@ -47,7 +47,7 @@ Audit every discoverable repository on this machine and prepare an evidence-back
 | --- | --- | --- | --- |
 | done | All 28 primary repo reviews and 91 Git-location dispositions | parent + explorers | report.md |
 | done | Shared drafts and independent contract review | parent + explorer | resources/guidance-proposal-review.md |
-| in_progress | Validate completeness/evidence, finalize learnings, archive | parent | resources/validation.json |
+| done | Validate completeness/evidence, finalize learnings, archive | parent | resources/validation.json |
 
 ## Backlog / Remaining Work
 
@@ -58,7 +58,7 @@ Audit every discoverable repository on this machine and prepare an evidence-back
 - [x] Prepare global guidance and playbook draft revisions with a contract-preservation map.
 - [x] Write a compact portfolio report and staged implementation plan.
 - [x] Validate report coverage, evidence paths, proposed guidance consistency, and repo hygiene.
-- [ ] Finalize learnings; archive the completed project and remove disposable tools.
+- [x] Finalize learnings; archive the completed project and remove disposable tools.
 
 ## Validation / Test Plan
 
@@ -77,4 +77,6 @@ Audit every discoverable repository on this machine and prepare an evidence-back
 - 2026-09-17: [DONE] Prepared three shared guidance drafts and an unapplied patch; independent review caught four semantic losses, all incorporated. Patch applicability and repo hygiene pass.
 - 2026-09-17: [DONE] Repo fast checks passed, including 41 unit tests, production-source shell check, and local Codex structural validation. Existing SwiftUI skill length validator fails as recorded audit evidence.
 - 2026-09-17: [DONE] Coverage reconciliation verified all 28 primary reviews, every one of 91 Git-location dispositions, 288 local links, 228 file/line citations, unchanged canonical guidance hashes, and an applicable proposal patch. All primary HEADs remained unchanged since the structural snapshot; tracked changes are audit artifacts in agents only.
+- 2026-09-17: [CLOSEOUT FOLLOW-UP] The Stop hook selected four inert Git markers from read-only audit commands and blocked finalization. Repaired canonical candidate handling and worktree identity checks; all surviving source and cache files remain intact. Follow-up regression and shared-check evidence is recorded in resources/validation.json. Guidance proposals remain unapplied.
 - 2026-09-17: [DONE] Finalized learnings and resolved all four independent proposal findings. Prepared complete directory archive; broad implementation remains the explicitly separate next stage.
+- 2026-09-17: [DONE] Archived the complete project using the bundled helper (`source_removed: true`), revalidated coverage/links/patch at the archive path, and reran the repo fast gate successfully. Active tracker path removed and disposable inventory helpers cleaned up. Audit objective complete; implementation proposals remain unapplied for review.

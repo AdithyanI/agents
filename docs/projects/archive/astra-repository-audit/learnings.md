@@ -38,6 +38,13 @@
   where that invariant is intended; no new fleet-wide service is needed.
 - Link validation catches missing paths, but current-versus-historical and
   command-versus-implementation contradictions still require focused reading.
+- A read-only audit can select broken Git markers for Stop-hook finalization.
+  The closeout retry exposed this on two empty pre-commit caches and two orphan
+  worktrees. The canonical hook was repaired to skip only candidates with
+  positively absent metadata and no recorded work, including saved retries.
+  Root-identity checking prevents Git from falling through to an enclosing repo;
+  malformed or uncertain metadata still blocks publication. Integration tests
+  verify file preservation and the retained failure behavior.
 
 ## Follow-through
 

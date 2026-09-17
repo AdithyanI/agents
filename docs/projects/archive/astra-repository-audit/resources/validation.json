@@ -27,5 +27,33 @@
     "No application runtime suites, production health checks, provider requests, or private corpus reads",
     "Protected system paths excluded/inaccessible as recorded in inventory",
     "File links verified; prose interpretation independently reviewed and major findings spot-checked"
-  ]
+  ],
+  "archive": {
+    "path": "/Users/dobby/GitHub/agents/docs/projects/archive/astra-repository-audit",
+    "source_removed": true,
+    "post_archive_fast_check": "passed",
+    "post_archive_link_and_coverage_check": "passed"
+  },
+  "draft_skill_validator": "passed",
+  "post_audit_hook_repair": {
+    "validated_at": "2026-09-17T21:14:18.395476+00:00",
+    "scope": "Canonical Stop-hook handling of inert Git candidates and selected-worktree identity",
+    "shared_bootstrap": "passed; --apply --repo /Users/dobby/GitHub/agents",
+    "shared_control_plane_check": "passed; --repo /Users/dobby/GitHub/agents",
+    "full_regression_suite": {
+      "status": "passed",
+      "tests": 298,
+      "command": "./scripts/test-control-plane.sh"
+    },
+    "independent_review": "Completed; malformed gitfile ValueError finding fixed and covered by regression",
+    "pending_transaction_read_only_classification": {
+      "inert_candidates_to_skip": 4,
+      "agents_retained": true,
+      "state_file_mutated": false
+    },
+    "surviving_worktree_and_cache_files": "preserved",
+    "guidance_proposals_applied": false,
+    "repo_fast_check": "passed; 41 tests, production-source check, repo hygiene, registry and Codex structural checks",
+    "diff_whitespace_check": "passed"
+  }
 }

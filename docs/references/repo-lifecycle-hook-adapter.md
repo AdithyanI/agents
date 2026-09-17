@@ -102,6 +102,14 @@ All repo lifecycle hooks are Python. Do not add shell compatibility shims.
   even a read command can select a repo with pending changes. Unreferenced dirty
   siblings are untouched; clean candidates are skipped. Computed paths absent
   from command text/cwd still need explicit transaction registration.
+- Read-only discovery can encounter inert Git markers: an empty `.git`
+  directory in a tool cache or a worktree gitfile pointing to a missing
+  metadata directory. Drop these candidates, including restored pending
+  entries, only when no attributed paths or outstanding commit are recorded.
+  Leave their files intact. Unreadable, malformed, or existing corrupt metadata
+  is not proof of absence and retains failure handling. Before interpreting
+  status, verify that Git identifies the selected worktree itself; an invalid
+  nested marker must not redirect finalization into its enclosing repository.
 - Missing task identity or failed activity discovery (except the unavailable-owner
   case below) stops finalization before
   any Git mutation. Pending transactions remain available for a complete retry;

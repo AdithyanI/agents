@@ -308,6 +308,116 @@ class CodexMultiRepoStopTests(TempDirTestCase):
         for repo in (first, second):
             self.assertEqual(run_command(["git", "-C", str(repo), "rev-parse", "HEAD"]).stdout, before[str(repo)])
 
+    def test_inert_audit_candidates_are_removed_on_retry_without_touching_sources(self) -> None:
+        first, remote = self.make_published_repo("first")
+        outer, outer_remote = self.make_published_repo("unreferenced")
+        nested = outer / "cache"
+        (nested / ".git").mkdir(parents=True)
+        orphan = self.temp_path / "orphan"
+        orphan.mkdir()
+        (orphan / ".git").write_text("gitdir: ../missing/admin\n", encoding="utf-8")
+        for candidate in (nested, orphan):
+            (candidate / "surviving.txt").write_text("preserve\n", encoding="utf-8")
+        (outer / "unrelated.txt").write_text("unrelated\n", encoding="utf-8")
+        outer_head = run_command(["git", "-C", str(outer_remote), "rev-parse", "HEAD"]).stdout
+        (first / "audit.txt").write_text("audit\n", encoding="utf-8")
+        changes = self.changes([first / "audit.txt"])
+        changes.shell_paths = (str(nested), str(orphan))
+        pending = {str(p.resolve()): stop.RepoFinalization(root=str(p.resolve())) for p in (nested, orphan)}
+        with patch.dict(os.environ, {"HOME": str(self.temp_path / "home")}):
+            stop.save_codex_transaction("thread", pending)
+            with patch.object(stop, "collect_codex_turn_changes", return_value=changes), patch.object(
+                stop, "MAX_CODEX_REPOSITORIES", 1
+            ):
+                output = stop.process_codex_repositories(str(first), {"session_id": "thread"})
+            self.assertEqual(stop.load_codex_transaction("thread"), {})
+        self.assertIsNone(output)
+        self.assertEqual(run_command(["git", "-C", str(remote), "show", "HEAD:audit.txt"]).stdout, "audit\n")
+        self.assertEqual(run_command(["git", "-C", str(outer_remote), "rev-parse", "HEAD"]).stdout, outer_head)
+        for candidate in (nested, orphan):
+            self.assertEqual((candidate / "surviving.txt").read_text(), "preserve\n")
+            self.assertTrue((candidate / ".git").exists())
+        self.assertIn("unrelated.txt", run_command(["git", "-C", str(outer), "status", "--porcelain"]).stdout)
+
+    def test_inert_marker_with_recorded_work_blocks_and_preserves_transaction(self) -> None:
+        first, remote = self.make_published_repo("first")
+        outer, outer_remote = self.make_published_repo("outer")
+        nested = outer / "cache"
+        (nested / ".git").mkdir(parents=True)
+        (nested / "surviving.txt").write_text("preserve\n", encoding="utf-8")
+        (first / "first.txt").write_text("pending\n", encoding="utf-8")
+        before = {str(p): run_command(["git", "-C", str(p), "rev-parse", "HEAD"]).stdout for p in (remote, outer_remote)}
+        for evidence in ("attributed", "committed"):
+            with self.subTest(evidence=evidence), patch.dict(os.environ, {"HOME": str(self.temp_path / "home")}):
+                item = stop.RepoFinalization(
+                    root=str(nested.resolve()),
+                    paths={"surviving.txt"} if evidence == "attributed" else set(),
+                    phase="pending" if evidence == "attributed" else "committed",
+                    commit="recorded-commit" if evidence == "committed" else "",
+                )
+                stop.save_codex_transaction(evidence, {item.root: item})
+                with patch.object(stop, "collect_codex_turn_changes", return_value=self.changes([first / "first.txt"])):
+                    output = stop.process_codex_repositories(str(first), {"session_id": evidence})
+                self.assertEqual(output["decision"], "block")
+                self.assertIn("selected worktree", output["reason"])
+                retained = stop.load_codex_transaction(evidence)[item.root]
+                self.assertEqual(retained.paths, item.paths)
+                self.assertEqual(retained.commit, item.commit)
+                self.assertEqual(retained.phase, item.phase)
+        for p in (remote, outer_remote):
+            self.assertEqual(run_command(["git", "-C", str(p), "rev-parse", "HEAD"]).stdout, before[str(p)])
+
+    def test_nonempty_invalid_marker_cannot_finalize_enclosing_repository(self) -> None:
+        outer, remote = self.make_published_repo("outer")
+        nested = outer / "cache"
+        (nested / ".git").mkdir(parents=True)
+        (nested / ".git" / "partial").write_text("unknown metadata\n", encoding="utf-8")
+        (outer / "unrelated.txt").write_text("unrelated\n", encoding="utf-8")
+        before = run_command(["git", "-C", str(remote), "rev-parse", "HEAD"]).stdout
+        item = stop.RepoFinalization(root=str(nested.resolve()))
+        with patch.dict(os.environ, {"HOME": str(self.temp_path / "home")}):
+            output = stop.finalize_codex_repositories(str(self.temp_path), {}, "thread", {item.root: item})
+            self.assertIn(item.root, stop.load_codex_transaction("thread"))
+        self.assertEqual(output["decision"], "block")
+        self.assertEqual(run_command(["git", "-C", str(remote), "rev-parse", "HEAD"]).stdout, before)
+
+    def test_valid_worktree_status_error_is_not_discarded_as_a_shell_candidate(self) -> None:
+        first, remote = self.make_published_repo("first")
+        candidate, _ = self.make_published_repo("candidate")
+        (first / "first.txt").write_text("pending\n", encoding="utf-8")
+        before = run_command(["git", "-C", str(remote), "rev-parse", "HEAD"]).stdout
+        changes = self.changes([first / "first.txt"])
+        changes.shell_paths = (str(candidate),)
+        inspect = stop.worktree_changed_paths
+        with patch.dict(os.environ, {"HOME": str(self.temp_path / "home")}):
+            with patch.object(stop, "collect_codex_turn_changes", return_value=changes), patch.object(
+                stop, "worktree_changed_paths",
+                side_effect=lambda root: (set(), False) if root == str(candidate.resolve()) else inspect(root),
+            ):
+                output = stop.process_codex_repositories(str(first), {"session_id": "thread"})
+            self.assertIn(str(candidate.resolve()), stop.load_codex_transaction("thread"))
+        self.assertEqual(output["decision"], "block")
+        self.assertIn("could not inspect working-tree changes", output["reason"])
+        self.assertEqual(run_command(["git", "-C", str(remote), "rev-parse", "HEAD"]).stdout, before)
+
+    def test_malformed_gitfile_preserves_candidate_and_blocks_publication(self) -> None:
+        first, remote = self.make_published_repo("first")
+        candidate = self.temp_path / "candidate"
+        candidate.mkdir()
+        (first / "first.txt").write_text("pending\n", encoding="utf-8")
+        before = run_command(["git", "-C", str(remote), "rev-parse", "HEAD"]).stdout
+        changes = self.changes([first / "first.txt"])
+        changes.shell_paths = (str(candidate),)
+        for content in (b"gitdir: missing\0metadata\n", b"gitdir: \xff\n", b"invalid: missing\n"):
+            with self.subTest(content=content), patch.dict(os.environ, {"HOME": str(self.temp_path / "home")}):
+                (candidate / ".git").write_bytes(content)
+                with patch.object(stop, "collect_codex_turn_changes", return_value=changes):
+                    output = stop.process_codex_repositories(str(first), {"session_id": "thread"})
+                self.assertEqual(output["decision"], "block")
+                self.assertIn(str(candidate.resolve()), stop.load_codex_transaction("thread"))
+                self.assertEqual((candidate / ".git").read_bytes(), content)
+                self.assertEqual(run_command(["git", "-C", str(remote), "rev-parse", "HEAD"]).stdout, before)
+
     def test_shell_discovery_limit_does_not_silently_finalize_primary_only(self) -> None:
         first, _ = self.make_published_repo("first")
         (first / "first.txt").write_text("first\n", encoding="utf-8")

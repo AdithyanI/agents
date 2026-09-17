@@ -730,6 +730,39 @@ def repositories_from_shell_paths(paths: tuple[str, ...]) -> dict[str, RepoFinal
     return repositories
 
 
+def git_metadata_definitely_missing(root: str) -> bool:
+    """Recognize inert Git markers without treating I/O/corruption as absence.
+
+    Audit commands can encounter empty tool-cache .git directories or surviving
+    worktrees whose gitdir target was removed. Keep the nearest marker as the
+    boundary; Git may otherwise discover an unrelated enclosing repository.
+    """
+    marker = Path(root) / ".git"
+    try:
+        mode = marker.stat().st_mode
+        if stat.S_ISDIR(mode):
+            with os.scandir(marker) as entries:
+                return next(entries, None) is None
+        if stat.S_ISREG(mode):
+            with marker.open(encoding="utf-8") as stream:
+                value = stream.read(4097)
+            if len(value) > 4096:
+                return False
+            match = re.fullmatch(r"gitdir: ([^\r\n]+)\r?\n?", value)
+            if match is None:
+                return False
+            target = Path(match.group(1))
+            if not target.is_absolute():
+                target = Path(root) / target
+            try:
+                target.stat()
+            except FileNotFoundError:
+                return True
+    except (OSError, ValueError):
+        pass
+    return False
+
+
 def merge_codex_transactions(
     pending: dict[str, RepoFinalization],
     discovered: dict[str, RepoFinalization],
@@ -1225,6 +1258,19 @@ def finalize_codex_repositories(
             clear_discovery=discovery_complete,
         )
 
+    # Shell paths are candidates, not proof of edits. Prune only positively
+    # inert markers with no recorded work, including entries saved by a prior
+    # failed Stop. Never discard attributed changes or an outstanding commit.
+    for item in list(repositories.values()):
+        if (
+            item.phase == "pending"
+            and not item.paths
+            and not item.commit
+            and git_metadata_definitely_missing(item.root)
+        ):
+            repositories.pop(item.root)
+            log("codex", f"skip inert-git-candidate repo={item.root}")
+
     attributed_path_count = sum(len(item.paths) for item in repositories.values())
     if len(repositories) > MAX_CODEX_REPOSITORIES:
         save_progress()
@@ -1244,6 +1290,13 @@ def finalize_codex_repositories(
     with lock_codex_repositories(list(repositories)):
         failures: list[str] = []
         for item in list(repositories.values()):
+            resolved_root = repo_root(item.root)
+            if resolved_root is None or Path(resolved_root).resolve() != Path(item.root).resolve():
+                failures.append(
+                    f"Repository {item.root}: could not inspect working-tree changes "
+                    "because Git does not identify it as the selected worktree."
+                )
+                continue
             current_changes, status_ok = worktree_changed_paths(item.root)
             if not status_ok:
                 failures.append(f"Repository {item.root}: could not inspect working-tree changes.")
