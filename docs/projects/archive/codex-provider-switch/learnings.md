@@ -16,8 +16,10 @@
 - Direct swiftc needs an explicit macOS SDK path when run from the installer.
 - The existing Stop reader used an older terminal binary that could not parse
   completed-subagent items. Scheduled Git auto-sync published the tested source;
-  running the existing Stop hook with the desktop Resources directory first in
-  PATH successfully read this task. No task history or hook policy was changed.
+  the final installer also links ~/bin/codex to the desktop engine because the
+  old terminal CLI rejected real Astra requests. That fixed normal terminal
+  inference and the existing Stop reader without changing task history or hook
+  policy. Explicit OpenAI and Azure terminal smokes then passed.
 - Native menu inspection and live helper/engine checks gave usable UI proof
   while screenshots were black from sleeping/locked displays. GUI installation
   did not need a privacy grant or a restart of the user's active Codex app.

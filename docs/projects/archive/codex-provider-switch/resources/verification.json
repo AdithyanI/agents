@@ -270,5 +270,24 @@
     "native_apps": "installed and running via per-user LaunchAgents on both Macs",
     "review": "bounded independent backend review found no actionable issues"
   },
-  "source_revision": "ffb7a605812069d29a1365ade692e5767695c4f0"
+  "source_revision": "b9e099ed6f1f41a2c022fa1d2db685ea8c5af30b",
+  "terminal_launchers": [
+    {
+      "launcher": "codex-openai",
+      "exit": 0,
+      "exact_final_answer": true,
+      "provider_lines": [
+        "provider: openai"
+      ]
+    },
+    {
+      "launcher": "codex-azure",
+      "exit": 0,
+      "exact_final_answer": true,
+      "provider_lines": [
+        "provider: azure"
+      ]
+    }
+  ],
+  "terminal_engine": "~/bin/codex -> /Applications/ChatGPT.app/Contents/Resources/codex, 0.154.0-alpha.6.2"
 }

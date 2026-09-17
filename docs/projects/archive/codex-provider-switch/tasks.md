@@ -42,9 +42,7 @@ Install a small native menu bar switch on MacBook and Mac mini that independentl
 - [x] Update ownership and operator docs; finalize learnings and archive.
 
 ## Open Questions / Blockers
-Terminal validation found MacBook Homebrew Codex 0.147 rejects Astra; installer
-now aligns ~/bin/codex with the installed desktop engine. Reinstall/retest that
-small follow-up on both Macs before final archive.
+None. Both Macs have the native menu, independent preferences, and compatible terminal launchers.
 
 ## Validation / Test Plan
 - Two isolated homes with opposite selections; repeated sync; invalid/missing dependencies preserve prior config.
@@ -60,3 +58,6 @@ small follow-up on both Macs before final archive.
 
 - 2026-09-17: [DONE] Git auto-sync published ffb7a605. Mini pulled through Git, shared bootstrap/check passed (291 tests), menu installed and running. Real opposite selections survived sync on both Macs; both restored to Azure.
 - 2026-09-17: [DONE] Menu source/installer delegation stayed isolated; parent integrated provider logic, reviewed implementation, and verified both machines. No review findings.
+
+- 2026-09-17: [DONE] Terminal follow-up b9e099ed installed on both Macs; real subscription and Azure launcher responses passed, and final fast checks passed on both. ~/bin/codex now uses the desktop engine. Existing shells may need a new tab or rehash.
+- 2026-09-17: [DONE] Archived the complete project directory; active path removed. No runtime/provider changes remain pending.
