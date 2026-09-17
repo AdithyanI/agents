@@ -86,6 +86,13 @@ def main() -> int:
     plist = home / "Library/LaunchAgents" / f"{IDENTIFIER}.plist"
     helper = root / "scripts/codex-provider.py"
     launcher = home / "bin/codex-provider"
+    # Keep interactive terminals on the same engine as the installed desktop.
+    # An older Homebrew CLI can reject Astra and rewrite its model cache.
+    codex_commands = {
+        home / "bin/codex": Path("/Applications/ChatGPT.app/Contents/Resources/codex"),
+        home / "bin/codex-azure": home / "GitHub/scripts/bin/codex-azure",
+        home / "bin/codex-openai": home / "GitHub/scripts/bin/codex-openai",
+    }
     domain = f"gui/{os.getuid()}"
     if app.exists() and not app_owned(app):
         parser.error(f"refusing to replace an unrelated application: {app}")
@@ -119,6 +126,11 @@ def main() -> int:
         parser.error(f"provider source or helper is missing under {root}")
     if (launcher.exists() or launcher.is_symlink()) and not link_owned(launcher, helper):
         parser.error(f"unrelated terminal command exists at {launcher}; move it before installing")
+    for command, target in codex_commands.items():
+        if not target.is_file() or not os.access(target, os.X_OK):
+            parser.error(f"required Codex command is unavailable: {target}")
+        if (command.exists() or command.is_symlink()) and not link_owned(command, target):
+            parser.error(f"unrelated terminal command exists at {command}; move it before installing")
     swift = run(["/usr/bin/xcrun", "--find", "swiftc"]).stdout.strip()
     sdk = run(["/usr/bin/xcrun", "--sdk", "macosx", "--show-sdk-path"]).stdout.strip()
     if not args.apply:
@@ -126,6 +138,7 @@ def main() -> int:
         print(f"Would install {app}, load {plist}, and start the menu on this Mac.")
         print(f"Helper: {python} {helper}")
         print(f"Would link {launcher} to {helper}.")
+        print("Would link ~/bin/codex to the desktop engine and install both explicit provider launchers.")
         print("Provider selection is unchanged. Codex itself will not be restarted.")
         return 0
 
@@ -207,6 +220,10 @@ def main() -> int:
     print(f"Login agent: {plist}")
     print(f"Terminal command: {launcher}")
     print(f"Current provider: {menu_state['selected']} (this Mac only)")
+    for command, target in codex_commands.items():
+        if not command.is_symlink():
+            command.symlink_to(target)
+    print("Terminal codex uses the installed desktop engine. Existing terminal sessions are unchanged.")
     return 0
 
 
