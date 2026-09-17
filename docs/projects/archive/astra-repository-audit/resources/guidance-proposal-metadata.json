@@ -1,0 +1,26 @@
+[
+  {
+    "target": "config/global.agents.md",
+    "draft": "proposed-global.agents.md",
+    "original_sha256": "fc7f2ba3b84338a23331c91c3df90e8103c799942bc6ffc2a7deedf964326b8b",
+    "original_bytes": 7569,
+    "draft_bytes": 3923,
+    "reduction_percent": 48.2
+  },
+  {
+    "target": "skills-source/owned/agent-native-repo-playbook/SKILL.md",
+    "draft": "proposed-agent-native-repo-playbook.md",
+    "original_sha256": "db36d0bf08a8b2c6656e845d4a37e1b02e50ad66d54a8c5fb27f7c6c88035b9d",
+    "original_bytes": 4985,
+    "draft_bytes": 3228,
+    "reduction_percent": 35.2
+  },
+  {
+    "target": "AGENTS.md",
+    "draft": "proposed-agents-root.md",
+    "original_sha256": "dfee197b3fab6dcc6bee5fdffbe72ac1c4339f28799fac3444085b998f34ddcf",
+    "original_bytes": 14946,
+    "draft_bytes": 4985,
+    "reduction_percent": 66.6
+  }
+]

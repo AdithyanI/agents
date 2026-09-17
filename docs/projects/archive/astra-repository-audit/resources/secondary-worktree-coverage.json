@@ -1,0 +1,146 @@
+[
+  {
+    "path": "/Users/dobby/.codex/worktrees/0baa/whos-in-your-head",
+    "root_guidance_lines": 49,
+    "docs_markdown": 7,
+    "root_routes": {
+      ".agents/skills/azure-webapp-deploy/SKILL.md": false,
+      "docs/references/agent-native-workflow.md": true,
+      "docs/references/openai-runtime-contract.md": true,
+      "scripts/check-fast.sh": true
+    },
+    "broken_skill_links": [
+      "impeccable",
+      "claude-api",
+      "azure-webapp-deploy",
+      "vercel-react-best-practices",
+      "openai-docs"
+    ]
+  },
+  {
+    "path": "/Users/dobby/.codex/worktrees/23a4/whos-in-your-head",
+    "root_guidance_lines": 49,
+    "docs_markdown": 7,
+    "root_routes": {
+      ".agents/skills/azure-webapp-deploy/SKILL.md": false,
+      "docs/references/agent-native-workflow.md": true,
+      "docs/references/openai-runtime-contract.md": true,
+      "scripts/check-fast.sh": true
+    },
+    "broken_skill_links": [
+      "impeccable",
+      "claude-api",
+      "azure-webapp-deploy",
+      "vercel-react-best-practices",
+      "openai-docs"
+    ]
+  },
+  {
+    "path": "/Users/dobby/.codex/worktrees/36ff/whos-in-your-head",
+    "root_guidance_lines": 49,
+    "docs_markdown": 7,
+    "root_routes": {
+      ".agents/skills/azure-webapp-deploy/SKILL.md": false,
+      "docs/references/agent-native-workflow.md": true,
+      "docs/references/openai-runtime-contract.md": true,
+      "scripts/check-fast.sh": true
+    },
+    "broken_skill_links": [
+      "impeccable",
+      "claude-api",
+      "azure-webapp-deploy",
+      "vercel-react-best-practices",
+      "openai-docs"
+    ]
+  },
+  {
+    "path": "/Users/dobby/.codex/worktrees/4471/whos-in-your-head",
+    "root_guidance_lines": 49,
+    "docs_markdown": 7,
+    "root_routes": {
+      ".agents/skills/azure-webapp-deploy/SKILL.md": false,
+      "docs/references/agent-native-workflow.md": true,
+      "docs/references/openai-runtime-contract.md": true,
+      "scripts/check-fast.sh": true
+    },
+    "broken_skill_links": [
+      "impeccable",
+      "claude-api",
+      "azure-webapp-deploy",
+      "vercel-react-best-practices",
+      "openai-docs"
+    ]
+  },
+  {
+    "path": "/Users/dobby/.codex/worktrees/5d38/whos-in-your-head",
+    "root_guidance_lines": 49,
+    "docs_markdown": 7,
+    "root_routes": {
+      ".agents/skills/azure-webapp-deploy/SKILL.md": false,
+      "docs/references/agent-native-workflow.md": true,
+      "docs/references/openai-runtime-contract.md": true,
+      "scripts/check-fast.sh": true
+    },
+    "broken_skill_links": [
+      "impeccable",
+      "claude-api",
+      "azure-webapp-deploy",
+      "vercel-react-best-practices",
+      "openai-docs"
+    ]
+  },
+  {
+    "path": "/Users/dobby/.codex/worktrees/67c9/whos-in-your-head",
+    "root_guidance_lines": 49,
+    "docs_markdown": 7,
+    "root_routes": {
+      ".agents/skills/azure-webapp-deploy/SKILL.md": false,
+      "docs/references/agent-native-workflow.md": true,
+      "docs/references/openai-runtime-contract.md": true,
+      "scripts/check-fast.sh": true
+    },
+    "broken_skill_links": [
+      "impeccable",
+      "claude-api",
+      "azure-webapp-deploy",
+      "vercel-react-best-practices",
+      "openai-docs"
+    ]
+  },
+  {
+    "path": "/Users/dobby/.codex/worktrees/84f1/whos-in-your-head",
+    "root_guidance_lines": 49,
+    "docs_markdown": 7,
+    "root_routes": {
+      ".agents/skills/azure-webapp-deploy/SKILL.md": false,
+      "docs/references/agent-native-workflow.md": true,
+      "docs/references/openai-runtime-contract.md": true,
+      "scripts/check-fast.sh": true
+    },
+    "broken_skill_links": [
+      "impeccable",
+      "claude-api",
+      "azure-webapp-deploy",
+      "vercel-react-best-practices",
+      "openai-docs"
+    ]
+  },
+  {
+    "path": "/Users/dobby/.codex/worktrees/8a77/whos-in-your-head",
+    "root_guidance_lines": 49,
+    "docs_markdown": 7,
+    "root_routes": {
+      ".agents/skills/azure-webapp-deploy/SKILL.md": false,
+      "docs/references/agent-native-workflow.md": true,
+      "docs/references/openai-runtime-contract.md": true,
+      "scripts/check-fast.sh": true
+    },
+    "broken_skill_links": [
+      "impeccable",
+      "claude-api",
+      "azure-webapp-deploy",
+      "vercel-react-best-practices",
+      "openai-docs"
+    ]
+  }
+]

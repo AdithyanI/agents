@@ -1,0 +1,402 @@
+{
+  "snapshot_utc": "2026-09-17T20:52:00.602967+00:00",
+  "scope": "11 assigned primary repositories; read-only target audit",
+  "count_note": "Tracked .md/.mdx/.rst only. Current references excludes archive subtrees. Stadia active/archive project counts are README indexes, not trackers. Global skills and plugins are not included in per-repo skill lists.",
+  "repositories": [
+    {
+      "repo": ".github",
+      "path": "/Users/dobby/GitHub/.github",
+      "head": "48051729fde5e5d2ebab2b7a1e0808676b5f64af",
+      "dirty_count": 0,
+      "tracked_files": 9,
+      "tracked_markdown_mdx_rst_files": 4,
+      "tracked_docs_directory_count": 1,
+      "doc_categories": {
+        "architecture": 0,
+        "references_current": 0,
+        "active_project": 0,
+        "archive": 0,
+        "historical_changelog": 0,
+        "other": 1
+      },
+      "active_tasks_md_count": 0,
+      "guidance": [
+        {
+          "path": ".claude/CLAUDE.md",
+          "lines": 1,
+          "bytes": 14
+        },
+        {
+          "path": "AGENTS.md",
+          "lines": 17,
+          "bytes": 746
+        }
+      ],
+      "repo_skills": [],
+      "runtime_checks_run": false
+    },
+    {
+      "repo": "adi-design",
+      "path": "/Users/dobby/GitHub/adi-design",
+      "head": "039e8c723eb3bb4ebd290d557f52da56eef74f5e",
+      "dirty_count": 0,
+      "tracked_files": 90,
+      "tracked_markdown_mdx_rst_files": 18,
+      "tracked_docs_directory_count": 2,
+      "doc_categories": {
+        "architecture": 1,
+        "references_current": 1,
+        "active_project": 0,
+        "archive": 0,
+        "historical_changelog": 0,
+        "other": 0
+      },
+      "active_tasks_md_count": 0,
+      "guidance": [
+        {
+          "path": ".claude/CLAUDE.md",
+          "lines": 1,
+          "bytes": 14
+        },
+        {
+          "path": "AGENTS.md",
+          "lines": 73,
+          "bytes": 3565
+        }
+      ],
+      "repo_skills": [],
+      "runtime_checks_run": false
+    },
+    {
+      "repo": "aipodcasting-website",
+      "path": "/Users/dobby/GitHub/aipodcasting-website",
+      "head": "0d3979417860bf03fec27c7f9ea0d385a3fee278",
+      "dirty_count": 0,
+      "tracked_files": 106,
+      "tracked_markdown_mdx_rst_files": 12,
+      "tracked_docs_directory_count": 7,
+      "doc_categories": {
+        "architecture": 1,
+        "references_current": 6,
+        "active_project": 0,
+        "archive": 0,
+        "historical_changelog": 0,
+        "other": 0
+      },
+      "active_tasks_md_count": 0,
+      "guidance": [
+        {
+          "path": ".claude/CLAUDE.md",
+          "lines": 1,
+          "bytes": 14
+        },
+        {
+          "path": "AGENTS.md",
+          "lines": 77,
+          "bytes": 3569
+        }
+      ],
+      "repo_skills": [],
+      "runtime_checks_run": false
+    },
+    {
+      "repo": "blog-personal",
+      "path": "/Users/dobby/GitHub/blog-personal",
+      "head": "a28cefc409fb8890f5c32f81cbfd865fb3a932e8",
+      "dirty_count": 0,
+      "tracked_files": 278,
+      "tracked_markdown_mdx_rst_files": 80,
+      "tracked_docs_directory_count": 8,
+      "doc_categories": {
+        "architecture": 1,
+        "references_current": 7,
+        "active_project": 0,
+        "archive": 0,
+        "historical_changelog": 0,
+        "other": 0
+      },
+      "active_tasks_md_count": 0,
+      "guidance": [
+        {
+          "path": ".claude/CLAUDE.md",
+          "lines": 1,
+          "bytes": 14
+        },
+        {
+          "path": "AGENTS.md",
+          "lines": 82,
+          "bytes": 4189
+        }
+      ],
+      "repo_skills": [
+        {
+          "name": "adi-writing",
+          "managed_symlink": true,
+          "source": "/Users/dobby/GitHub/agents/skills-source/owned/adi-writing"
+        },
+        {
+          "name": "blog-posting",
+          "managed_symlink": false,
+          "source": "/Users/dobby/GitHub/blog-personal/.agents/skills/blog-posting"
+        }
+      ],
+      "runtime_checks_run": false
+    },
+    {
+      "repo": "focus",
+      "path": "/Users/dobby/GitHub/focus",
+      "head": "c7799a80a609f2ea56e25a38fb1d16a0a5a1bf74",
+      "dirty_count": 0,
+      "tracked_files": 97,
+      "tracked_markdown_mdx_rst_files": 23,
+      "tracked_docs_directory_count": 17,
+      "doc_categories": {
+        "architecture": 3,
+        "references_current": 14,
+        "active_project": 0,
+        "archive": 0,
+        "historical_changelog": 0,
+        "other": 0
+      },
+      "active_tasks_md_count": 0,
+      "guidance": [
+        {
+          "path": ".claude/CLAUDE.md",
+          "lines": 1,
+          "bytes": 14
+        },
+        {
+          "path": "AGENTS.md",
+          "lines": 52,
+          "bytes": 2581
+        }
+      ],
+      "repo_skills": [],
+      "runtime_checks_run": false
+    },
+    {
+      "repo": "frontier-lab-intelligence",
+      "path": "/Users/dobby/GitHub/frontier-lab-intelligence",
+      "head": "2b404080a6edb87fbf0a4446f17fa00527f82c6b",
+      "dirty_count": 0,
+      "tracked_files": 345,
+      "tracked_markdown_mdx_rst_files": 42,
+      "tracked_docs_directory_count": 32,
+      "doc_categories": {
+        "architecture": 2,
+        "references_current": 24,
+        "active_project": 0,
+        "archive": 5,
+        "historical_changelog": 0,
+        "other": 1
+      },
+      "active_tasks_md_count": 0,
+      "guidance": [
+        {
+          "path": ".claude/CLAUDE.md",
+          "lines": 1,
+          "bytes": 14
+        },
+        {
+          "path": "AGENTS.md",
+          "lines": 80,
+          "bytes": 3956
+        }
+      ],
+      "repo_skills": [
+        {
+          "name": "adi-writing",
+          "managed_symlink": true,
+          "source": "/Users/dobby/GitHub/agents/skills-source/owned/adi-writing"
+        },
+        {
+          "name": "fli-daily-intelligence",
+          "managed_symlink": false,
+          "source": "/Users/dobby/GitHub/frontier-lab-intelligence/.agents/skills/fli-daily-intelligence"
+        },
+        {
+          "name": "fli-review",
+          "managed_symlink": true,
+          "source": "/Users/dobby/GitHub/agents/skills-source/owned/fli-review"
+        },
+        {
+          "name": "openai-docs",
+          "managed_symlink": true,
+          "source": "/Users/dobby/GitHub/agents/skills-source/external/openai-docs"
+        }
+      ],
+      "runtime_checks_run": false
+    },
+    {
+      "repo": "litellm",
+      "path": "/Users/dobby/GitHub/litellm",
+      "head": "ab36a2af7fdea47330654f07f1a62a217e6675d1",
+      "dirty_count": 0,
+      "tracked_files": 54,
+      "tracked_markdown_mdx_rst_files": 34,
+      "tracked_docs_directory_count": 31,
+      "doc_categories": {
+        "architecture": 1,
+        "references_current": 3,
+        "active_project": 0,
+        "archive": 0,
+        "historical_changelog": 27,
+        "other": 0
+      },
+      "active_tasks_md_count": 0,
+      "guidance": [
+        {
+          "path": ".claude/CLAUDE.md",
+          "lines": 1,
+          "bytes": 14
+        },
+        {
+          "path": "AGENTS.md",
+          "lines": 31,
+          "bytes": 1361
+        }
+      ],
+      "repo_skills": [],
+      "runtime_checks_run": false
+    },
+    {
+      "repo": "meeting-capture",
+      "path": "/Users/dobby/GitHub/meeting-capture",
+      "head": "434e63d626dbe13ce70e657beb6d9fe413ec1895",
+      "dirty_count": 0,
+      "tracked_files": 33,
+      "tracked_markdown_mdx_rst_files": 6,
+      "tracked_docs_directory_count": 3,
+      "doc_categories": {
+        "architecture": 1,
+        "references_current": 2,
+        "active_project": 0,
+        "archive": 0,
+        "historical_changelog": 0,
+        "other": 0
+      },
+      "active_tasks_md_count": 0,
+      "guidance": [
+        {
+          "path": ".claude/CLAUDE.md",
+          "lines": 1,
+          "bytes": 14
+        },
+        {
+          "path": "AGENTS.md",
+          "lines": 32,
+          "bytes": 2026
+        }
+      ],
+      "repo_skills": [
+        {
+          "name": "swiftui-specialist",
+          "managed_symlink": true,
+          "source": "/Users/dobby/GitHub/agents/skills-source/external/swiftui-specialist"
+        },
+        {
+          "name": "swiftui-whats-new-27",
+          "managed_symlink": true,
+          "source": "/Users/dobby/GitHub/agents/skills-source/external/swiftui-whats-new-27"
+        }
+      ],
+      "runtime_checks_run": false
+    },
+    {
+      "repo": "stadia-macos-controller",
+      "path": "/Users/dobby/GitHub/stadia-macos-controller",
+      "head": "32b7a0820f659b74c57d74b0b259375b394b194b",
+      "dirty_count": 0,
+      "tracked_files": 39,
+      "tracked_markdown_mdx_rst_files": 15,
+      "tracked_docs_directory_count": 11,
+      "doc_categories": {
+        "architecture": 3,
+        "references_current": 6,
+        "active_project": 1,
+        "archive": 1,
+        "historical_changelog": 0,
+        "other": 0
+      },
+      "active_tasks_md_count": 0,
+      "guidance": [
+        {
+          "path": ".claude/CLAUDE.md",
+          "lines": 1,
+          "bytes": 14
+        },
+        {
+          "path": "AGENTS.md",
+          "lines": 44,
+          "bytes": 2337
+        }
+      ],
+      "repo_skills": [],
+      "runtime_checks_run": false
+    },
+    {
+      "repo": "thoughtforms-life",
+      "path": "/Users/dobby/GitHub/thoughtforms-life",
+      "head": "996ec0a458c13d7aa0c2cf2332d4e5f158d5742d",
+      "dirty_count": 0,
+      "tracked_files": 2904,
+      "tracked_markdown_mdx_rst_files": 5,
+      "tracked_docs_directory_count": 2,
+      "doc_categories": {
+        "architecture": 1,
+        "references_current": 1,
+        "active_project": 0,
+        "archive": 0,
+        "historical_changelog": 0,
+        "other": 0
+      },
+      "active_tasks_md_count": 0,
+      "guidance": [
+        {
+          "path": ".claude/CLAUDE.md",
+          "lines": 1,
+          "bytes": 14
+        },
+        {
+          "path": "AGENTS.md",
+          "lines": 26,
+          "bytes": 1610
+        }
+      ],
+      "repo_skills": [],
+      "runtime_checks_run": false
+    },
+    {
+      "repo": "trenopoulospraxis",
+      "path": "/Users/dobby/GitHub/trenopoulospraxis",
+      "head": "da065b8f7856e6a13ffbd07706052e2960ac89ae",
+      "dirty_count": 0,
+      "tracked_files": 102,
+      "tracked_markdown_mdx_rst_files": 5,
+      "tracked_docs_directory_count": 3,
+      "doc_categories": {
+        "architecture": 1,
+        "references_current": 2,
+        "active_project": 0,
+        "archive": 0,
+        "historical_changelog": 0,
+        "other": 0
+      },
+      "active_tasks_md_count": 0,
+      "guidance": [
+        {
+          "path": ".claude/CLAUDE.md",
+          "lines": 1,
+          "bytes": 14
+        },
+        {
+          "path": "AGENTS.md",
+          "lines": 36,
+          "bytes": 1831
+        }
+      ],
+      "repo_skills": [],
+      "runtime_checks_run": false
+    }
+  ]
+}

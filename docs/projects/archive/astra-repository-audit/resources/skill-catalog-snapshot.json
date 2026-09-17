@@ -1,0 +1,680 @@
+{
+  "measurement": "YAML-parsed description length, UTF-8 body bytes; no private contents retained",
+  "skills": [
+    {
+      "skill": "agent-native-repo-playbook",
+      "kind": "managed_skills",
+      "origin": "owned",
+      "scope": "global",
+      "repos": [],
+      "source": "skills-source/owned/agent-native-repo-playbook/SKILL.md",
+      "description_characters": 419,
+      "body_bytes": 4512,
+      "body_lines": 101,
+      "description_over_1024": false
+    },
+    {
+      "skill": "find-skills",
+      "kind": "managed_skills",
+      "origin": "external",
+      "scope": "global",
+      "repos": [],
+      "source": "skills-source/external/find-skills/SKILL.md",
+      "description_characters": 303,
+      "body_bytes": 5130,
+      "body_lines": 138,
+      "description_over_1024": false
+    },
+    {
+      "skill": "pretty-mermaid",
+      "kind": "managed_skills",
+      "origin": "owned",
+      "scope": "dormant",
+      "repos": [],
+      "source": "skills-source/owned/pretty-mermaid/SKILL.md",
+      "description_characters": 591,
+      "body_bytes": 10303,
+      "body_lines": 500,
+      "description_over_1024": false
+    },
+    {
+      "skill": "project",
+      "kind": "managed_skills",
+      "origin": "owned",
+      "scope": "global",
+      "repos": [],
+      "source": "skills-source/owned/project/SKILL.md",
+      "description_characters": 444,
+      "body_bytes": 5599,
+      "body_lines": 75,
+      "description_over_1024": false
+    },
+    {
+      "skill": "adi-writing",
+      "kind": "managed_skills",
+      "origin": "owned",
+      "scope": "repo",
+      "repos": [
+        "adi",
+        "adithyan-ai-videos",
+        "blog-personal",
+        "frontier-lab-intelligence"
+      ],
+      "source": "skills-source/owned/adi-writing/SKILL.md",
+      "description_characters": 286,
+      "body_bytes": 732,
+      "body_lines": 17,
+      "description_over_1024": false
+    },
+    {
+      "skill": "adi-design",
+      "kind": "managed_skills",
+      "origin": "owned",
+      "scope": "global",
+      "repos": [],
+      "source": "skills-source/owned/adi-design/SKILL.md",
+      "description_characters": 646,
+      "body_bytes": 4820,
+      "body_lines": 92,
+      "description_over_1024": false
+    },
+    {
+      "skill": "social-media-publishing",
+      "kind": "managed_skills",
+      "origin": "owned",
+      "scope": "repo",
+      "repos": [
+        "adi",
+        "adithyan-ai-videos",
+        "agents"
+      ],
+      "source": "skills-source/owned/social-media-publishing/SKILL.md",
+      "description_characters": 525,
+      "body_bytes": 14143,
+      "body_lines": 246,
+      "description_over_1024": false
+    },
+    {
+      "skill": "ai-podcasting",
+      "kind": "managed_skills",
+      "origin": "owned",
+      "scope": "repo",
+      "repos": [
+        "aipodcasting"
+      ],
+      "source": "skills-source/owned/ai-podcasting/SKILL.md",
+      "description_characters": 452,
+      "body_bytes": 17763,
+      "body_lines": 381,
+      "description_over_1024": false
+    },
+    {
+      "skill": "win-aip-contract-sync",
+      "kind": "managed_skills",
+      "origin": "owned",
+      "scope": "repo",
+      "repos": [
+        "aipodcasting",
+        "win"
+      ],
+      "source": "skills-source/owned/win-aip-contract-sync/SKILL.md",
+      "description_characters": 374,
+      "body_bytes": 3455,
+      "body_lines": 66,
+      "description_over_1024": false
+    },
+    {
+      "skill": "codex-agent-loop",
+      "kind": "managed_skills",
+      "origin": "owned",
+      "scope": "repo",
+      "repos": [
+        "adi",
+        "dobby-gateway"
+      ],
+      "source": "skills-source/owned/codex-agent-loop/SKILL.md",
+      "description_characters": 445,
+      "body_bytes": 3429,
+      "body_lines": 53,
+      "description_over_1024": false
+    },
+    {
+      "skill": "codex-app-server",
+      "kind": "managed_skills",
+      "origin": "owned",
+      "scope": "repo",
+      "repos": [
+        "adi",
+        "agents",
+        "dobby-gateway"
+      ],
+      "source": "skills-source/owned/codex-app-server/SKILL.md",
+      "description_characters": 418,
+      "body_bytes": 6211,
+      "body_lines": 118,
+      "description_over_1024": false
+    },
+    {
+      "skill": "codex-reset-credits",
+      "kind": "managed_skills",
+      "origin": "owned",
+      "scope": "dormant",
+      "repos": [],
+      "source": "skills-source/owned/codex-reset-credits/SKILL.md",
+      "description_characters": 266,
+      "body_bytes": 1710,
+      "body_lines": 62,
+      "description_over_1024": false
+    },
+    {
+      "skill": "dobby-system",
+      "kind": "managed_skills",
+      "origin": "owned",
+      "scope": "repo",
+      "repos": [
+        "adi",
+        "angie",
+        "dobby-engine",
+        "dobby-gateway",
+        "dobby-ios"
+      ],
+      "source": "skills-source/owned/dobby-system/SKILL.md",
+      "description_characters": 627,
+      "body_bytes": 12671,
+      "body_lines": 157,
+      "description_over_1024": false
+    },
+    {
+      "skill": "client-interface-guidelines",
+      "kind": "managed_skills",
+      "origin": "owned",
+      "scope": "global",
+      "repos": [],
+      "source": "skills-source/owned/client-interface-guidelines/SKILL.md",
+      "description_characters": 357,
+      "body_bytes": 1814,
+      "body_lines": 46,
+      "description_over_1024": false
+    },
+    {
+      "skill": "cv-creator",
+      "kind": "managed_skills",
+      "origin": "owned",
+      "scope": "repo",
+      "repos": [
+        "adi",
+        "angie"
+      ],
+      "source": "skills-source/owned/cv-creator/SKILL.md",
+      "description_characters": 354,
+      "body_bytes": 15900,
+      "body_lines": 198,
+      "description_over_1024": false
+    },
+    {
+      "skill": "modal-function-sync",
+      "kind": "managed_skills",
+      "origin": "owned",
+      "scope": "repo",
+      "repos": [
+        "aipodcasting",
+        "modal_functions",
+        "win"
+      ],
+      "source": "skills-source/owned/modal-function-sync/SKILL.md",
+      "description_characters": 248,
+      "body_bytes": 4583,
+      "body_lines": 78,
+      "description_over_1024": false
+    },
+    {
+      "skill": "media-storage-lifecycle",
+      "kind": "managed_skills",
+      "origin": "owned",
+      "scope": "repo",
+      "repos": [
+        "adithyan-ai-videos",
+        "agents",
+        "aipodcasting",
+        "local-transcription",
+        "modal_functions",
+        "scripts",
+        "win"
+      ],
+      "source": "skills-source/owned/media-storage-lifecycle/SKILL.md",
+      "description_characters": 471,
+      "body_bytes": 6296,
+      "body_lines": 110,
+      "description_over_1024": false
+    },
+    {
+      "skill": "openai-docs",
+      "kind": "managed_skills",
+      "origin": "external",
+      "scope": "repo",
+      "repos": [
+        "agents",
+        "frontier-lab-intelligence"
+      ],
+      "source": "skills-source/external/openai-docs/SKILL.md",
+      "description_characters": 447,
+      "body_bytes": 17812,
+      "body_lines": 158,
+      "description_over_1024": false
+    },
+    {
+      "skill": "pdf",
+      "kind": "managed_skills",
+      "origin": "owned",
+      "scope": "global",
+      "repos": [],
+      "source": "skills-source/owned/pdf/SKILL.md",
+      "description_characters": 248,
+      "body_bytes": 1995,
+      "body_lines": 43,
+      "description_over_1024": false
+    },
+    {
+      "skill": "imagegen",
+      "kind": "managed_skills",
+      "origin": "owned",
+      "scope": "global",
+      "repos": [],
+      "source": "skills-source/owned/imagegen/SKILL.md",
+      "description_characters": 333,
+      "body_bytes": 15564,
+      "body_lines": 257,
+      "description_over_1024": false
+    },
+    {
+      "skill": "skill-router",
+      "kind": "managed_skills",
+      "origin": "owned",
+      "scope": "dormant",
+      "repos": [],
+      "source": "skills-source/owned/skill-router/SKILL.md",
+      "description_characters": 284,
+      "body_bytes": 252,
+      "body_lines": 8,
+      "description_over_1024": false
+    },
+    {
+      "skill": "show-password-setup",
+      "kind": "managed_skills",
+      "origin": "owned",
+      "scope": "dormant",
+      "repos": [],
+      "source": "skills-source/owned/show-password-setup/SKILL.md",
+      "description_characters": 169,
+      "body_bytes": 860,
+      "body_lines": 18,
+      "description_over_1024": false
+    },
+    {
+      "skill": "media-toolkit",
+      "kind": "managed_skills",
+      "origin": "owned",
+      "scope": "repo",
+      "repos": [
+        "adi",
+        "adithyan-ai-videos",
+        "agents",
+        "angie",
+        "dobby-gateway",
+        "dobby-ios",
+        "local-transcription",
+        "scripts"
+      ],
+      "source": "skills-source/owned/media-toolkit/SKILL.md",
+      "description_characters": 282,
+      "body_bytes": 4838,
+      "body_lines": 139,
+      "description_over_1024": false
+    },
+    {
+      "skill": "fal-seedance",
+      "kind": "managed_skills",
+      "origin": "owned",
+      "scope": "repo",
+      "repos": [
+        "adithyan-ai-videos"
+      ],
+      "source": "skills-source/owned/fal-seedance/SKILL.md",
+      "description_characters": 215,
+      "body_bytes": 6522,
+      "body_lines": 117,
+      "description_over_1024": false
+    },
+    {
+      "skill": "whiyh-gpt-hill-climb",
+      "kind": "managed_skills",
+      "origin": "owned",
+      "scope": "dormant",
+      "repos": [],
+      "source": "skills-source/owned/whiyh-gpt-hill-climb/SKILL.md",
+      "description_characters": 490,
+      "body_bytes": 11849,
+      "body_lines": 252,
+      "description_over_1024": false
+    },
+    {
+      "skill": "skill-creator",
+      "kind": "managed_skills",
+      "origin": "owned",
+      "scope": "global",
+      "repos": [],
+      "source": "skills-source/owned/skill-creator/SKILL.md",
+      "description_characters": 458,
+      "body_bytes": 7279,
+      "body_lines": 179,
+      "description_over_1024": false
+    },
+    {
+      "skill": "secret-management",
+      "kind": "managed_skills",
+      "origin": "owned",
+      "scope": "global",
+      "repos": [],
+      "source": "skills-source/owned/secret-management/SKILL.md",
+      "description_characters": 311,
+      "body_bytes": 4017,
+      "body_lines": 93,
+      "description_over_1024": false
+    },
+    {
+      "skill": "vercel-react-best-practices",
+      "kind": "managed_skills",
+      "origin": "external",
+      "scope": "repo",
+      "repos": [
+        "adithyan-ai-videos",
+        "aipodcasting"
+      ],
+      "source": "skills-source/external/vercel-react-best-practices/SKILL.md",
+      "description_characters": 329,
+      "body_bytes": 6808,
+      "body_lines": 142,
+      "description_over_1024": false
+    },
+    {
+      "skill": "impeccable",
+      "kind": "managed_skills",
+      "origin": "external",
+      "scope": "global",
+      "repos": [],
+      "source": "skills-source/external/impeccable/SKILL.md",
+      "description_characters": 895,
+      "body_bytes": 10908,
+      "body_lines": 80,
+      "description_over_1024": false
+    },
+    {
+      "skill": "fli-review",
+      "kind": "managed_skills",
+      "origin": "owned",
+      "scope": "repo",
+      "repos": [
+        "frontier-lab-intelligence"
+      ],
+      "source": "skills-source/owned/fli-review/SKILL.md",
+      "description_characters": 496,
+      "body_bytes": 4516,
+      "body_lines": 95,
+      "description_over_1024": false
+    },
+    {
+      "skill": "remotion",
+      "kind": "managed_skills",
+      "origin": "external",
+      "scope": "repo",
+      "repos": [
+        "adithyan-ai-videos"
+      ],
+      "source": "skills-source/external/remotion/SKILL.md",
+      "description_characters": 530,
+      "body_bytes": 12332,
+      "body_lines": 355,
+      "description_over_1024": false
+    },
+    {
+      "skill": "audit-xcode-security-settings",
+      "kind": "managed_skills",
+      "origin": "external",
+      "scope": "dormant",
+      "repos": [],
+      "source": "skills-source/external/audit-xcode-security-settings/SKILL.md",
+      "description_characters": 535,
+      "body_bytes": 17758,
+      "body_lines": 213,
+      "description_over_1024": false
+    },
+    {
+      "skill": "c-bounds-safety",
+      "kind": "managed_skills",
+      "origin": "external",
+      "scope": "dormant",
+      "repos": [],
+      "source": "skills-source/external/c-bounds-safety/SKILL.md",
+      "description_characters": 222,
+      "body_bytes": 2003,
+      "body_lines": 24,
+      "description_over_1024": false
+    },
+    {
+      "skill": "device-interaction",
+      "kind": "managed_skills",
+      "origin": "external",
+      "scope": "dormant",
+      "repos": [],
+      "source": "skills-source/external/device-interaction/SKILL.md",
+      "description_characters": 101,
+      "body_bytes": 7441,
+      "body_lines": 130,
+      "description_over_1024": false
+    },
+    {
+      "skill": "swiftui-specialist",
+      "kind": "managed_skills",
+      "origin": "external",
+      "scope": "repo",
+      "repos": [
+        "meeting-capture"
+      ],
+      "source": "skills-source/external/swiftui-specialist/SKILL.md",
+      "description_characters": 104,
+      "body_bytes": 3356,
+      "body_lines": 17,
+      "description_over_1024": false
+    },
+    {
+      "skill": "swiftui-whats-new-27",
+      "kind": "managed_skills",
+      "origin": "external",
+      "scope": "repo",
+      "repos": [
+        "meeting-capture"
+      ],
+      "source": "skills-source/external/swiftui-whats-new-27/SKILL.md",
+      "description_characters": 2696,
+      "body_bytes": 5055,
+      "body_lines": 20,
+      "description_over_1024": true
+    },
+    {
+      "skill": "test-modernizer",
+      "kind": "managed_skills",
+      "origin": "external",
+      "scope": "dormant",
+      "repos": [],
+      "source": "skills-source/external/test-modernizer/SKILL.md",
+      "description_characters": 82,
+      "body_bytes": 9337,
+      "body_lines": 243,
+      "description_over_1024": false
+    },
+    {
+      "skill": "uikit-app-modernization",
+      "kind": "managed_skills",
+      "origin": "external",
+      "scope": "dormant",
+      "repos": [],
+      "source": "skills-source/external/uikit-app-modernization/SKILL.md",
+      "description_characters": 266,
+      "body_bytes": 16129,
+      "body_lines": 123,
+      "description_over_1024": false
+    },
+    {
+      "skill": "figma-use",
+      "kind": "managed_skills",
+      "origin": "external",
+      "scope": "repo",
+      "repos": [
+        "aipodcasting"
+      ],
+      "source": "skills-source/external/figma-use/SKILL.md",
+      "description_characters": 546,
+      "body_bytes": 35044,
+      "body_lines": 426,
+      "description_over_1024": false
+    },
+    {
+      "skill": "agent-browser",
+      "kind": "managed_skills",
+      "origin": "external",
+      "scope": "dormant",
+      "repos": [],
+      "source": "skills-source/external/agent-browser/SKILL.md",
+      "description_characters": 925,
+      "body_bytes": 2414,
+      "body_lines": 47,
+      "description_over_1024": false
+    },
+    {
+      "skill": "ios-app-intents",
+      "kind": "managed_plugin_skills",
+      "origin": "external",
+      "scope": "repo",
+      "repos": [
+        "dobby-ios"
+      ],
+      "source": "plugins-source/external/build-ios-apps/skills/ios-app-intents/SKILL.md",
+      "description_characters": 170,
+      "body_bytes": 4400,
+      "body_lines": 74,
+      "description_over_1024": false
+    },
+    {
+      "skill": "ios-debugger-agent",
+      "kind": "managed_plugin_skills",
+      "origin": "external",
+      "scope": "repo",
+      "repos": [
+        "dobby-ios"
+      ],
+      "source": "plugins-source/external/build-ios-apps/skills/ios-debugger-agent/SKILL.md",
+      "description_characters": 155,
+      "body_bytes": 2442,
+      "body_lines": 48,
+      "description_over_1024": false
+    },
+    {
+      "skill": "ios-ettrace-performance",
+      "kind": "managed_plugin_skills",
+      "origin": "external",
+      "scope": "repo",
+      "repos": [
+        "dobby-ios"
+      ],
+      "source": "plugins-source/external/build-ios-apps/skills/ios-ettrace-performance/SKILL.md",
+      "description_characters": 146,
+      "body_bytes": 8635,
+      "body_lines": 194,
+      "description_over_1024": false
+    },
+    {
+      "skill": "ios-memgraph-leaks",
+      "kind": "managed_plugin_skills",
+      "origin": "external",
+      "scope": "repo",
+      "repos": [
+        "dobby-ios"
+      ],
+      "source": "plugins-source/external/build-ios-apps/skills/ios-memgraph-leaks/SKILL.md",
+      "description_characters": 140,
+      "body_bytes": 3767,
+      "body_lines": 73,
+      "description_over_1024": false
+    },
+    {
+      "skill": "ios-simulator-browser",
+      "kind": "managed_plugin_skills",
+      "origin": "external",
+      "scope": "repo",
+      "repos": [
+        "dobby-ios"
+      ],
+      "source": "plugins-source/external/build-ios-apps/skills/ios-simulator-browser/SKILL.md",
+      "description_characters": 337,
+      "body_bytes": 2865,
+      "body_lines": 49,
+      "description_over_1024": false
+    },
+    {
+      "skill": "swiftui-liquid-glass",
+      "kind": "managed_plugin_skills",
+      "origin": "external",
+      "scope": "repo",
+      "repos": [
+        "dobby-ios"
+      ],
+      "source": "plugins-source/external/build-ios-apps/skills/swiftui-liquid-glass/SKILL.md",
+      "description_characters": 142,
+      "body_bytes": 3555,
+      "body_lines": 87,
+      "description_over_1024": false
+    },
+    {
+      "skill": "swiftui-performance-audit",
+      "kind": "managed_plugin_skills",
+      "origin": "external",
+      "scope": "repo",
+      "repos": [
+        "dobby-ios"
+      ],
+      "source": "plugins-source/external/build-ios-apps/skills/swiftui-performance-audit/SKILL.md",
+      "description_characters": 142,
+      "body_bytes": 4817,
+      "body_lines": 104,
+      "description_over_1024": false
+    },
+    {
+      "skill": "swiftui-ui-patterns",
+      "kind": "managed_plugin_skills",
+      "origin": "external",
+      "scope": "repo",
+      "repos": [
+        "dobby-ios"
+      ],
+      "source": "plugins-source/external/build-ios-apps/skills/swiftui-ui-patterns/SKILL.md",
+      "description_characters": 145,
+      "body_bytes": 7137,
+      "body_lines": 93,
+      "description_over_1024": false
+    },
+    {
+      "skill": "swiftui-view-refactor",
+      "kind": "managed_plugin_skills",
+      "origin": "external",
+      "scope": "repo",
+      "repos": [
+        "dobby-ios"
+      ],
+      "source": "plugins-source/external/build-ios-apps/skills/swiftui-view-refactor/SKILL.md",
+      "description_characters": 149,
+      "body_bytes": 7684,
+      "body_lines": 200,
+      "description_over_1024": false
+    }
+  ]
+}

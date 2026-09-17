@@ -1,0 +1,379 @@
+{
+  "audited_at_utc": "2026-09-17T20:55:17.993826+00:00",
+  "mode": "read-only",
+  "runtime_validation_executed": false,
+  "method": "git tracked files; guidance/reference/source inspection; path/link existence; sibling source comparison",
+  "registry_global_skills": [
+    "agent-native-repo-playbook",
+    "find-skills",
+    "project",
+    "adi-design",
+    "client-interface-guidelines",
+    "pdf",
+    "imagegen",
+    "skill-creator",
+    "secret-management",
+    "impeccable"
+  ],
+  "repositories": [
+    {
+      "repository": "win",
+      "path": "/Users/dobby/GitHub/win",
+      "head": "56b3a1550e8dd6a2049eab53b4a0ae7c534a7f6b",
+      "dirty_file_count": 0,
+      "root_guidance": {
+        "lines": 58,
+        "bytes": 3470
+      },
+      "tracked_files": 3004,
+      "tracked_markdown": 227,
+      "tracked_docs_markdown": 188,
+      "docs_groups": {
+        "(root)": 1,
+        "architecture": 17,
+        "projects": 112,
+        "references": 55,
+        "rules": 3
+      },
+      "archived_docs_markdown": 35,
+      "active_tracker_count": 3,
+      "repo_skills": [
+        {
+          "name": "add-env-var",
+          "scope": "repo-local",
+          "source": "/Users/dobby/GitHub/win/.agents/skills/add-env-var",
+          "entry_bytes": 3692
+        },
+        {
+          "name": "channel-create",
+          "scope": "repo-local",
+          "source": "/Users/dobby/GitHub/win/.agents/skills/channel-create",
+          "entry_bytes": 6253
+        },
+        {
+          "name": "contact-form-automation",
+          "scope": "repo-local",
+          "source": "/Users/dobby/GitHub/win/.agents/skills/contact-form-automation",
+          "entry_bytes": 1533
+        },
+        {
+          "name": "descript-api-docs-sync",
+          "scope": "repo-local",
+          "source": "/Users/dobby/GitHub/win/.agents/skills/descript-api-docs-sync",
+          "entry_bytes": 1460
+        },
+        {
+          "name": "finance-client-invoicing",
+          "scope": "repo-local",
+          "source": "/Users/dobby/GitHub/win/.agents/skills/finance-client-invoicing",
+          "entry_bytes": 32108
+        },
+        {
+          "name": "finance-invoice-autopilot",
+          "scope": "repo-local",
+          "source": "/Users/dobby/GitHub/win/.agents/skills/finance-invoice-autopilot",
+          "entry_bytes": 14154
+        },
+        {
+          "name": "finance-month-end-close",
+          "scope": "repo-local",
+          "source": "/Users/dobby/GitHub/win/.agents/skills/finance-month-end-close",
+          "entry_bytes": 5201
+        },
+        {
+          "name": "log-investigation",
+          "scope": "repo-local",
+          "source": "/Users/dobby/GitHub/win/.agents/skills/log-investigation",
+          "entry_bytes": 2273
+        },
+        {
+          "name": "media-storage-lifecycle",
+          "scope": "managed-repo",
+          "source": "/Users/dobby/GitHub/agents/skills-source/owned/media-storage-lifecycle",
+          "entry_bytes": 6818
+        },
+        {
+          "name": "modal-function-sync",
+          "scope": "managed-repo",
+          "source": "/Users/dobby/GitHub/agents/skills-source/owned/modal-function-sync",
+          "entry_bytes": 4878
+        },
+        {
+          "name": "monetary-matters-editing",
+          "scope": "repo-local",
+          "source": "/Users/dobby/GitHub/win/.agents/skills/monetary-matters-editing",
+          "entry_bytes": 8389
+        },
+        {
+          "name": "network-school-references-file",
+          "scope": "repo-local",
+          "source": "/Users/dobby/GitHub/win/.agents/skills/network-school-references-file",
+          "entry_bytes": 6477
+        },
+        {
+          "name": "riverside-export",
+          "scope": "repo-local",
+          "source": "/Users/dobby/GitHub/win/.agents/skills/riverside-export",
+          "entry_bytes": 6578
+        },
+        {
+          "name": "win-aip-contract-sync",
+          "scope": "managed-repo",
+          "source": "/Users/dobby/GitHub/agents/skills-source/owned/win-aip-contract-sync",
+          "entry_bytes": 3878
+        }
+      ]
+    },
+    {
+      "repository": "aipodcasting",
+      "path": "/Users/dobby/GitHub/aipodcasting",
+      "head": "25e56b86f751c8e165f09bba546c9efe8523592d",
+      "dirty_file_count": 0,
+      "root_guidance": {
+        "lines": 56,
+        "bytes": 3246
+      },
+      "tracked_files": 735,
+      "tracked_markdown": 64,
+      "tracked_docs_markdown": 35,
+      "docs_groups": {
+        "(root)": 1,
+        "architecture": 2,
+        "references": 20,
+        "rules": 11,
+        "security": 1
+      },
+      "archived_docs_markdown": 0,
+      "active_tracker_count": 0,
+      "repo_skills": [
+        {
+          "name": "ai-podcasting",
+          "scope": "managed-repo",
+          "source": "/Users/dobby/GitHub/agents/skills-source/owned/ai-podcasting",
+          "entry_bytes": 18256
+        },
+        {
+          "name": "figma-use",
+          "scope": "managed-repo",
+          "source": "/Users/dobby/GitHub/agents/skills-source/external/figma-use",
+          "entry_bytes": 35665
+        },
+        {
+          "name": "media-storage-lifecycle",
+          "scope": "managed-repo",
+          "source": "/Users/dobby/GitHub/agents/skills-source/owned/media-storage-lifecycle",
+          "entry_bytes": 6818
+        },
+        {
+          "name": "modal-function-sync",
+          "scope": "managed-repo",
+          "source": "/Users/dobby/GitHub/agents/skills-source/owned/modal-function-sync",
+          "entry_bytes": 4878
+        },
+        {
+          "name": "vercel-react-best-practices",
+          "scope": "managed-repo",
+          "source": "/Users/dobby/GitHub/agents/skills-source/external/vercel-react-best-practices",
+          "entry_bytes": 7251
+        },
+        {
+          "name": "win-aip-contract-sync",
+          "scope": "managed-repo",
+          "source": "/Users/dobby/GitHub/agents/skills-source/owned/win-aip-contract-sync",
+          "entry_bytes": 3878
+        }
+      ]
+    },
+    {
+      "repository": "modal_functions",
+      "path": "/Users/dobby/GitHub/modal_functions",
+      "head": "526c3fdfb0d678c68f0629ca810fecc6789bfa47",
+      "dirty_file_count": 0,
+      "root_guidance": {
+        "lines": 56,
+        "bytes": 2951
+      },
+      "tracked_files": 357,
+      "tracked_markdown": 54,
+      "tracked_docs_markdown": 49,
+      "docs_groups": {
+        "architecture": 4,
+        "projects": 1,
+        "references": 38,
+        "rules": 6
+      },
+      "archived_docs_markdown": 1,
+      "active_tracker_count": 0,
+      "repo_skills": [
+        {
+          "name": "media-storage-lifecycle",
+          "scope": "managed-repo",
+          "source": "/Users/dobby/GitHub/agents/skills-source/owned/media-storage-lifecycle",
+          "entry_bytes": 6818
+        },
+        {
+          "name": "modal-function-intake",
+          "scope": "repo-local",
+          "source": "/Users/dobby/GitHub/modal_functions/.agents/skills/modal-function-intake",
+          "entry_bytes": 7292
+        },
+        {
+          "name": "modal-function-sync",
+          "scope": "managed-repo",
+          "source": "/Users/dobby/GitHub/agents/skills-source/owned/modal-function-sync",
+          "entry_bytes": 4878
+        }
+      ]
+    },
+    {
+      "repository": "local-transcription",
+      "path": "/Users/dobby/GitHub/local-transcription",
+      "head": "6955ac2c3a57bc6eb87bcdc66ec5f158c4c8d620",
+      "dirty_file_count": 0,
+      "root_guidance": {
+        "lines": 35,
+        "bytes": 1486
+      },
+      "tracked_files": 47,
+      "tracked_markdown": 11,
+      "tracked_docs_markdown": 7,
+      "docs_groups": {
+        "architecture": 1,
+        "projects": 2,
+        "references": 4
+      },
+      "archived_docs_markdown": 1,
+      "active_tracker_count": 0,
+      "repo_skills": [
+        {
+          "name": "media-storage-lifecycle",
+          "scope": "managed-repo",
+          "source": "/Users/dobby/GitHub/agents/skills-source/owned/media-storage-lifecycle",
+          "entry_bytes": 6818
+        },
+        {
+          "name": "media-toolkit",
+          "scope": "managed-repo",
+          "source": "/Users/dobby/GitHub/agents/skills-source/owned/media-toolkit",
+          "entry_bytes": 5163
+        }
+      ]
+    },
+    {
+      "repository": "adithyan-ai-videos",
+      "path": "/Users/dobby/GitHub/adithyan-ai-videos",
+      "head": "d85ec93098f9416b3a7584def0c98392e17b5e61",
+      "dirty_file_count": 0,
+      "root_guidance": {
+        "lines": 32,
+        "bytes": 1292
+      },
+      "tracked_files": 521,
+      "tracked_markdown": 53,
+      "tracked_docs_markdown": 13,
+      "docs_groups": {
+        "architecture": 1,
+        "references": 11,
+        "setup": 1
+      },
+      "archived_docs_markdown": 0,
+      "active_tracker_count": 0,
+      "repo_skills": [
+        {
+          "name": "adi-writing",
+          "scope": "managed-repo",
+          "source": "/Users/dobby/GitHub/agents/skills-source/owned/adi-writing",
+          "entry_bytes": 1057
+        },
+        {
+          "name": "creating-video",
+          "scope": "repo-local",
+          "source": "/Users/dobby/GitHub/adithyan-ai-videos/.agents/skills/creating-video",
+          "entry_bytes": 6247
+        },
+        {
+          "name": "fal-seedance",
+          "scope": "managed-repo",
+          "source": "/Users/dobby/GitHub/agents/skills-source/owned/fal-seedance",
+          "entry_bytes": 6779
+        },
+        {
+          "name": "media-storage-lifecycle",
+          "scope": "managed-repo",
+          "source": "/Users/dobby/GitHub/agents/skills-source/owned/media-storage-lifecycle",
+          "entry_bytes": 6818
+        },
+        {
+          "name": "media-toolkit",
+          "scope": "managed-repo",
+          "source": "/Users/dobby/GitHub/agents/skills-source/owned/media-toolkit",
+          "entry_bytes": 5163
+        },
+        {
+          "name": "omni-flash-video",
+          "scope": "repo-local",
+          "source": "/Users/dobby/GitHub/adithyan-ai-videos/.agents/skills/omni-flash-video",
+          "entry_bytes": 3061
+        },
+        {
+          "name": "remotion",
+          "scope": "managed-repo",
+          "source": "/Users/dobby/GitHub/agents/skills-source/external/remotion",
+          "entry_bytes": 12980
+        },
+        {
+          "name": "social-media-publishing",
+          "scope": "managed-repo",
+          "source": "/Users/dobby/GitHub/agents/skills-source/owned/social-media-publishing",
+          "entry_bytes": 14719
+        },
+        {
+          "name": "vercel-react-best-practices",
+          "scope": "managed-repo",
+          "source": "/Users/dobby/GitHub/agents/skills-source/external/vercel-react-best-practices",
+          "entry_bytes": 7251
+        }
+      ]
+    },
+    {
+      "repository": "aip-cognitive-revolution",
+      "path": "/Users/dobby/GitHub/aip-cognitive-revolution",
+      "head": "c995b2c20bc6812399f439ca97e6f1d17c77502b",
+      "dirty_file_count": 0,
+      "root_guidance": {
+        "lines": 27,
+        "bytes": 1289
+      },
+      "tracked_files": 212,
+      "tracked_markdown": 5,
+      "tracked_docs_markdown": 3,
+      "docs_groups": {
+        "architecture": 1,
+        "references": 2
+      },
+      "archived_docs_markdown": 0,
+      "active_tracker_count": 0,
+      "repo_skills": []
+    },
+    {
+      "repository": "futureoflife-podcast",
+      "path": "/Users/dobby/GitHub/futureoflife-podcast",
+      "head": "82832660ddcc3b68caa4fe731d4ac33f00bec77b",
+      "dirty_file_count": 0,
+      "root_guidance": {
+        "lines": 26,
+        "bytes": 1600
+      },
+      "tracked_files": 324,
+      "tracked_markdown": 4,
+      "tracked_docs_markdown": 2,
+      "docs_groups": {
+        "architecture": 1,
+        "references": 1
+      },
+      "archived_docs_markdown": 0,
+      "active_tracker_count": 0,
+      "repo_skills": []
+    }
+  ]
+}

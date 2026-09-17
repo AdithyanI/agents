@@ -16,19 +16,19 @@ Audit every discoverable repository on this machine and prepare an evidence-back
 
 ## Done When
 
-- [ ] Machine discovery is complete with exact scanned roots, exclusions, inaccessible paths, and repository/copy classification recorded.
-- [ ] Every primary repository has a concise evidence-backed audit and recommended action; tool/vendor/copy repositories have an explicit disposition.
-- [ ] Portfolio findings distinguish confirmed defects, consolidation candidates, preserved domain constraints, and unverified runtime assumptions.
-- [ ] Shared global guidance and playbook revisions are concrete, reviewable, and mapped to retained operational contracts.
-- [ ] A staged rollout plan identifies the first changes, validation, owners, and success criteria.
-- [ ] Report completeness and links are checked; applicable local documentation checks pass or residual failures are explained.
+- [x] Machine discovery is complete with scanned roots, exclusions, inaccessible-path categories, and repository/copy classification recorded.
+- [x] Every primary repository has a concise evidence-backed audit and recommended action; tool/vendor/copy repositories have an explicit disposition.
+- [x] Portfolio findings distinguish confirmed defects, consolidation candidates, preserved domain constraints, and unverified runtime assumptions.
+- [x] Shared global guidance and playbook revisions are concrete, reviewable, and mapped to retained operational contracts.
+- [x] A staged rollout plan identifies the first changes, validation, owners, and success criteria.
+- [x] Report completeness and links are checked; applicable local documentation checks pass or residual failures are explained.
 - [ ] Learnings are finalized and this complete project directory is archived with the active path removed.
 
 ## Milestones
 
-- [ ] Inventory — discover and classify repositories; reconcile with the managed registry.
-- [ ] Repository audit — inspect every primary repo and classify all secondary checkouts.
-- [ ] Synthesis — prioritize shared and repo-specific changes; prepare guidance proposals.
+- [x] Inventory — discover and classify repositories; reconcile with the managed registry.
+- [x] Repository audit — inspect every primary repo and classify all secondary checkouts.
+- [x] Synthesis — prioritize shared and repo-specific changes; prepare guidance proposals.
 - [ ] Validation and closeout — verify coverage and evidence, archive deliverables, and report results.
 
 ## Decisions
@@ -45,21 +45,19 @@ Audit every discoverable repository on this machine and prepare an evidence-back
 
 | Status | Work Item | Role | Resource |
 | --- | --- | --- | --- |
-| in_progress | Discover all repositories and classify secondary copies | parent | resources/repository-inventory.json |
-| delegated | Audit product/media repositories: win, aipodcasting, modal_functions, local-transcription, adithyan-ai-videos, aip-cognitive-revolution, futureoflife-podcast | explorer | resources/product-media-audit.md |
-| delegated | Audit Dobby and operations: adi, angie, dobby-engine, dobby-gateway, dobby-ios, documents, scripts, platform-ops, home-automation | explorer | resources/dobby-operations-audit.md |
-| delegated | Audit small apps/sites/content: .github, adi-design, aipodcasting-website, blog-personal, focus, frontier-lab-intelligence, litellm, meeting-capture, stadia-macos-controller, thoughtforms-life, trenopoulospraxis | explorer | resources/apps-content-audit.md |
-| in_progress | Shared guidance, skills, and control-plane audit | parent | resources/shared-guidance-audit.md |
+| done | All 28 primary repo reviews and 91 Git-location dispositions | parent + explorers | report.md |
+| done | Shared drafts and independent contract review | parent + explorer | resources/guidance-proposal-review.md |
+| in_progress | Validate completeness/evidence, finalize learnings, archive | parent | resources/validation.json |
 
 ## Backlog / Remaining Work
 
-- [ ] Freeze per-reviewer repository lists after discovery.
-- [ ] Reconcile all discoveries against reviewer coverage.
-- [ ] Inspect local skill triggers and root bodies, preserve workflow-specific safeguards.
-- [ ] Review docs duplication, broken routing, archived/active separation, and concrete cleanup candidates.
-- [ ] Prepare global guidance and playbook draft revisions with a contract-preservation map.
-- [ ] Write a compact portfolio report and staged implementation plan.
-- [ ] Validate report coverage, evidence paths, proposed guidance consistency, and repo hygiene.
+- [x] Freeze per-reviewer repository lists after discovery.
+- [x] Reconcile all discoveries against reviewer coverage.
+- [x] Inspect local skill triggers and root bodies, preserve workflow-specific safeguards.
+- [x] Review docs duplication, broken routing, archived/active separation, and concrete cleanup candidates.
+- [x] Prepare global guidance and playbook draft revisions with a contract-preservation map.
+- [x] Write a compact portfolio report and staged implementation plan.
+- [x] Validate report coverage, evidence paths, proposed guidance consistency, and repo hygiene.
 - [ ] Finalize learnings; archive the completed project and remove disposable tools.
 
 ## Validation / Test Plan
@@ -74,3 +72,9 @@ Audit every discoverable repository on this machine and prepare an evidence-back
 
 - 2026-09-17: [IN-PROGRESS] Created the overnight audit goal and tracker. Read project operating rules and reused the playbook/article context from the initial two-repo sample.
 - 2026-09-17: [DELEGATED] Assigned all 27 primary repositories outside `agents` to three disjoint review groups. Parent retains machine-wide discovery and shared-control-plane analysis.
+- 2026-09-17: [DONE] Metadata discovery visited 336,292 directories; classified 91 Git locations, including eight unresolved worktrees and two empty cache markers. All personal-user paths were accessible; protected OS areas are explicitly limited.
+- 2026-09-17: [DONE] Three independent reviewers completed all 27 assigned repos. Parent completed agents/shared skills, runtime inventory, the empty unmanaged project, and orphaned-worktree review. Target application repos remain unedited.
+- 2026-09-17: [DONE] Prepared three shared guidance drafts and an unapplied patch; independent review caught four semantic losses, all incorporated. Patch applicability and repo hygiene pass.
+- 2026-09-17: [DONE] Repo fast checks passed, including 41 unit tests, production-source shell check, and local Codex structural validation. Existing SwiftUI skill length validator fails as recorded audit evidence.
+- 2026-09-17: [DONE] Coverage reconciliation verified all 28 primary reviews, every one of 91 Git-location dispositions, 288 local links, 228 file/line citations, unchanged canonical guidance hashes, and an applicable proposal patch. All primary HEADs remained unchanged since the structural snapshot; tracked changes are audit artifacts in agents only.
+- 2026-09-17: [DONE] Finalized learnings and resolved all four independent proposal findings. Prepared complete directory archive; broad implementation remains the explicitly separate next stage.
