@@ -12,7 +12,7 @@ scripts/check-repo-hygiene.sh
 bash -n hooks/git/pre-commit scripts/sync-managed-git-hooks.sh scripts/check-agent-control-planes.sh scripts/auto-apply-agent-control-planes.sh scripts/enroll-managed-repos.sh scripts/serve-control-plane-dashboard.sh scripts/install-control-plane-dashboard-launchagent.sh scripts/install-prune-stale-copilot-sessions-launchagent.sh scripts/deploy-control-plane-dashboard.sh scripts/local-production-source.sh scripts/switch-claude-provider.sh
 scripts/check-skills-registry.sh --staged-ok
 scripts/check-plugins-registry.sh --staged-ok
-python3 -m unittest tests.control_plane.test_project_archive tests.control_plane.test_skills_sync tests.control_plane.test_azure_model_catalog
+python3 -m unittest tests.control_plane.test_project_archive tests.control_plane.test_skills_sync tests.control_plane.test_azure_model_catalog tests.control_plane.test_codex_native_env
 python3 -m unittest \
   tests.control_plane.test_stop_whitespace \
   tests.control_plane.test_codex_multi_repo_stop.CodexMultiRepoStopTests.test_git_eof_whitespace_is_repaired_rechecked_and_published_without_feedback \

@@ -10,6 +10,7 @@ GLOBAL_CONFIG="${HOME}/.codex/config.toml"
 GLOBAL_HOOKS="${HOME}/.codex/hooks.json"
 GLOBAL_AUTH="${HOME}/.codex/auth.json"
 GLOBAL_MCP_CREDENTIALS="${HOME}/.codex/.credentials.json"
+GITHUB_ROOT="${HOME}/GitHub"
 CANONICAL_DIR="${CONTROL_PLANE_DIR}/config"
 REGISTRY_FILE="${CANONICAL_DIR}/repo-bootstrap.json"
 MCP_REGISTRY_FILE="${ROOT_DIR}/mcp/config/presets.json"
@@ -24,6 +25,7 @@ Usage: $(basename "$0") [options]
 Validate canonical Codex control-plane inputs and rendered runtime outputs.
 
 Options:
+  --github-root <path>        Root containing the scripts-owned secret materializer
   --canonical-dir <path>      Override canonical codex/config directory
   --global-config <path>      Override runtime ~/.codex/config.toml path
   --global-hooks <path>       Override runtime ~/.codex/hooks.json path
@@ -41,6 +43,10 @@ USAGE
 
 while [[ $# -gt 0 ]]; do
   case "$1" in
+    --github-root)
+      GITHUB_ROOT="${2:-}"
+      shift 2
+      ;;
     --canonical-dir)
       CANONICAL_DIR="${2:-}"
       REGISTRY_FILE="${CANONICAL_DIR}/repo-bootstrap.json"
@@ -102,6 +108,12 @@ REPO_ARGS=()
 for repo in "${REPO_FILTERS[@]}"; do
   REPO_ARGS+=(--repo "$repo")
 done
+
+python3 "${SCRIPT_DIR}/sync-native-env.py" \
+  --canonical-dir "$CANONICAL_DIR" \
+  --runtime-dir "$(dirname "$GLOBAL_CONFIG")" \
+  --github-root "$GITHUB_ROOT" \
+  --check
 
 python3 "${SCRIPT_DIR}/sync-azure-model-catalog.py" \
   --canonical-dir "$CANONICAL_DIR" \

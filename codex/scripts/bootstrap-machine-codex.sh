@@ -188,6 +188,7 @@ fi
 
 check_cmd=(
   "$CHECK_CONTROL_PLANE_SCRIPT"
+  --github-root "$GITHUB_ROOT"
   --global-config "$GLOBAL_CONFIG"
   --global-hooks "$GLOBAL_HOOKS"
   "${REPO_ARGS[@]}"

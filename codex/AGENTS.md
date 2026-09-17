@@ -16,6 +16,9 @@ Canonical personal Codex control-plane assets live here.
 - `../config/global.agents.md`: shared machine-wide guidance source for `~/.codex/AGENTS.md` and `~/.claude/CLAUDE.md`.
 - `scripts/`: canonical Codex-specific automation scripts.
   - includes Ghostty/Codex helper scripts and any thin helper invoked by Keyboard Maestro for Codex workflows.
+  - `scripts/sync-native-env.py` connects `config/secrets.env.map` to the
+    scripts-owned local secret materializer before installing provider config;
+    the control-plane check verifies the generated native environment as well.
   - `scripts/sync-azure-model-catalog.py` derives the shared Azure default/profile model
     catalog during config sync; runtime catalog contents remain outside git.
 - `shell/`: Codex-specific shell and Ghostty integration fragments.

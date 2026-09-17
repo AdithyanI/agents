@@ -55,21 +55,43 @@ Codex's native `~/.codex/.env`. This generated file is owner-only (`0600`) and
 works for GUI launches without shell environment inheritance. It contains
 credentials and must never be printed, committed, or hand-maintained.
 
-Materialize on each machine that will use Azure, and again after key rotation:
+The canonical value lives separately on each machine at
+`~/Documents/DobbySecrets/scopes/shared/litellm--azure-openai-api-key`.
+Git synchronizes the mapping and configuration, **not this secret store**.
+Provision the named value on each authorized Mac using `scripts/bin/local-secrets`
+(`--stdin` or `--value-file`, never a value in command arguments or logs).
+
+Sync both repos, provision the source key, then run the normal bootstrap:
 
 ```bash
-~/GitHub/scripts/sync/materialize_machine_env.py \
-  --secret-scope shared \
-  --mapping-file ~/GitHub/agents/codex/config/secrets.env.map \
-  --output-file ~/.codex/.env \
-  --apply
-~/GitHub/agents/codex/scripts/sync-config.sh --apply
+~/GitHub/agents/scripts/bootstrap-machine-agent-control-planes.sh --apply
 ```
+
+`sync-config.sh` invokes `sync-native-env.py` **before installing provider config**.
+The helper delegates to the `scripts` repo's existing `materialize_machine_env.py`.
+Missing or empty source credentials fail the apply before replacing the existing
+Codex config. Both full bootstrap and Git auto-sync's recurring `--global-only`
+preflight use this path, so changes to the local source key regenerate the native
+file automatically. Unchanged files are not rewritten. Cross-machine key rotation
+still requires updating each machine's canonical value; there is no implicit
+secret replication.
+
+The Codex control-plane check invokes the same helper with `--check`, which checks
+the complete generated file against the local source and requires `0600`
+permissions without writing or printing values. This also catches missing or
+stale credentials in the shared runtime health audit. Restart Codex after initial
+provisioning or rotation so its next process loads the new native environment.
 
 The materializer owns the complete `.env` file. Add future native Codex secret
 mappings to the same map; don't overwrite unrelated manually maintained values
-without migrating their ownership first. Normal configuration sync does not
-materialize secrets or require Azure credentials when using the subscription.
+without migrating their ownership first. Explicit `codex-openai` sessions use
+the separate ChatGPT login; the shared bootstrap enforces the declared native
+credential mapping while the Azure configuration remains managed.
+
+The September 17, 2026 MacBook incident exposed the missing connection: Azure
+config had synced, but neither the local source key nor native `.env` existed.
+Config validation previously passed without checking credentials. The bootstrap
+preflight and read-only credential check now cover that failure.
 
 ## Choosing Azure
 

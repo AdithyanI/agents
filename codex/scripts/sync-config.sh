@@ -1177,6 +1177,18 @@ sync_global() {
   local hooks_original="$GLOBAL_HOOKS"
   local hooks_rendered="${TMP_DIR}/hooks.json"
 
+  # Credentials are a prerequisite for installing a provider default. Reconcile
+  # on every apply, including the scheduled --global-only runtime preflight.
+  local env_mode="--dry-run"
+  if (( APPLY == 1 )); then
+    env_mode="--apply"
+  fi
+  python3 "${SCRIPT_DIR}/sync-native-env.py" \
+    --canonical-dir "$CANONICAL_DIR" \
+    --runtime-dir "$(dirname "$GLOBAL_CONFIG")" \
+    --github-root "$GITHUB_ROOT" \
+    "$env_mode"
+
   # Build the profile's local catalog before installing a profile that needs it.
   # Runtime model/cache contents never become canonical repo inputs.
   local catalog_mode="--dry-run"

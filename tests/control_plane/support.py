@@ -114,6 +114,12 @@ def make_control_plane_root(base_dir: Path) -> Path:
     ):
         copy_repo_file(relative_path, root)
     (root / "codex/config").mkdir(parents=True, exist_ok=True)
+    # Generic config fixtures have no external provider credentials. Tests of
+    # native credential bootstrap explicitly declare the env_key and mapping.
+    global_template = root / "codex/config/global.config.toml"
+    global_template.write_text(global_template.read_text().replace(
+        'env_key = "AZURE_OPENAI_API_KEY"\n', ""
+    ))
     (root / "mcp/config").mkdir(parents=True, exist_ok=True)
     (root / "plugins").mkdir(parents=True, exist_ok=True)
     (root / "skills").mkdir(parents=True, exist_ok=True)
