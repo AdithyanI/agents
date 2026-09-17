@@ -52,6 +52,13 @@ def values(canonical: Path, choice: str) -> dict:
         result["model"] = profile.get("model")
         if not result["model"]:
             raise ValueError("Azure profile is missing its deployment model.")
+    else:
+        # Ordinary subscription sessions must use Codex's live model discovery.
+        # Loading models_cache.json as a custom catalog disables its refresh and
+        # can hide models when an older CLI last wrote that shared cache. The
+        # explicit chatgpt profile still needs a snapshot to override an Azure
+        # global catalog; do not carry that workaround into subscription defaults.
+        result["model_catalog_json"] = None
     return result
 
 
@@ -143,11 +150,11 @@ def status(config: Path, canonical: Path) -> dict:
 
 def preflight(config: Path, canonical: Path, choice: str) -> None:
     settings = values(canonical, choice)
-    catalog = config.parent / settings["model_catalog_json"]
-    data = json.loads(catalog.read_text())
-    if not isinstance(data.get("models"), list) or not data["models"]:
-        raise ValueError(f"Model catalog is not ready: {catalog}; run the shared bootstrap.")
     if choice == "azure":
+        catalog = config.parent / settings["model_catalog_json"]
+        data = json.loads(catalog.read_text())
+        if not isinstance(data.get("models"), list) or not data["models"]:
+            raise ValueError(f"Model catalog is not ready: {catalog}; run the shared bootstrap.")
         model = next((m for m in data["models"] if m.get("slug") == settings["model"]), {})
         if model.get("use_responses_lite") is not False:
             raise ValueError("Azure model catalog is not ready; run the shared bootstrap.")

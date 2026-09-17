@@ -74,6 +74,25 @@ class CodexProviderTests(TempDirTestCase):
         for name, original in protected.items():
             self.assertEqual((self.config.parent / name).read_bytes(), original)
 
+    def test_subscription_restores_live_discovery_without_a_cached_catalog(self):
+        # An older CLI can replace the normal cache with a list missing newer
+        # models. Subscription mode must neither require nor pin that snapshot.
+        (self.config.parent / "models_cache.json").unlink()
+        result = self.cli("subscription", "--apply")
+        self.assertEqual(result.returncode, 0, result.stdout)
+        self.assertNotIn("model_catalog_json", tomllib.loads(self.config.read_text()))
+        self.assertTrue(json.loads(result.stdout)["data"]["config_in_sync"])
+        self.assertEqual(self.cli("azure", "--apply").returncode, 0)
+        self.assertEqual(tomllib.loads(self.config.read_text())["model_catalog_json"],
+                         "model-catalogs/azure-astra.json")
+
+    def test_subscription_detects_and_repairs_a_stale_catalog_override(self):
+        self.assertEqual(self.cli("subscription", "--apply").returncode, 0)
+        self.config.write_text('model_catalog_json = "models_cache.json"\n' + self.config.read_text())
+        self.assertFalse(json.loads(self.cli("status").stdout)["data"]["config_in_sync"])
+        self.assertEqual(self.cli("subscription", "--apply").returncode, 0)
+        self.assertNotIn("model_catalog_json", tomllib.loads(self.config.read_text()))
+
     def test_failed_preflight_and_invalid_local_state_do_not_write(self):
         before = self.config.read_bytes()
         (self.config.parent / "auth.json").unlink()
@@ -130,6 +149,8 @@ class CodexProviderTests(TempDirTestCase):
                 self.assertEqual(data["selected"], choice)
                 self.assertTrue(data["persisted"])
                 self.assertTrue(data["config_in_sync"])
+                if choice == "subscription":
+                    self.assertNotIn("model_catalog_json", tomllib.loads(config.read_text()))
                 run_command([sys.executable, str(REPO_ROOT / "codex/scripts/provider_selection.py"), "check",
                              str(root / "codex/config"), str(config)], env={"HOME": str(home)})
         self.assertEqual(json.loads(self.cli("status").stdout)["data"]["selected"], "subscription")

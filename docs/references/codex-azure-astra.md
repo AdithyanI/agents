@@ -282,14 +282,16 @@ uses a catalog snapshot, whose refresh procedure follows.
 ### Refresh and diagnose
 
 Explicit `model_catalog_json` bypasses Codex's normal remote catalog refresh.
-This now also applies to the subscription profile's explicit normal-cache
-selection. It preserves today's model metadata but does not automatically fetch
-new metadata. After relevant Codex/model changes, refresh the source in a normal
-subscription invocation that skips the global catalog override:
+Machine-wide subscription mode removes that override so ordinary Codex CLI and
+desktop sessions discover account models normally. The explicit `codex-openai` /
+`--profile chatgpt` launcher still selects the normal-cache snapshot to override
+a global Azure catalog; that explicit profile does not refresh metadata itself.
+After relevant Codex/model changes while using Azure, refresh the source with
+the desktop-bundled engine in a subscription invocation that skips the override:
 
 ```sh
-codex exec --ignore-user-config --ephemeral --sandbox read-only \
-  --model gpt-6-astra -c 'model_provider="openai"' \
+/Applications/ChatGPT.app/Contents/Resources/codex exec \
+  --ignore-user-config --ephemeral --sandbox read-only --model gpt-6-astra -c 'model_provider="openai"' \
   -c 'forced_login_method="chatgpt"' -c 'features.hooks=false' 'Reply OK.'
 codex/scripts/sync-config.sh --apply
 codex/scripts/check-codex-control-plane.sh
@@ -299,6 +301,12 @@ codex/scripts/check-codex-control-plane.sh
 `chatgpt` profile to this refresh command: it would load the snapshot again.
 On a new machine, populate the source this way before applying the workaround.
 Restart the app or start a new CLI process after the refresh.
+
+On 2026-09-17, a source cache written by CLI 0.147.0 omitted Astra while the
+current desktop engine returned Astra and successfully used it on the same
+ChatGPT subscription. The provider switch now clears the custom catalog key for
+machine-wide subscription mode, rather than freezing that old snapshot. This is
+a local catalog issue, not evidence that the account lost Astra access.
 
 The generator writes atomically and refuses invalid catalogs instead of
 replacing the last valid output. The normal check validates the saved catalog

@@ -56,9 +56,13 @@ without a provider default starts on subscription. Invalid preferences fail with
 an actionable error rather than silently changing the provider. An explicit
 provider selection repairs the preference.
 
-The renderer merges only provider, matching model catalog, authentication method,
-and standalone-search settings from the selected shared profile. Azure also pins
-its deployment model. Subscription preserves the client's existing model choice.
+The renderer merges provider, authentication method, and standalone-search
+settings from the selected shared profile. Azure also selects its custom model
+catalog and deployment model. Subscription removes the custom catalog override
+so Codex can refresh its account model list normally, and preserves the client's
+existing model choice. Do not pin ordinary subscription sessions to
+`models_cache.json`: an older CLI can overwrite that cache with a list missing
+Astra, and loading it as a custom catalog prevents normal refresh.
 The menu does not copy the Azure CLI profile's reasoning effort into the desktop
 default. Explicit `codex-azure` / `codex-openai` terminal launchers retain their
 per-process behavior regardless of the menu selection.
