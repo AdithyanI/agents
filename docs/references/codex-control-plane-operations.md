@@ -182,7 +182,7 @@ Use [Codex Control Plane Ownership](/Users/dobby/GitHub/agents/docs/references/c
   - prunes stale managed repo-local `.codex/agents/*.toml` files left by older control-plane versions
   - skips no-op rewrites instead of dirtying the git repos unnecessarily
   - keeps the repo list and repo-level behavior assignments in [`repo-bootstrap.json`](/Users/dobby/GitHub/agents/codex/config/repo-bootstrap.json); model, effort, and service tier remain client-owned
-  - resolves Codex cells from the MCP target matrix in [`mcp/config/presets.json`](/Users/dobby/GitHub/agents/mcp/config/presets.json)
+  - resolves repository scopes from the MCP registry in [`mcp/config/presets.json`](/Users/dobby/GitHub/agents/mcp/config/presets.json)
 - [`sync-managed-git-hooks.sh`](/Users/dobby/GitHub/agents/scripts/sync-managed-git-hooks.sh)
   - applies local-only `core.hooksPath` for every managed repo in [`repo-bootstrap.json`](/Users/dobby/GitHub/agents/codex/config/repo-bootstrap.json)
   - points Git at [`hooks/git/pre-commit`](/Users/dobby/GitHub/agents/hooks/git/pre-commit)

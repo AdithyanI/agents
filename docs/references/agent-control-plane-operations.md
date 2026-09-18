@@ -12,7 +12,7 @@ cd ~/GitHub/agents
 ./scripts/test-control-plane.sh
 ```
 
-Bootstrap reconciles skill links, native plugins, Codex previews, local Git hooks, and the Codex runtime. It also removes recognized setup left by retired development clients. Check validates these outputs, repository hygiene, runtime drift, and hermetic regressions.
+Bootstrap reconciles skill links, native plugins, Codex previews, local Git hooks, and the Codex runtime. It also removes obsolete setup left by retired development clients. Check validates these outputs, repository hygiene, runtime drift, and hermetic regressions.
 
 For one repository, use an exact path with shared bootstrap/check:
 
@@ -51,9 +51,9 @@ Codex remote connections use `features.remote_connections` in the global config 
 
 ## Retired-client migration
 
-Claude, Copilot, their VS Code agent defaults, and the Antigravity experiment have no active renderers or optional enable flags. `scripts/retire-agent-clients.py` only removes recognized historical control-plane outputs. Bootstrap runs it so another machine cannot retain old hooks or jobs after syncing this change.
+Claude, Copilot, their VS Code agent defaults, and the Antigravity experiment have no active renderers or optional enable flags. `scripts/retire-agent-clients.py` removes dedicated per-repo client setup and recognized historical global outputs. Bootstrap runs it so another machine cannot retain old hooks or jobs after syncing this change.
 
-The migration supports `--dry-run`, `--apply`, and `--check`, plus exact `--repo` filters. It backs up changed regular files under `~/.local/state/agents-control-plane/retired-client-backups` before removing owned setup. It preserves application binaries, credentials, conversations, real skill source directories, unknown MCP entries, and unrelated preferences. It retires owned launchers and the old Claude finalizer/archiver and Copilot pruner jobs. Recovery of tracked source is through Git history; local configuration recovery uses those private backups.
+The migration supports `--dry-run`, `--apply`, and `--check`, plus exact `--repo` filters. It backs up changed regular files under `~/.local/state/agents-control-plane/retired-client-backups` before removing owned setup. It preserves application binaries, credentials, conversations, real skill source directories, unknown MCP entries, and unrelated preferences. Dedicated repo client instructions/permissions and retired editor integration preferences are removed, including manual additions. It retires owned launchers and the old Claude finalizer/archiver and Copilot pruner jobs. Recovery of tracked source is through Git history; local configuration recovery uses those private backups.
 
 ## Lifecycle and commit gate
 

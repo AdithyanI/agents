@@ -66,6 +66,31 @@ class RetireAgentClientsTests(TempDirTestCase):
         self.assertEqual(target.read_bytes(), before)
         self.assertFalse((self.home / ".local/state").exists())
 
+    def test_jsonc_trailing_comma_before_comments_keeps_string_contents(self) -> None:
+        text = r'''{
+          "url": "https://example.test/a//b/*literal*/",
+          "literal": "comma,} and quote\" ,]",
+          "list": [true, /* trailing comment */ ],
+          "nested": {"enabled": false, // trailing line comment
+          }, /* trailing top-level comment */
+        }'''
+        self.assertEqual(RETIRE.parse_json(text, self.home / "settings.json"), {
+            "url": "https://example.test/a//b/*literal*/",
+            "literal": 'comma,} and quote" ,]',
+            "list": [True], "nested": {"enabled": False},
+        })
+
+    def test_hook_ownership_requires_exact_script_token(self) -> None:
+        migration = self.retirement()
+        for filename, runtime in (("claude_stop.py", ""), ("antigravity_stop.py", ""), ("session_start.py", " --runtime claude"), ("user_prompt_submit.py", " --runtime copilot"), ("stop.py", " --runtime copilot")):
+            with self.subTest(filename=filename):
+                self.assertTrue(migration.owned_hook(self.hook(filename, runtime)))
+                for suffix in (".backup", "_custom", "/other"):
+                    self.assertFalse(migration.owned_hook(self.hook(filename + suffix, runtime)))
+        self.assertFalse(migration.owned_hook(self.hook("stop.py", " --runtime codex")))
+        custom = {"command": f'python3 "/elsewhere{self.home}/GitHub/agents/hooks/scripts/claude_stop.py"'}
+        self.assertFalse(migration.owned_hook(custom))
+
     def test_repo_cleanup_preserves_codex_identity_workflows_and_real_skills(self) -> None:
         identity = write_text(self.repo / "identity.md", "private identity source\n")
         write_text(self.repo / "AGENTS.md", "router\n")
@@ -205,6 +230,45 @@ class RetireAgentClientsTests(TempDirTestCase):
         self.run_retire("--apply", "--repo", str(self.repo))
         self.assertFalse((self.repo / ".claude/CLAUDE.md").exists())
         self.assertTrue((self.other / ".claude/CLAUDE.md").exists())
+
+    def test_retired_editor_namespaces_preserve_auth_codex_and_editor_preferences(self) -> None:
+        retired = {
+            "github.copilot.enable": {"*": True},
+            "github.copilot.nextEditSuggestions.enabled": True,
+            "github.copilot.chat.agent.autoFix": True,
+            "github.copilot.chat.agent.thinkingTool": True,
+            "github.copilot.chat.claudeAgent.allowDangerouslySkipPermissions": True,
+            "github.copilot.chat.claudeAgent.enabled": True,
+            "github.copilot.chat.codesearch.enabled": True,
+            "github.copilot.chat.runCommand.enabled": True,
+            "claudeAgent.enabled": True,
+            "claudeMultiRootEnabled": True,
+            "copilotMultiRootEnabled": True,
+            "copilotSdkLogLevel": "debug",
+            "migrateLegacyCopilotCliEnabled": True,
+        }
+        preserved = {
+            "github.copilot.authProvider": "keep",
+            "github.copilot.accessToken": "PRIVATE_TOKEN",
+            "github.copilot.chat.customProvider": {"api_key": "PRIVATE_KEY", "enabled": True},
+            "github.copilot.chat.environments": [{"env": {"CUSTOM": "PRIVATE_ENV"}}],
+            "github.copilot.chat.providers": {"codex": {"enabled": True}},
+            "claudeAgent.credentials": {"secret": "PRIVATE_SECRET"},
+            "codexAgentEnabled": True,
+            "codexMultiRootEnabled": True,
+            "chatgpt.openOnStartup": True,
+            "editor.fontSize": 14,
+            "chat.remoteAgentHosts": [{"address": "keep"}],
+            "github.copilotAlternative.enabled": True,
+        }
+        paths = [self.home / "Library/Application Support/Code/User/settings.json", self.home / ".vscode-server/data/User/globalStorage/agent-host-config.json"]
+        for path in paths:
+            write_json(path, {**retired, **preserved})
+        result = self.run_retire("--apply")
+        self.assertNotIn("PRIVATE_", result.stdout + result.stderr)
+        for path in paths:
+            self.assertEqual(json.loads(path.read_text()), preserved)
+        self.assertEqual(self.run_retire("--check").returncode, 0)
 
     def test_symlinked_settings_and_directories_are_not_followed(self) -> None:
         source = write_json(self.home / "outside/settings.json", {"askUser": False, "private": True})

@@ -96,16 +96,31 @@ def parse_json(text: str, path: Path) -> dict[str, Any]:
                 raise ValueError(f"Unterminated JSON comment: {path}")
             result.append(" ")
             i = end + 2
-        elif char == ",":
-            j = i + 1
-            while j < len(text) and text[j].isspace():
-                j += 1
-            if j >= len(text) or text[j] not in "}]":
-                result.append(char)
-            i += 1
         else:
             result.append(char)
             i += 1
+    # Comments may sit between a trailing comma and the closing delimiter.
+    # Remove commas only after comment stripping, still respecting JSON strings.
+    uncommented = "".join(result)
+    result = []
+    in_string = escaped = False
+    for i, char in enumerate(uncommented):
+        if in_string:
+            if escaped:
+                escaped = False
+            elif char == "\\":
+                escaped = True
+            elif char == '"':
+                in_string = False
+        elif char == '"':
+            in_string = True
+        elif char == ",":
+            j = i + 1
+            while j < len(uncommented) and uncommented[j].isspace():
+                j += 1
+            if j < len(uncommented) and uncommented[j] in "}]":
+                continue
+        result.append(char)
     try:
         data = json.loads("".join(result))
     except (json.JSONDecodeError, UnicodeError) as exc:
@@ -138,6 +153,28 @@ def prune_nested(data: dict[str, Any], key: str, keys: set[str]) -> None:
     if isinstance(nested, dict):
         prune_keys(nested, keys)
         if not nested:
+            data.pop(key)
+
+
+def protected_preference(key: str, value: Any) -> bool:
+    """Preserve credential-bearing and Codex fields even in a retired namespace."""
+    normalized = re.sub(r"[^a-z0-9]", "", key.lower())
+    if any(part in normalized for part in ("auth", "token", "secret", "password", "credential", "apikey", "privatekey", "keychain", "codex", "chatgpt")):
+        return True
+    if key.lower() in {"env", "headers"}:
+        return True
+    if isinstance(value, dict):
+        return any(protected_preference(child, item) for child, item in value.items())
+    if isinstance(value, list):
+        return any(protected_preference("", item) for item in value)
+    return False
+
+
+def prune_retired_editor_preferences(data: dict[str, Any]) -> None:
+    retired_host_keys = {"claudeMultiRootEnabled", "copilotMultiRootEnabled", "copilotSdkLogLevel", "migrateLegacyCopilotCliEnabled"}
+    for key, value in list(data.items()):
+        retired = key in retired_host_keys or key == "github.copilot" or key.startswith(("github.copilot.", "claudeAgent."))
+        if retired and not protected_preference(key, value):
             data.pop(key)
 
 
@@ -240,11 +277,13 @@ class Retirement:
         command = command.replace("${HOME}", str(self.home)).replace("$HOME", str(self.home)).replace("~/", str(self.home) + "/")
         roots = [root / "hooks/scripts" for root in self.control_roots]
         roots.append(self.home / ".agents/hooks/scripts")
+        def script_token(path: Path) -> bool:
+            return re.search(r"(?:^|[\s\"'])" + re.escape(str(path)) + r"(?=$|[\s\"';])", command) is not None
         for root in roots:
-            if any(str(root / name) in command for name in ("claude_stop.py", "antigravity_stop.py")):
+            if any(script_token(root / name) for name in ("claude_stop.py", "antigravity_stop.py")):
                 return True
             if re.search(r"--runtime[ =]+(?:claude|copilot)(?:[\s\"']|$)", command):
-                if any(str(root / name) in command for name in ("session_start.py", "user_prompt_submit.py", "stop.py")):
+                if any(script_token(root / name) for name in ("session_start.py", "user_prompt_submit.py", "stop.py")):
                     return True
         return False
 
@@ -398,11 +437,13 @@ class Retirement:
         def vscode_host(data: dict[str, Any]) -> None:
             prune_keys(data, {"globalAutoApproveEnabled", "autoReplyEnabled", "terminalAutoApproveEnabled"})
             prune_nested(data, "terminalAutoApproveRules", {"curl", "/.*/"})
+            prune_retired_editor_preferences(data)
         self.edit_json(self.home / ".vscode-server/data/User/globalStorage/agent-host-config.json", vscode_host)
         def vscode_settings(data: dict[str, Any]) -> None:
             prune_keys(data, {"chat.permissions.default", "chat.tools.global.autoApprove", "chat.useAgentSkills", "github.copilot.chat.githubMcpServer.enabled"})
             prune_nested(data, "chat.defaultConfiguration", {"approvals", "mode"})
             prune_nested(data, "chat.mcp.discovery.enabled", {"claude-desktop", "windsurf", "cursor-global", "cursor-workspace"})
+            prune_retired_editor_preferences(data)
         self.edit_json(self.home / "Library/Application Support/Code/User/settings.json", vscode_settings)
 
     def jobs(self) -> None:

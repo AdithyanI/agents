@@ -8,7 +8,7 @@ Remove Claude, Copilot, and unused agent-setup integrations from the shared cont
 
 - Started 2026-09-18. User explicitly authorized complete removal, including `../scripts/`, with Git history providing recovery for tracked code.
 - Codex is the only supported development client. No dormant multi-client flag framework.
-- Preserve application product behavior, private workspaces, credentials, conversations, and unrelated VS Code settings. Remove setup owned by this control plane.
+- Preserve application product behavior, private workspaces, credentials, conversations, and unrelated VS Code settings. Remove retired-client setup, including dedicated manual per-repo instructions/permissions and editor integration preferences; preserve unrelated shared settings and data.
 - Codex preview rendering currently lives in `sync-claude.py`; move it before retiring that script.
 - Existing archived Astra audit is background evidence, not an active implementation tracker.
 
@@ -24,7 +24,7 @@ Remove Claude, Copilot, and unused agent-setup integrations from the shared cont
 ## Decisions
 
 - Delete obsolete integrations rather than maintain inactive implementations.
-- Keep cleanup ownership-aware; do not delete whole application state directories.
+- Use ownership checks for shared global settings/MCPs/jobs; retire dedicated repo client setup completely with private backups. Do not delete whole application state directories.
 - Historical audits and vendored upstream examples are not active setup and need no blanket text scrub.
 - Main agent owns integration, shared registries, runtime migration, documentation, validation, and final report.
 
@@ -36,9 +36,9 @@ Remove Claude, Copilot, and unused agent-setup integrations from the shared cont
 | complete | Retire agent setup in sibling machine-scripts repo; 25 focused tests and fast checks passed | machine scripts worker |
 | in_progress | Ownership-aware installed-file/job migration | machine scripts worker |
 | complete | Standalone Codex preview renderer; 13 tests and byte-identical preview output | preview worker |
-| in_progress | Codex-only dashboard and backend contract | preview worker |
+| complete | Codex-only dashboard; 9 backend tests, UI build, desktop/mobile browser proof | preview worker |
 | complete | Retired hook/session-maintenance adapters; surviving Codex hooks unchanged | hooks worker |
-| in_progress | Remove orphaned Dobby Claude finalizer wiring | hooks worker |
+| complete | Removed orphaned Dobby Claude finalizer wiring; engine 193 tests, gateway 115 tests, four repo fast checks and Codex startup smoke | hooks worker |
 
 ## Validation
 
@@ -52,7 +52,10 @@ Remove Claude, Copilot, and unused agent-setup integrations from the shared cont
 - 2026-09-18: Began implementation after explicit authorization; initial agents working tree clean.
 
 - 2026-09-18: Removed active client dimensions from MCP schema and repo bootstrap; Codex MCP assignments exactly match the baseline. Standalone Codex previews replace the old Claude-owned renderer. Updated current guidance and operations docs; archived audit evidence remains unchanged.
-- Validation so far: 73 focused MCP/bootstrap/Stop regressions and 10 orchestration tests pass. Full regression suite running.
+- Validation so far: 73 focused MCP/bootstrap/Stop regressions and 10 orchestration tests pass. Full regression suite passed 248 tests; root fast gate passed.
+
+- Machine auto-sync published the source changes and ran retirement during implementation. Verified all 65 saved Codex config/hook/preview files remain byte-identical; all three retired jobs are unloaded. Private backup run: `~/.local/state/agents-control-plane/retired-client-backups/20260918T134849Z-thvdi42f`.
+- Migration review identified JSONC comment/trailing-comma parsing and hook-path-boundary edge cases; fixes and focused regression coverage are being added before final validation.
 
 ## Open questions / blockers
 
