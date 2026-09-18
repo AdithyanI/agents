@@ -59,10 +59,7 @@ provider selection repairs the preference.
 The renderer merges the selected profile's provider and authentication method.
 Azure also selects its deployment model; subscription preserves the client's
 existing model choice. Both use Codex's default model metadata and search
-behavior. The September 18 rollback removed the custom Azure catalog and the
-subscription snapshot workaround. The renderer clears old `model_catalog_json`
-and `features.standalone_web_search` overrides during both sync and switching.
-Do not pin either provider to a generated catalog or `models_cache.json`.
+behavior and retain normal model discovery.
 The menu does not copy the Azure CLI profile's reasoning effort into the desktop
 default. Explicit `codex-azure` / `codex-openai` terminal launchers retain their
 per-process behavior regardless of the menu selection.

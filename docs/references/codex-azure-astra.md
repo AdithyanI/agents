@@ -192,70 +192,15 @@ the response's actual `service_tier` before claiming priority is active;
 requests can fall back to standard processing. See [Azure Priority Processing](https://learn.microsoft.com/en-us/azure/foundry/openai/concepts/priority-processing)
 for supported model versions, pricing, and fallback conditions.
 
-## Web search in the Azure profile
-
-On September 18, 2026 the user requested removal of the standard Responses
-workaround introduced on September 16. Azure now uses Codex's default model
-metadata and protocol selection again. The installed Astra metadata selects
-Responses Lite; the control plane does not pin or rewrite that model flag.
-
-- Neither `azure-astra.config.toml` nor `chatgpt.config.toml` sets
-  `model_catalog_json` or `features.standalone_web_search`.
-- The machine-local provider renderer clears the previous catalog/search
-  overrides while preserving each Mac's Azure/subscription choice.
-- Config sync removes its retired `~/.codex/model-catalogs/azure-astra.json`
-  after installing the global config and profiles. The generator and its
-  bootstrap/check dependency have been removed.
-- Codex's normal `models_cache.json` stays untouched. Subscription sessions and
-  explicit subscription profiles can use normal model discovery again.
-- Azure credentials, deployment, endpoint, launchers, model, and the provider
-  menu remain available. `wire_api = "responses"` remains the correct provider
-  setting for both paths; it is not the removed standard-Responses override.
-
-Apply and verify on each Mac after syncing this repo:
-
-```bash
-codex/scripts/sync-config.sh --apply
-codex/scripts/check-codex-control-plane.sh
-codex-provider status --plain
-```
-
-Reopen Codex and start a new task to load the restored defaults. Do not terminate
-an active desktop task from inside the agent. A running task can retain the old
-configuration until its runtime restarts.
-
-September 18 rollback verification passed the shared bootstrap, Codex structural
-validation, fast checks, and all 292 control-plane regression tests. The installed
-bundled Astra metadata reported `use_responses_lite = true`; all three rendered
-configs omitted the catalog/search overrides and the retired catalog was absent.
-A fresh ephemeral CLI using the saved Azure provider/model/protocol returned
-`AZURE_LITE_RESTORED_OK`. Hooks, apps, MCPs, and search were disabled for that
-single-response smoke; the running desktop app was not restarted.
-
-### Search limitation and historical evidence
-
-The rollback removes the workaround that enabled Azure-hosted search in Codex.
-The September 16 tests found that the Lite path's separate
-`/openai/v1/alpha/search` endpoint returned 404 on this Azure resource. Keeping
-`web_search = "live"` does not establish that Azure native search is available;
-do not reintroduce protocol overrides just to expose that tool.
-
-The [archived enablement record](../projects/archive/azure-astra-web-search/tasks.md)
-preserves the old configuration and tests. Standard Responses did retrieve usable
-search sources, but intermittent empty results remained unexplained and no
-controlled Lite/standard token-cost or long-session comparison was completed.
-Those records describe the retired experiment, not current configuration.
-
-Azure model-list refresh has also previously returned `missing field models`.
-The original Lite inference still completed in the recorded smoke check. If this
-recurs, inspect the installed desktop engine and its default model metadata;
-do not restore the removed catalog snapshot as an automatic workaround.
-
 ## Protocol and validation
 
 Use the Responses API (`wire_api = "responses"`) and the Azure deployment name
 as `model`. The `/openai/v1` endpoint does not require an `api-version` query
 parameter. Don't mix this route with the older dated-preview endpoint example.
+
+Both provider profiles use Codex's default model metadata and protocol selection.
+Native web-search availability depends on provider support; setting
+`web_search = "live"` alone does not establish that the Azure endpoint supports it.
 
 Validate both a minimal Responses request and an isolated request through the
 Codex engine bundled with the desktop app. Disable lifecycle hooks and external
