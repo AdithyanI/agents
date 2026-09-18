@@ -2,7 +2,7 @@
 
 ## Goal
 
-Adapt shared guidance, skills, and repository documentation to Astra while preserving Adi's workflow: humans set intent; agents complete authorized implementation, validation, documentation, and cleanup with minimal coordination.
+Simplify shared guidance, skills, and repository documentation while preserving Adi's workflow: humans set intent; agents complete authorized work with minimal coordination. Code is authoritative for implementation; documentation should explain useful context that code does not readily reveal.
 
 ## Why / Impact
 
@@ -10,7 +10,7 @@ The original concern was accumulated instructions, overlapping skills, scattered
 
 ## Scope / Non-Goals
 
-- Cover the 28 primary repositories from the completed audit, starting with shared guidance and a small pilot.
+- Cover the 28 primary repositories from the completed audit, starting with shared guidance and proceeding in bounded repository groups.
 - Review global guidance, the agent-native playbook and its references, skill descriptions/scope, repo `AGENTS.md`, and competing or stale operational docs.
 - Repair broken routes and inappropriate intermediate approval checkpoints; preserve real ownership, privacy, production, cost, and recovery boundaries.
 - Keep all repositories. Repository deletion, app uninstallation, historical-data cleanup, and a new centralized management framework are outside this project.
@@ -25,6 +25,7 @@ The original concern was accumulated instructions, overlapping skills, scattered
 - The old [shared-guidance drafts and review](../archive/astra-repository-audit/resources/guidance-proposal-review.md) predate the Codex-only cleanup. Refresh their ideas against current source; do not apply their old patch wholesale.
 - Canonical starting files: `config/global.agents.md`, root `AGENTS.md`, `skills-source/owned/agent-native-repo-playbook/SKILL.md` and its references, then `skills/registry.json` and `plugins/registry.json` when capability scope is addressed.
 - This tracker is the single active continuation point. Link existing evidence instead of copying the audit into another report tree.
+- September 18 steering: the user authorized implementation across all repositories, including skill and documentation cleanup, and requested a concise plan first. Preserve agent-native execution; avoid extra frameworks, mandatory documentation, and instructions that constrain reasoning without a concrete benefit. The supplied Ryan Lopopolo quotation reinforces this preference; further social-media research is optional and unnecessary to start.
 
 ## Done When
 
@@ -32,26 +33,26 @@ The original concern was accumulated instructions, overlapping skills, scattered
 - [ ] Skill descriptions and placement give useful routing; referenced capabilities exist and registry/runtime mismatches are resolved.
 - [ ] Each primary repo has a recorded outcome: corrected, consolidated, or deliberately kept as-is, with a reason.
 - [ ] Current docs have clear owners and working links; moved/deleted documents leave no stale incoming routes or lost unique contracts.
-- [ ] Representative work demonstrates appropriate context loading, completion, and validation; required checks pass for changed behavior and generated outputs.
-- [ ] Results and learnings are recorded, and the completed project directory is archived.
+- [ ] Important routing or ownership changes receive focused navigation review; required checks pass for changed behavior and generated outputs. Do not invent product work or claim measured model-performance gains.
+- [ ] Concise results and any useful learnings are recorded here, and the completed project directory is archived.
 
 ## Milestones
 
 - [x] Continuity — recover the original intent, completed audit, and cleanup outcome in one active tracker. Validate linked local sources.
 - [ ] Shared guidance — analysis and reviewed proposals are complete; implement global/playbook and companion-reference simplification. Validate preserved contracts and required bootstrap/checks.
 - [ ] Skill routing — review global defaults, precise triggers, repo placement, and distribution mismatches. Validate registry and runtime agreement.
-- [ ] Pilot — exercise the revised approach in two representative repositories. Record unnecessary reads/stops, completed outcome, checks, and any missing boundary.
 - [ ] Repository rollout — refresh audit findings and implement justified corrections in bounded groups; record explicit keep decisions for already-good repos. Validate each group's actual contracts and affected checks.
 - [ ] Closeout — check routes and outstanding work, finalize learnings, and archive this whole project directory.
 
 ## Decisions
 
 - Keep the agent-native operating model; simplify the instructions supporting it.
-- Start with shared guidance because it affects every task. Pilot before spreading repo-specific changes broadly.
-- Prefer one canonical source per topic and conditional links to relevant detail. Preserve facts before deleting duplicate documents.
+- Start with shared guidance because it affects every task. Use the completed audit as leads; recheck current source rather than perform another broad audit.
+- Keep short orientation, source ownership, non-obvious constraints, and useful commands. Remove documentation that only narrates discoverable code; do not move every deleted paragraph into a new reference.
+- Use conditional references for knowledge worth retaining. Preserve unique operational and domain facts before removing duplicate documents.
 - Keep useful checks mechanical and proportionate. Do not replace working checks with more reminder text or introduce arbitrary line/token targets.
 - Preserve Codex-only setup. References to Claude as an application provider or historical evidence are not automatically obsolete development setup.
-- Current request: begin the shared-guidance analysis with agent-native execution as a hard requirement. Broad implementation remains a later batch.
+- Implementation is authorized across the 28 primary repos. Latest request is to explain the plan and whether more investigation is needed: enough context exists to start; only targeted checks at each change are needed.
 
 ## Current Batch
 
@@ -60,24 +61,25 @@ The original concern was accumulated instructions, overlapping skills, scattered
 | done | Reconstruct original intent, completed work, constraints, and rollout plan | parent | This tracker and linked archives |
 | done | Analyze current shared guidance and prepare refreshed global/playbook proposals with preserved agent-native contracts | parent | [Analysis and proposals](resources/shared-guidance-analysis.md) |
 | done | Independently review current contracts and the refreshed proposals; no remaining consequential losses found | explorer | [Contract preservation](resources/shared-guidance-analysis.md) |
+| done | Narrow the execution plan to justified subtraction and independently check it for unnecessary ceremony | parent + explorer | Decisions and execution approach below |
 | todo | Implement the bounded shared-guidance batch, including companion references, and run required validation | parent | [Implementation scope](resources/shared-guidance-analysis.md) |
 
-## Analysis Guardrails
+## Execution Approach
 
-- The user reaffirmed that preserving agent-native execution is essential: humans set intent; agents complete authorized implementation, checks, docs, and cleanup.
-- This batch analyzes current shared guidance and records concrete proposals. Canonical/runtime changes are a later implementation batch.
-- Preserve persistence, existing authorization, repo-owned checks and Git automation, recoverability, and local/domain boundaries explicitly in any proposed simplification.
+1. Trim shared global guidance and the agent-native playbook, including companion references. Preserve autonomy, carried authorization, source ownership, existing checks, and recovery boundaries. Keep root repo guidance that is already useful.
+2. Review skills by purpose and actual routing. Shorten overly broad triggers and fix missing or misplaced capabilities through canonical sources; do not delete useful capabilities just to reduce the count.
+3. Split current repository corrections among focused subagents. Check each proposed removal against code, current guidance, and incoming links. Keep public content, private records, and unique domain knowledge; leave already-good repositories alone.
+4. Run affected existing checks. Use independent navigation review only for important routing or ownership changes; ordinary wording cleanup and duplicate removal need diff and incoming-link checks. Record one concise outcome per repository here, resolve actual failures, and archive the project on completion. No new universal docs layout, audit tooling, or demonstration feature is needed.
 
 ## Backlog / Remaining Work
 
 - [ ] Complete the shared-guidance change with companion reference updates, then validate and record its practical effect.
 - [ ] Recheck reported browser fallback and skill inventory mismatches before choosing any scope changes.
 - [ ] Review overly broad or long skill descriptions and loaded detail; retain specialist safeguards and correct source ownership.
-- [ ] Choose two pilot repos from actual upcoming work; `blog-personal` and `aipodcasting` are initial candidates for a small change and an integration workflow.
 - [ ] Fix confirmed stale authorities, broken paths, outdated commands, and artificial approval checkpoints from the audit in small repository groups.
 - [ ] Consolidate repeated operational topics while preserving public content, useful architecture, and historical evidence.
 - [ ] Record per-repo validation and explicit keep decisions; track any newly discovered implementation defects separately from prose cleanup.
-- [ ] Review and finalize `learnings.md` at closeout, then archive with the project skill's whole-directory helper.
+- [ ] Record useful learnings in this tracker at closeout, then archive with the project skill's whole-directory helper.
 
 ## Validation / Test Plan
 
@@ -85,12 +87,11 @@ The original concern was accumulated instructions, overlapping skills, scattered
 - Check local links and incoming references after moves. Run repo-owned hygiene checks; do not run unrelated application suites for tracker-only edits.
 - For shared skill/registry/runtime changes, use the existing bootstrap and required checks: `scripts/bootstrap-machine-agent-control-planes.sh --apply`, `scripts/check-agent-control-planes.sh`, and scoped component checks as applicable.
 - For repo implementation changes, follow that repo's affected checks and product proof paths. Do not invent a larger feature solely to demonstrate the guidance.
-- For pilot work, record the context actually loaded, avoidable user checkpoints, completed outcome, and validation relevance. A smaller prompt without a correct result is not success.
+- Use focused source-navigation reviews only when important routing or ownership changes could leave agents without necessary context. Smaller instructions alone do not demonstrate better execution.
 
 ## Open Questions / Blockers
 
-- Shared analysis is complete and proposals are ready. The next batch is canonical implementation with companion reference changes; no technical blocker identified.
-- Pilot repo selection is a later planning choice based on upcoming work; it does not block shared cleanup.
+- No blocking question or additional broad research is needed. Existing proposals are leads, not a requirement to preserve every paragraph or introduce more references.
 
 ## Progress Log
 
@@ -100,3 +101,5 @@ The original concern was accumulated instructions, overlapping skills, scattered
 
 - 2026-09-18: [DONE] Analyzed current shared guidance against the official Astra article and existing agent-native contracts. Prepared two inactive proposals and a concrete keep/move/remove analysis. Confirmed the mandatory browser skill is dormant. Independent review found no remaining consequential contract losses in the refreshed proposals. Canonical guidance, registries, hooks, and runtime were unchanged in this analysis batch.
 - Validation: repo hygiene and whitespace checks passed; all 24 project-local links resolve. Application tests were unnecessary for this analysis-only batch. The broader project remains active for implementation and pilot work.
+- 2026-09-18: User authorized code-first simplification across all primary repos and asked for a lightweight plan. Replaced the earlier analysis-only restriction and mandatory pilot with targeted edits, bounded repository groups, and existing validation. No live guidance, skills, or runtime settings changed in this planning step.
+- Validation: independent plan review confirmed the approach and narrowed navigation reviews to changes that warrant them. Repo hygiene and whitespace checks passed; application suites were unnecessary for this tracker-only update.
