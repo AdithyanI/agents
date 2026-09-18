@@ -15,7 +15,7 @@ Record only what another agent needs to continue: goal and completion criteria, 
 
 Continue through implementation, proportionate verification, repair, and cleanup. Ask only for missing decisions that materially affect the outcome and cannot be resolved from available context. Update the tracker after meaningful changes or before handoff; do not copy routine tool output into it.
 
-For parallel work, keep the tracker single-writer and assign clear ownership. The parent integrates results and records the durable outcome. See `references/subagent-conventions.md` if coordination itself needs design.
+Integrate delegated results into the current project state. Agents can use their judgment about how to collaborate.
 
 ## Completion and Archive
 
