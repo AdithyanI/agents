@@ -11,6 +11,7 @@ import argparse
 import copy
 from dataclasses import dataclass
 import datetime as dt
+import errno
 import json
 import os
 from pathlib import Path
@@ -508,6 +509,25 @@ class Retirement:
         if result.returncode != 0:
             raise RuntimeError(f"Cannot unload retired LaunchAgent: {label}")
 
+    def prune_empty_directories(self) -> None:
+        directories = [self.home / relative for relative in (
+            ".claude/skills", ".copilot/skills", ".gemini/antigravity-cli/skills",
+        )]
+        for entry in self.repos:
+            root = entry["root"]
+            if not self.repo_filters or root in self.repo_filters:
+                directories.extend(root / relative for relative in (
+                    ".claude/skills", ".claude", ".github/skills",
+                ))
+        for directory in directories:
+            if not self.safe_path(directory / "placeholder"):
+                continue
+            try:
+                directory.rmdir()
+            except OSError as exc:
+                if exc.errno not in {errno.ENOENT, errno.ENOTEMPTY, errno.EEXIST, errno.ENOTDIR}:
+                    raise
+
     def apply(self) -> None:
         touched: set[Path] = set()
         try:
@@ -530,6 +550,7 @@ class Retirement:
                     finally:
                         Path(name).unlink(missing_ok=True)
                 touched.add(change.path)
+            self.prune_empty_directories()
         finally:
             # Runtime settings/backups never enter publication, even if a legacy
             # checkout surrounds the user's home. Include partial successful work.

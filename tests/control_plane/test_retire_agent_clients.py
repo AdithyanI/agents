@@ -280,6 +280,27 @@ class RetireAgentClientsTests(TempDirTestCase):
         self.assertEqual((source.read_bytes(), outside.read_bytes()), before)
         self.assertTrue((self.repo / ".claude").is_symlink())
 
+    def test_empty_directory_pruning_is_apply_only_and_preserves_nonempty_and_symlinks(self) -> None:
+        empty = [self.repo / ".claude/skills", self.repo / ".github/skills", self.home / ".claude/skills"]
+        for directory in empty:
+            directory.mkdir(parents=True)
+        remaining = write_text(self.other / ".claude/skills/real/SKILL.md", "keep source\n")
+        outside = self.home / "outside-empty"
+        outside.mkdir()
+        link = self.link(self.home / ".copilot/skills", outside)
+        self.run_retire("--dry-run")
+        self.run_retire("--check")
+        self.assertTrue(all(directory.is_dir() for directory in empty))
+        self.run_retire("--apply")
+        self.assertTrue(all(not directory.exists() for directory in empty))
+        self.assertFalse((self.repo / ".claude").exists())
+        self.assertTrue((self.repo / ".github").is_dir())
+        self.assertEqual(remaining.read_text(), "keep source\n")
+        self.assertTrue(link.is_symlink())
+        self.assertTrue(outside.is_dir())
+        self.assertFalse((self.home / ".local/state").exists())
+        self.run_retire("--apply")
+
     def test_backup_is_private_and_second_apply_is_noop(self) -> None:
         target = write_json(self.home / ".copilot/settings.json", {"askUser": False, "token": "private"})
         before = target.read_bytes()
