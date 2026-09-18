@@ -38,7 +38,7 @@ The original concern was accumulated instructions, overlapping skills, scattered
 ## Milestones
 
 - [x] Continuity — recover the original intent, completed audit, and cleanup outcome in one active tracker. Validate linked local sources.
-- [ ] Shared guidance — simplify global instructions and the playbook, including references that would otherwise reintroduce blanket rules. Validate preserved contracts and required bootstrap/checks.
+- [ ] Shared guidance — analysis and reviewed proposals are complete; implement global/playbook and companion-reference simplification. Validate preserved contracts and required bootstrap/checks.
 - [ ] Skill routing — review global defaults, precise triggers, repo placement, and distribution mismatches. Validate registry and runtime agreement.
 - [ ] Pilot — exercise the revised approach in two representative repositories. Record unnecessary reads/stops, completed outcome, checks, and any missing boundary.
 - [ ] Repository rollout — refresh audit findings and implement justified corrections in bounded groups; record explicit keep decisions for already-good repos. Validate each group's actual contracts and affected checks.
@@ -51,14 +51,22 @@ The original concern was accumulated instructions, overlapping skills, scattered
 - Prefer one canonical source per topic and conditional links to relevant detail. Preserve facts before deleting duplicate documents.
 - Keep useful checks mechanical and proportionate. Do not replace working checks with more reminder text or introduce arbitrary line/token targets.
 - Preserve Codex-only setup. References to Claude as an application provider or historical evidence are not automatically obsolete development setup.
-- The current request establishes the project and next batch. Implementation can proceed from that batch as we continue; this is not a new unattended fleet-wide rewrite request.
+- Current request: begin the shared-guidance analysis with agent-native execution as a hard requirement. Broad implementation remains a later batch.
 
 ## Current Batch
 
 | Status | Work Item | Role | Resource |
 | --- | --- | --- | --- |
 | done | Reconstruct original intent, completed work, constraints, and rollout plan | parent | This tracker and linked archives |
-| todo | Refresh the proposed global-guidance and playbook changes against current Codex-only sources; explain what to keep, move, and remove | parent | `config/global.agents.md`; `skills-source/owned/agent-native-repo-playbook/`; archived proposal review |
+| done | Analyze current shared guidance and prepare refreshed global/playbook proposals with preserved agent-native contracts | parent | [Analysis and proposals](resources/shared-guidance-analysis.md) |
+| done | Independently review current contracts and the refreshed proposals; no remaining consequential losses found | explorer | [Contract preservation](resources/shared-guidance-analysis.md) |
+| todo | Implement the bounded shared-guidance batch, including companion references, and run required validation | parent | [Implementation scope](resources/shared-guidance-analysis.md) |
+
+## Analysis Guardrails
+
+- The user reaffirmed that preserving agent-native execution is essential: humans set intent; agents complete authorized implementation, checks, docs, and cleanup.
+- This batch analyzes current shared guidance and records concrete proposals. Canonical/runtime changes are a later implementation batch.
+- Preserve persistence, existing authorization, repo-owned checks and Git automation, recoverability, and local/domain boundaries explicitly in any proposed simplification.
 
 ## Backlog / Remaining Work
 
@@ -81,7 +89,7 @@ The original concern was accumulated instructions, overlapping skills, scattered
 
 ## Open Questions / Blockers
 
-- No blocker to starting the shared-guidance batch.
+- Shared analysis is complete and proposals are ready. The next batch is canonical implementation with companion reference changes; no technical blocker identified.
 - Pilot repo selection is a later planning choice based on upcoming work; it does not block shared cleanup.
 
 ## Progress Log
@@ -89,3 +97,6 @@ The original concern was accumulated instructions, overlapping skills, scattered
 - 2026-09-17: [DONE] Original machine-wide repository audit completed and archived; implementation drafts remained proposals.
 - 2026-09-18: [DONE] Codex-only setup cleanup completed and archived. Its evidence includes 28-repo validation, unchanged Codex runtime files, and passing regression checks.
 - 2026-09-18: [DONE] Created this active continuation project at the user's request; preserved the original objective and linked completed work. Shared-guidance implementation is the next batch.
+
+- 2026-09-18: [DONE] Analyzed current shared guidance against the official Astra article and existing agent-native contracts. Prepared two inactive proposals and a concrete keep/move/remove analysis. Confirmed the mandatory browser skill is dormant. Independent review found no remaining consequential contract losses in the refreshed proposals. Canonical guidance, registries, hooks, and runtime were unchanged in this analysis batch.
+- Validation: repo hygiene and whitespace checks passed; all 24 project-local links resolve. Application tests were unnecessary for this analysis-only batch. The broader project remains active for implementation and pilot work.
