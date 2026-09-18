@@ -1,6 +1,6 @@
 # Harness Readiness Rubric
 
-Use this rubric when the user asks to score, benchmark, audit, or compare a repo's agent-native readiness.
+Use this rubric when the user asks to score, benchmark, or numerically compare a repo's agent-native readiness.
 
 ## Scoring
 
@@ -9,20 +9,20 @@ Score each dimension from 0 to 4.
 - `0`: missing or actively harmful.
 - `1`: present as prose or ad hoc habit, but not reliable.
 - `2`: usable in common cases, with visible gaps.
-- `3`: documented and repeatable for most relevant work.
+- `3`: discoverable and repeatable for most relevant work.
 - `4`: mechanically supported, easy for a cold agent to run, and improved when failures repeat.
 
 ## Dimensions
 
 ### Context Routing
-- Does a cold agent know which files to read first?
+- Can an arriving agent find the authority relevant to its task?
 - Are `AGENTS.md`, repo maps, and local docs short, current, and non-duplicative?
 - Do nested rules exist only where local boundary rules materially differ?
 
 ### Durable Repo Knowledge
-- Are architecture, reference facts, active plans, and decisions stored in repo docs?
+- Is useful intent, ownership, recovery, and non-obvious knowledge discoverable without duplicating code?
 - Are volatile instructions kept out of root guidance?
-- Do docs change with behavior changes?
+- Are affected useful docs updated when their claims change?
 
 ### Autonomous Execution Loop
 - Can the agent continue from intent to implementation, validation, docs, and cleanup without frequent human prompting?
@@ -61,4 +61,4 @@ For scorecard audits, return:
    - Later: useful after the core loop is stronger.
 5. Evidence: concrete file paths and commands inspected.
 
-Weight proof, autonomous execution, and mechanical guardrails heavily for solo high-permission repos. Do not penalize a repo for skipping enterprise process when the repo has fast recovery and clear proof loops.
+Explain any weighting used for the overall score; prioritize proof, autonomous execution, and mechanical guardrails. Document or folder counts are not quality measures. Do not penalize a repo for skipping enterprise process when the repo has fast recovery and clear proof loops.

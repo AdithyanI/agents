@@ -1,9 +1,9 @@
 /* Adi Design — design tokens (vendored copy).
  *
  * SOURCE OF TRUTH: ~/GitHub/adi-design (system/styles.css + system/tokens/*.css),
- * browsable at https://design.adithyan.io. Authored in the Claude Design project,
- * exported into that repo. This is a VENDORED COPY for agents building Adi's UIs
- * without cloning the repo — refresh it from system/styles.css when VERSION bumps.
+ * browsable at https://design.adithyan.io and authored directly in that repo.
+ * This is a flattened VENDORED COPY. system/styles.css is an import manifest;
+ * refresh from its imported system/tokens/*.css files in order when VERSION bumps.
  *
  * Color space is oklch throughout. Light is default; dark overrides via
  * prefers-color-scheme. Reference tokens (var(--accent), --space-lg) — never raw

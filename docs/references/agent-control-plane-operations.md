@@ -30,7 +30,7 @@ Sparse machines are normal. Registry entries absent locally are skipped; existin
 | `scripts/auto-apply-agent-control-planes.sh --apply` | Reconcile runtime-relevant changes since a machine-local Git revision stamp; use full bootstrap for first sync or shared-input changes |
 | `scripts/enroll-managed-repos.sh --apply` | Add direct child Git repos under `~/GitHub` to `codex/config/repo-bootstrap.json` |
 | `scripts/sync-skills-registry.sh` | Render global and repo skill links from `skills/registry.json` |
-| `scripts/sync-plugins-registry.sh` | Render native plugin state from `plugins/registry.json` |
+| `scripts/sync-plugins-registry.sh` | Validate native plugin entries; Codex config sync renders their runtime state |
 | `scripts/sync-codex-plugin-installs.py` | Install enabled missing native plugin packages |
 | `scripts/sync-codex-previews.py` | Render preview environments from `dev-servers/registry.json` |
 | `scripts/sync-managed-git-hooks.sh --apply` | Set managed repo `core.hooksPath` to this repo's `hooks/git` |
@@ -61,4 +61,4 @@ The migration supports `--dry-run`, `--apply`, and `--check`, plus exact `--repo
 
 Explicit thread finalization is separate from native hooks: `codex/scripts/finalize-codex-thread.py` reads thread ownership, runs optional repo `scripts/hooks/finalize_codex_thread.py`, and then archives.
 
-Stop discovers affected repositories across the turn tree and stages attributed changes. Git invokes `hooks/git/pre-commit`, which delegates to repo `scripts/check-fast.sh` when present. Tracked branches push optimistically and rebase only when the remote is ahead; new branches establish upstream tracking. Successful `main` publication sends a bounded best-effort revision notification to Mac Mini production automation. Builds remain outside the hook; periodic reconciliation recovers failed notifications. Timing lives in `~/.local/state/agents-control-plane/log/hooks-stop.log`.
+Stop discovers affected repositories across the turn tree and consolidates their current staged and working-tree changes. Git invokes `hooks/git/pre-commit`, which delegates to repo `scripts/check-fast.sh` when present. Tracked branches push optimistically and rebase only when the remote is ahead; new branches establish upstream tracking. Successful `main` publication sends a bounded best-effort revision notification to Mac Mini production automation. Builds remain outside the hook; periodic reconciliation recovers failed notifications. Timing lives in `~/.local/state/agents-control-plane/log/hooks-stop.log`.

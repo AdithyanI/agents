@@ -1,13 +1,6 @@
 # Architecture
 
-Use this folder for high-level system shape, boundaries, and flow.
+- [Control-plane ownership and runtime split](codex-control-plane.md)
+- [Skills, plugins, and MCP capability boundaries](capability-bootstrap-model.md)
 
-Use `docs/references/` for exact commands, lookup facts, and operational details.
-
-## Key Architecture Docs
-
-- [Codex Sync Simple](/Users/dobby/GitHub/agents/docs/architecture/codex-sync-simple.md)
-- [Codex Control Plane](/Users/dobby/GitHub/agents/docs/architecture/codex-control-plane.md)
-- [Capability Bootstrap Model](/Users/dobby/GitHub/agents/docs/architecture/capability-bootstrap-model.md)
-- [Codex Config Layers](/Users/dobby/GitHub/agents/docs/architecture/codex-config-layers.md)
-- [Codex Control Plane Script Flows](/Users/dobby/GitHub/agents/docs/architecture/codex-control-plane-script-flows.md)
+Use [operations](../references/agent-control-plane-operations.md) for bootstrap and checks, and [lifecycle contracts](../references/repo-lifecycle-hook-adapter.md) when changing hooks.

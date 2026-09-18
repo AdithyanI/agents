@@ -1,60 +1,33 @@
-# Global Agent Guidance (machine-wide)
+# Global Agent Guidance
 
-> Prompts are often dictated via speech-to-text; interpret intent over literal spelling.
+Prompts are often dictated. Interpret intent over transcription errors; use the conversation and repository to resolve ordinary ambiguity.
 
-This file is machine-wide baseline guidance. Keep it generic and avoid portfolio-specific policy here.
+## Working with Adi
 
-## Scope Routing
-- For repo best-practice recommendations, use [$agent-native-repo-playbook](/Users/dobby/GitHub/agents/skills-source/owned/agent-native-repo-playbook/SKILL.md).
+- Humans set intent, priorities, taste, acceptance criteria, and material-risk boundaries. Agents own implementation, verification, necessary documentation, cleanup, and routine follow-through.
+- In trusted repos, carry the complete authorized job through to a verified outcome. Keep working when the next step is clear, including inspecting and repairing the result when the task calls for it.
+- Carry existing authorization forward. Ask when a consequential unresolved decision changes intent or exceeds that authorization, such as new spending, destructive or out-of-scope work, secrets, or irreversible external effects. Make routine implementation decisions yourself.
+- Read and verify in proportion to the change. Honor required repo checks, inspect changed behavior when relevant, and repair failing gates. Broaden or repeat checks when changes, failures, or unresolved concerns warrant it.
+- Report the result, useful evidence, and remaining limitations concisely. Turn repeated mistakes into the smallest effective improvement to code, tools, checks, or local guidance.
 
-## Operating Model
-- Humans set intent, priorities, and acceptance criteria; agents implement, validate, maintain docs, and improve the harness.
-- Default to autonomous execution in trusted repos. Ask only for unclear intent, destructive or out-of-scope actions, secrets, spending, or irreversible external effects.
-- When the next concrete step is clear, keep working through implementation, validation, cleanup, and reporting instead of pausing for permission or status.
-- Treat repeated agent failure, check failure, review feedback, or human nudging as a harness gap. Prefer durable repo docs, tools, checks, or skills over repeating the same prompt.
-- For meaningful implementation work, report compact evidence in the final response: checks run, product/service proof when relevant, skipped validation with the reason, and any harness gap that made proof weaker.
+## Finding Context
 
-## Global Defaults
-- Prefer automation over manual repetition.
-- Keep instructions concise, operational, and durable.
-- Keep machine-wide guidance generic; let each repo define its own local docs contract.
-- Treat repo-local `AGENTS.md` files and repo docs as the source of truth for repo structure and workflow.
-- In managed repos, Codex setup is rendered from `~/GitHub/agents`: `.agents/skills/*` links to canonical skill sources; `.codex/config.toml`, `.codex/hooks.json`, and `.codex/environments/environment.toml` are generated config. Edit the canonical source or the repo's own guidance, then rerun bootstrap/check. Preview commands use `{repo_root}` to follow the selected checkout.
-- Unless the user explicitly asks for backward compatibility or repo-local guidance requires it, migrate cleanly to the target structure. Do not add dual reads, compatibility shims, legacy-schema support, or old-path fallbacks by default.
-- When working inside a repo, put temporary artifacts under that repo's `tmp/` directory unless the repo defines a different location. Do not scatter scratch files across the repo or home directory.
-- Browser/tool side outputs (Playwright MCP screenshots, traces, downloads, session snapshots) are temporary artifacts too: keep them in `/tmp/playwright-mcp` or the repo's `tmp/`, never at a repo root or in an unrelated repo. Never commit tool session folders (`.playwright-mcp/`, `.xcodebuildmcp/`, and similar dot-folders MCP tools drop at repo roots); if a tool dumps one, delete or untrack it before finishing (both are in the global gitignore).
-- Remove disposable temporary artifacts when finished. Keep only durable outputs in documented repo locations.
-- Do not assume nested `AGENTS.md` files load dynamically as you navigate later in a session; they apply when Codex starts in that subtree.
-- When a new repeatable pattern belongs to one repo, update that repo's local guidance or docs instead of expanding this global file.
-- Put durable knowledge in repo docs rather than relying on prompt-only memory.
-- In private/agent-native repos, do not create `README.md` as an operational doc. Use `AGENTS.md` for agent routing and `docs/architecture/` or `docs/references/` for durable detail. Keep `README.md` only for an explicit public/human landing page.
-- When a change clearly introduces durable behavior, architecture boundaries, or operational workflow that future work will rely on, update the relevant repo docs in the same change.
-- When choosing where docs belong inside a repo, prefer the repo's own guidance when it exists. Otherwise use `docs/architecture/` for system shape, `docs/references/` for durable facts, and project tracking docs only for active execution state. If placement is still unclear, make the best-fit update and call it out briefly.
-- When a tracker-backed project is complete, archive the tracker in the repo's archive path before final handoff, or explicitly state the blocker. Do not leave completed projects in the active tracker folder.
+- Start with applicable repo guidance and task-relevant source. Read deeper guidance when working in its scope; do not assume nested files have loaded automatically.
+- Code, schemas, scripts, and executable checks are authoritative for implementation. Keep docs for useful intent, ownership, external constraints, recovery, and other knowledge that source alone does not readily explain. Update affected docs; avoid creating a second description of the code.
+- Keep `AGENTS.md` useful for orientation and routing. Follow existing repo conventions rather than imposing a docs layout. Preserve public README landing pages; do not add duplicate operational READMEs to private agent-native repos.
+- Keep long-running execution state in the existing project tracker and archive it when complete. A simple change does not need a project or a new document.
+- Use [agent-native-repo-playbook](/Users/dobby/GitHub/agents/skills-source/owned/agent-native-repo-playbook/SKILL.md) for guidance and workflow improvement. Default to a clean target structure unless the user or repo contract requires compatibility.
 
-## Browser Routing
-- Prefer the in-app Browser for collaborative visual work when the current session can control it. A client-visible tab may not be accessible from a remote execution host, so verify access before relying on it.
-- Use `$agent-browser` for repeatable or headless automation, scraping, or whenever in-app Browser control is unavailable.
+## Shared Environment
 
-## Subagent Defaults
-- Use your best judgment on when subagents are helpful.
-- Prefer subagents when work can be split into bounded, independent tasks.
-- Subagents are often useful for exploration, tests, triage, read-heavy review, or other parallelizable side work.
-- Keep the main agent responsible for planning, shared contracts, final synthesis, and user-facing decisions.
-- Avoid subagents when the task is small, tightly coupled, or likely to create conflicts through parallel edits.
-- Favor a small number of focused subagents over many broad ones.
+- `~/GitHub/agents` owns shared Codex configuration, skills, registries, and hooks. Edit canonical sources and rerun its bootstrap/check; managed runtime files and skill symlinks are generated surfaces.
+- Prefer a controllable in-app browser for collaborative visual work. Otherwise use an available capability suited to the task; verify access before relying on an open tab.
+- Delegate bounded independent work when useful. Keep shared decisions, integration, and final reporting with the main agent.
+- Check `~/GitHub/scripts` before adding shared machine utilities. Application behavior, storage, and repo-specific lifecycle rules belong in their owning repo.
+- For generic media uploads without an app-owned path, use `~/GitHub/scripts/bin/upload-media`. It reads generated credentials from `~/.secrets/media-upload/env`; do not pass storage secrets through flags or ordinary environment variables. GitHub CLI is authenticated.
 
-## Git Automation (Agent Stop Hook)
-- Managed repos use the global Codex Stop hook that runs after each agent turn and auto-stages, commits, runs repo-owned fast checks through `git commit`, rebases, and pushes.
-- If repo-owned checks fail, the hook returns the failure details to the current agent so it can fix the issue in the same session.
-- Repo-owned lifecycle hook policy and hook payload contracts belong in repo docs or the shared hook adapter reference, not in machine-wide guidance.
-- Managed repos use a shared local Git hook from `~/GitHub/agents/hooks/git/`; repo-specific commit-time checks live in `scripts/check-fast.sh` when a repo needs fast validation.
-- Keep `scripts/check-fast.sh` deterministic, local, quick, and actionable; use `scripts/check-full.sh` for slower repo-wide validation.
-- Do not directly run `git commit` or `git push` for normal work unless the user explicitly asks.
-- Repo-owned automation may stage, commit, rebase, or push as part of a documented workflow; treat this as normal automation, not as a manual git operation or a warning-worthy side effect.
-- Focus on making changes and reporting what changed; the hook and repo-owned automation handle git sync.
+## Files and Delivery
 
-## Local Environment
-- GitHub CLI (`gh`) is authenticated; use it freely for repo operations.
-- For machine-local shared utilities, first check `~/GitHub/scripts` before creating new cross-repo scripts. It includes helpers for uploads, machine bootstrap, and local process/scheduler setup. Keep app-owned storage, runtime workers, and repo-specific lifecycle rules inside the owning repo.
-- For generic machine-local media uploads, prefer `~/GitHub/scripts/bin/upload-media` when the current repo does not already provide its own storage abstraction. It reads generated credentials from `~/.secrets/media-upload/env`; do not pass storage secrets through flags or ordinary environment variables.
+- Put temporary artifacts in the current repo's `tmp/` unless local guidance specifies another location. Browser outputs may also use `/tmp/playwright-mcp`. Remove disposable artifacts and keep tool session directories such as `.playwright-mcp/` and `.xcodebuildmcp/` out of Git.
+- Managed Codex lifecycle automation stages, checks, commits, rebases, and pushes after the turn. Fix failures it returns. Do not manually commit or push unless asked; documented repo automation may do so as part of its normal workflow.
+- Managed Git hooks call repo `scripts/check-fast.sh` when present. Keep fast checks local, deterministic, quick, and actionable; slower validation belongs in the repo's full-check path.

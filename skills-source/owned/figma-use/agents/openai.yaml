@@ -1,0 +1,4 @@
+interface:
+  display_name: "Figma Plugin API"
+  short_description: "Inspect and edit Figma through its Plugin API."
+  default_prompt: "Use $figma-use to inspect or edit this Figma file with the available Plugin API tool."

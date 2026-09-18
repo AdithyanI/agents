@@ -21,11 +21,11 @@
     },
     {
       "skill": "find-skills",
-      "origin": "external",
+      "origin": "owned",
       "scope": "global",
       "repos": [],
-      "source_path": "skills-source/external/find-skills",
-      "upstream_ref": "vercel-labs/skills:skills/find-skills@main"
+      "source_path": "skills-source/owned/find-skills",
+      "upstream_ref": "-"
     },
     {
       "skill": "pretty-mermaid",
@@ -358,13 +358,13 @@
     },
     {
       "skill": "swiftui-whats-new-27",
-      "origin": "external",
+      "origin": "owned",
       "scope": "repo",
       "repos": [
         "meeting-capture"
       ],
-      "source_path": "skills-source/external/swiftui-whats-new-27",
-      "upstream_ref": "local-import"
+      "source_path": "skills-source/owned/swiftui-whats-new-27",
+      "upstream_ref": "-"
     },
     {
       "skill": "test-modernizer",
@@ -384,13 +384,13 @@
     },
     {
       "skill": "figma-use",
-      "origin": "external",
+      "origin": "owned",
       "scope": "repo",
       "repos": [
         "aipodcasting"
       ],
-      "source_path": "skills-source/external/figma-use",
-      "upstream_ref": "figma/mcp-server-guide:skills/figma-use@main"
+      "source_path": "skills-source/owned/figma-use",
+      "upstream_ref": "-"
     },
     {
       "skill": "agent-browser",
@@ -399,6 +399,14 @@
       "repos": [],
       "source_path": "skills-source/external/agent-browser",
       "upstream_ref": "vercel-labs/agent-browser:skills/agent-browser@main"
+    },
+    {
+      "skill": "chart-visualization",
+      "origin": "external",
+      "scope": "dormant",
+      "repos": [],
+      "source_path": "skills-source/external/chart-visualization",
+      "upstream_ref": "local-import"
     }
   ],
   "unmanaged_repo_local_skills": [
@@ -457,6 +465,14 @@
     {
       "repo": "win",
       "skill": "riverside-export"
+    },
+    {
+      "repo": "adithyan-ai-videos",
+      "skill": "omni-flash-video"
+    },
+    {
+      "repo": "frontier-lab-intelligence",
+      "skill": "fli-daily-intelligence"
     }
   ],
   "managed_plugin_skills": [

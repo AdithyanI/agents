@@ -3,7 +3,6 @@
 Use this page when you need the exact facts for changing or validating the personal Codex control plane.
 
 Use [Codex Control Plane](/Users/dobby/GitHub/agents/docs/architecture/codex-control-plane.md) for the high-level system shape.
-Use [Codex Control Plane Script Flows](/Users/dobby/GitHub/agents/docs/architecture/codex-control-plane-script-flows.md) for smaller diagrams of the main script groups.
 Use [Codex Control Plane Ownership](/Users/dobby/GitHub/agents/docs/references/codex-control-plane-ownership.md) for the exact keep/move/generate split.
 
 ## What Lives Where
@@ -103,32 +102,7 @@ Use [Codex Control Plane Ownership](/Users/dobby/GitHub/agents/docs/references/c
   - `readlink ~/.zprofile`
   - expected target: `~/GitHub/scripts/setup/codex/zprofile.shared`
 - `~/.codex/config.toml` does not use Codex `notify`; global hook automation is rendered into `~/.codex/hooks.json`, and repo-assigned hooks are rendered into managed repo `.codex/hooks.json` from `hooks/registry.json`.
-- The global `Stop` hook owns the managed-repo git conveyor:
-  - reads Codex App Server `fileChange` items for the parent turn and recursively follows `parentThreadId` for descendant subagents
-  - also discovers repositories from executed `commandExecution` working directories and literal absolute, `~/`, `./`, or `../` paths in command text, including commands that exited with an error after writing files; shell/Python edits no longer require a `fileChange` event when their repository is visible in command evidence
-  - command use selects a repository for normal consolidation even when that individual command only reads it; clean repositories without local commits are skipped, and dirty siblings absent from the task's command/file evidence are not swept
-  - parses command input as text only: no command evaluation, environment expansion, command-output inspection, or filesystem-wide scanning; dynamically computed paths not visible in any command cwd/literal still require the existing explicit registration helper
-  - shell discovery limits return actionable Stop feedback rather than silently finalizing only the primary repository
-  - also adopts exact repo skill-link paths registered by shell-based control-plane syncs through `CODEX_THREAD_ID`, so bootstrap changes that do not surface as App Server `fileChange` items still use the same checked multi-repo finalization path
-  - merges descendant-thread registrations into the parent Stop transaction before finalization; subagent Stop events continue to defer to the parent
-  - uses those exact absolute paths to identify affected Git worktrees, then consolidates all current staged and working-tree changes inside each affected repository
-  - ignores subagent Stop events because the parent Stop owns the complete turn transaction
-  - allows concurrent Codex tasks to edit the same repository or file and uses deterministic per-repository locks to serialize only stage/check/commit/push finalization
-  - adopts pre-staged work into the consolidated commit instead of dropping or indefinitely orphaning another task's changes
-  - preflights every affected repo's `scripts/check-fast.sh` concurrently and reruns checks when the staged Git tree changes during validation, including same-path content edits that do not change the path set
-  - automatically removes Git-rejected extra blank lines at EOF before preflight, preserving content, line endings and file mode; honors whitespace attributes/config, skips binary/symlink/concurrently changed files, and lets the existing restage/recheck loop validate the repair without a formatter-only task interruption
-  - absorbs nonzero formatter/autofix passes into the same bounded restage/recheck loop when each failing repo's own tree changed; unchanged failures stop immediately and unresolved failures after three passes return feedback. A repaired tree must pass before commit or push
-  - commits with mutable commit hooks disabled after the explicit fast-check and staged-tree stability gates
-  - persists partial commit/push progress so a later continuation can finish all repositories without losing already-created commits
-  - detects and pushes existing local commits even when the current turn has no new file changes in its primary repository
-  - relies on managed repo local `core.hooksPath` pointing at `~/GitHub/agents/hooks/git`
-  - returns aggregated hook feedback to the originating Codex task when any repository fails, so the same task can repair every affected repository
-  - if task identity or activity discovery is unavailable, finalizes no repositories and preserves pending transaction state; the first failure returns retry feedback and a repeated hook continuation reports incomplete finalization without an infinite retry loop. It never silently downgrades to primary-repo-only publication. The normal primary-repo Git-status check still catches local work after successful discovery
-  - records `discovery_started_at` in the existing transaction before reading activity; recovery replays the original boundary turn and subsequent turns, including their subagents, so a retry with no new file edits cannot forget the original sibling repos. Explicit path registration preserves this checkpoint, and complete discovery clears it only after saving the discovered repositories. Unavailable retained history reports incomplete discovery
-  - tracked branches use an optimistic `commit -> push` path and only run `git pull --rebase` when push reports that the remote is ahead; after a successful rebase, the hook reruns `scripts/check-fast.sh` and requires a clean repository before retrying the push
-  - brand-new branches without upstream tracking use an initial `git push -u <remote> HEAD`, so the hook can publish the branch before future tracked-branch pulls
-  - after each successful `main` push, best-effort notifies `~/GitHub/scripts/sync/local-production-notify.sh` with the repo root and final commit SHA; the hook never builds an app, skips non-`main` branches and unregistered repos, and does not turn a successful Git publication into a failure when the local notifier is unavailable; Mac mini Git auto-sync emits the same event for a changed `main` revision it pulls, while the separate writer health sweep reports remaining revision drift without deploying it
-  - logs phase timing to `~/.local/state/agents-control-plane/log/hooks-stop.log`
+- Global Stop selects affected repositories from the task tree and consolidates their current changes through checked publication. Discovery, concurrent edits, retries, unavailable-owner fallback, and recovery are defined once in [the lifecycle adapter](repo-lifecycle-hook-adapter.md). Timing logs live at `~/.local/state/agents-control-plane/log/hooks-stop.log`.
 - Bootstrap and sync scripts remain renderers: they do not commit or push repositories directly. When `CODEX_THREAD_ID` is absent, such as unattended machine reconciliation, they apply runtime state without creating a Codex Stop transaction.
 - `~/.codex/config.toml` contains exact trusted repo entries for local repos such as `focus`
 - `~/.codex/config.toml` enables Codex hooks through `[features].hooks = true`

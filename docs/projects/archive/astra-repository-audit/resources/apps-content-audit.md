@@ -381,7 +381,7 @@ Lead with shipped audio output and label the paired Markdown/JSON format explici
 future contract. Preserve the contract; do not implement transcription during a docs audit.
 
 **Confirmed skill metadata overload:**
-[swiftui-whats-new-27:3](/Users/dobby/GitHub/agents/skills-source/external/swiftui-whats-new-27/SKILL.md)
+[swiftui-whats-new-27:3](/Users/dobby/GitHub/agents/skills-source/owned/swiftui-whats-new-27/SKILL.md)
 has a roughly 2,700-character description, including API error recipes and many feature examples.
 The root body already routes to topical references. Shorten metadata to SDK-27 adoption,
 migration and matching errors, and leave exact pitfalls in references. Preserve the

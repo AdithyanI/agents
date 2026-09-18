@@ -1,96 +1,13 @@
-# Project Tracker Operating Rules
+# Project Continuity and Closeout
 
-Use this note when editing `tasks.md`, rebuilding `Current Batch`, checkpointing a long run, or deciding whether a tracker is ready to archive.
+The tracker is a resume point, not a transcript or an additional policy manual.
 
-## Canonical Role Of `tasks.md`
+When current work, scope, or evidence has changed, update the existing tracker. Keep remaining work distinguishable from completed work. A current-batch table is useful for parallel work, but the column names and number of rows are not a contract.
 
-- Treat `tasks.md` as the canonical project tracker and single durable resume point.
-- Keep durable execution state in the repo, not only in chat.
-- Use milestones for checkpoint-sized outcomes.
-- Use `Current Batch` for active work now.
-- Use `Backlog / Remaining Work` for work that is not active yet.
+Record consequential decisions, unresolved blockers, and enough evidence to assess completion. Link to the actual source rather than copying architecture or command inventories. Keep only artifacts worth retaining across sessions in `resources/`; use repo scratch space for disposable logs.
 
-## When To Replan
+Keep one writer responsible for the tracker. Delegated work should return its outcome, changed files, validation, and any remaining concern; the parent records what matters.
 
-Replan the tracker in place when any of these is true:
+At closeout, verify the original acceptance criteria against current state. Resolve outstanding work or record explicit user-approved scope changes. An unanswered question that could change the deliverable means the project is not complete.
 
-- `Current Batch` is empty
-- `Current Batch` is stale or obviously wrong
-- the scoped work shifted materially
-- completed work is still marked active
-- the remaining milestones or backlog no longer reflect reality
-
-When replanning:
-
-1. Rebuild `Current Batch` from the remaining milestones and backlog.
-2. Keep shared-boundary work sequential.
-3. Keep the live board small and concrete.
-4. Promote only truly active work into `Current Batch`.
-
-## How To Use `Current Batch`
-
-- Treat `Current Batch` as the live execution board and primary resume point.
-- Keep it small, usually `1-5` items total.
-- Usually keep delegated items to `2-3` at once unless the work is mostly read-heavy.
-- Keep one row per active parent-owned or delegated work item.
-- Each row should say:
-  - what is being done now
-  - who owns it
-  - whether a useful file exists in `resources/`
-
-Recommended meanings for the columns:
-
-- `Status`
-  - `todo`, `in_progress`, `delegated`, `blocked`, or `done`
-- `Work Item`
-  - a concrete, scoped unit of work
-- `Role`
-  - `parent`, `explorer`, `external_researcher`, `worker`, or another explicit role when one exists
-- `Resource`
-  - a topic-based path under `resources/` when durable notes or artifacts exist
-
-## Checkpoint Rules
-
-Checkpoint after each meaningful batch:
-
-1. Update milestone and task checkbox state.
-2. Add a dated `Progress Log` entry.
-3. Refresh `Decisions`, `Open Questions / Blockers`, `Current Batch`, and `Backlog / Remaining Work`.
-4. Record the durable outcome of any delegated work in `tasks.md`.
-5. Link topic-based files under `resources/` when durable notes, logs, or artifacts are worth keeping.
-6. Reassess whether delegation is still helping.
-
-Keep blockers first-class:
-
-- Add them to `Open Questions / Blockers` immediately.
-- Remove or resolve them as soon as the answer is known.
-
-## Closeout And Archive Rules
-
-- Archive by default when `Done When` is satisfied, remaining milestones/tasks are complete or explicitly descoped, validation is acceptable for the scoped work, and no material blocker remains.
-- Ask before archiving only when project completion is materially uncertain or when closure depends on product judgment rather than implementation execution.
-- Unless repo guidance says otherwise, archive by moving the complete project directory from the active tracker path to the repo's archive path, e.g. `projects/<project>/` to `projects/archive/<project>/` or `docs/projects/<project>/` to `docs/projects/archive/<project>/`.
-- Use the Project skill's bundled `scripts/archive_project.py` rather than moving `tasks.md`, `learnings.md`, and `resources/` separately. Pass the active project directory and complete archive destination with `--no-input`; the command archives by default. Use `--dry-run` only when an inspection pass is useful.
-- A successful closeout must report `source_removed: true`. Verify the active project path no longer exists; an empty project or `resources/` directory is still an incomplete archive even though Git cannot track it.
-- If the archive folder does not exist, create it during closeout.
-- Do not introduce a `ready-to-archive` holding state by default.
-- Before the final response for completed scoped work, either move the tracker to the archive path or explicitly record why archive is blocked.
-
-Archive without asking when all of the following are true:
-
-- `Done When` is satisfied
-- remaining milestones/tasks are complete or explicitly descoped
-- validation has passed, or any residual failure is documented as out of scope and non-blocking
-- `Open Questions / Blockers` has no unresolved item that would change the deliverable if answered differently
-
-Final response requirement: mention the archive path and confirm the active path
-was removed when archived; if not archived, name the blocker so the next agent
-does not silently leave stale active projects behind.
-
-## `resources/` And `learnings/`
-
-- Use `resources/` for durable working artifacts such as notes, logs, external research summaries, snapshots, or helper outputs.
-- Keep `resources/` flat by default and use topic-based filenames.
-- Do not name files after agent mechanics such as `subagent-batch-01.md`.
-- Use `learnings.md` for project-specific retrospective notes about what would have made the run easier, faster, or more reliable.
-- For long-running or tooling-heavy projects, add a backlog task to review and finalize `learnings.md` before archive.
+Archive the entire project directory with the skill's bundled helper, then verify `source_removed: true` and that the active directory is absent. Do not move individual files and leave empty active folders. The final handoff should point to the archive, or identify concrete remaining work when completion has not been achieved.

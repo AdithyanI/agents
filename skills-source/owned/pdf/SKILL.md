@@ -1,46 +1,18 @@
 ---
-name: "pdf"
-description: "Use when tasks involve reading, creating, or reviewing PDF files where rendering and layout matter; prefer visual checks by rendering pages (Poppler) and use Python tools such as `reportlab`, `pdfplumber`, and `pypdf` for generation and extraction."
+name: pdf
+description: Read, create, or review PDFs when page layout and rendering matter. Use for PDF generation, extraction, and visual verification of deliverable pages.
 ---
 
+# PDF
 
-# PDF Skill
+Use text extraction for content and rendered pages for layout. `pdfplumber` and `pypdf` are useful for extraction; `reportlab` is available for programmatic creation. Choose the tool that fits the document instead of rebuilding an existing workflow.
 
-## When to use
-- Read or review PDF content where layout and visuals matter.
-- Create PDFs programmatically with reliable formatting.
-- Validate final rendering before delivery.
+Render pages with Poppler when visual verification matters:
 
-## Workflow
-1. Prefer visual review: render PDF pages to PNGs and inspect them.
-   - Use `pdftoppm` if available.
-   - If unavailable, install Poppler or ask the user to review the output locally.
-2. Use `reportlab` to generate PDFs when creating new documents.
-3. Use `pdfplumber` (or `pypdf`) for text extraction and quick checks; do not rely on it for layout fidelity.
-4. After each meaningful update, re-render pages and verify alignment, spacing, and legibility.
-
-## Temp and output conventions
-- Use `tmp/pdfs/` for intermediate files; delete when done.
-- Write final artifacts under `output/pdf/` only when the current repo allows that path.
-- Repo-local guidance wins: in Dobby workspaces and other repos that forbid top-level `output/`, keep scratch under `tmp/pdfs/` and place the final PDF only in a user-requested external path or a repo-approved artifact location.
-- Keep filenames stable and descriptive.
-
-## Environment
-No required environment variables.
-
-## Rendering command
-```
-pdftoppm -png $INPUT_PDF $OUTPUT_PREFIX
+```bash
+pdftoppm -png <input.pdf> <output-prefix>
 ```
 
-## Quality expectations
-- Maintain polished visual design: consistent typography, spacing, margins, and section hierarchy.
-- Avoid rendering issues: clipped text, overlapping elements, broken tables, black squares, or unreadable glyphs.
-- Charts, tables, and images must be sharp, aligned, and clearly labeled.
-- Use ASCII hyphens only. Avoid U+2011 (non-breaking hyphen) and other Unicode dashes.
-- Citations and references must be human-readable; never leave tool tokens or placeholder strings.
+Inspect affected pages of the final version for clipping, overlaps, broken tables, missing glyphs, and legibility. Text extraction alone does not establish visual correctness. If rendering is unavailable, use another available renderer or state the validation limit.
 
-## Final checks
-- Do not deliver until the latest PNG inspection shows zero visual or formatting defects.
-- Confirm headers/footers, page numbering, and section transitions look polished.
-- Keep intermediate files organized or remove them after final approval.
+Keep intermediates in repo `tmp/pdfs/` and remove disposable files when done. Put deliverables in the user-requested or repo-approved artifact location. In Dobby workspaces, follow the body map and artifact contract rather than creating a top-level `output/` directory.

@@ -1,7 +1,6 @@
 # Agent-First CLI Contract
 
-Use this contract when the primary caller is an AI agent.
-Operator inspection is supported as a secondary debugging and status path.
+These are design defaults for a new CLI whose primary caller is an agent. Existing repo-owned contracts take precedence. Do not add flags, modes, schema migrations, or compatibility layers solely to match these examples. Operator inspection can be a secondary status/debugging path.
 
 ## Interface Modes
 

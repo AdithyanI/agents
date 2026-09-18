@@ -1,78 +1,30 @@
 # Codex Control Plane
 
-This repo is the canonical personal Codex control plane across both machines. The durable source of truth lives in `~/GitHub/agents`; the live Codex runtime home lives in `~/.codex`; Codex user-scope skills are rendered into `~/.agents/skills`.
-
-That split keeps reusable skills, registries, docs, hooks, MCP presets, plugins, and bootstrap scripts in one normal GitHub checkout without using `~/.agents` as a catch-all repo. `~/.agents` remains useful because Codex natively discovers user skills there, but it should be a thin runtime surface, not the canonical checkout.
-
-## Figure 1: Ownership Layout
+`~/GitHub/agents` is the canonical personal Codex control plane across both machines. Keeping it separate from runtime homes makes shared configuration reproducible without syncing credentials, conversations, caches, or private workspace data.
 
 ```mermaid
-flowchart TD
-    A["~/GitHub/agents<br/>canonical control-plane repo"]
-    B["~/.agents/skills<br/>Codex USER skill runtime"]
-    C["~/.codex<br/>Codex runtime home"]
-    E["Repo-local .codex / .agents<br/>project surfaces"]
-    F["~/GitHub/scripts<br/>generic machine bootstrap"]
-
-    A --> B
-    A --> C
-    A --> E
-    F --> A
+flowchart LR
+    A[agents: canonical sources] --> B[bootstrap and reconcile]
+    B --> C[global Codex runtime]
+    B --> D[global and repo skill links]
+    B --> E[repo Codex config, hooks, previews]
+    F[scripts: machine Git sync] --> B
 ```
 
-## Canonical Inputs
+The source map is in [AGENTS.md](../../AGENTS.md). Standalone skills, native plugins, and standalone MCP definitions remain separate because their ownership and runtime scope differ; see [capability boundaries](capability-bootstrap-model.md).
 
-- `config/global.agents.md`: shared machine-wide guidance source rendered into `~/.codex/AGENTS.md`.
-- `skills/registry.json`: canonical managed skill registry.
-- `skills-source/owned/` and `skills-source/external/`: canonical managed skill content.
-- `plugins/registry.json`: native Codex plugin scope and enablement.
-- `mcp/config/presets.json`: shared MCP definitions and repository scopes.
-- `hooks/registry.json` and `hooks/scripts/`: shared lifecycle hook definitions and dispatchers.
-- `codex/config/repo-bootstrap.json`: managed repo inventory and repo-local Codex behavior.
-- `dev-servers/registry.json`: opt-in Codex preview environments. It is for short-lived local dev previews only; public Cloudflare/LaunchAgent service ports stay in `~/GitHub/scripts`.
-- `dashboard-app/`: source for the local read-only control-plane dashboard; production serves a
-  versioned external release, not tracked build output.
+## State and Authority
 
-## Generated Runtime Surfaces
+- `~/GitHub/agents` owns durable shared policy, source, registries, and renderers.
+- `~/.agents/skills` is a thin discovery surface of generated links, not another source checkout.
+- `~/.codex` holds applied config and app-owned runtime state. Preserve auth, sessions, databases, vendor imports, and caches according to their owner.
+- Repo `.codex` files and managed skill links are rendered here; repo-owned source, local skills, and domain behavior stay in their repositories.
+- `~/GitHub/scripts` owns machine bootstrap, scheduling, and Git transport. Public service wiring is separate from opt-in development previews.
 
-- `~/.agents/skills/<skill>`: Codex user-scope skill symlinks.
-- `~/.codex/AGENTS.md`: symlink or rendered link to `config/global.agents.md`.
-- `~/.codex/config.toml` and `~/.codex/hooks.json`: live global Codex runtime config.
-- repo `.codex/config.toml` and `.codex/hooks.json`: generated repo-local Codex behavior.
-- repo `.agents/skills/<skill>`: Codex repo-scope skill symlinks.
-- repo `.codex/environments/environment.toml`: generated Codex action for the same agent-preview target.
+Shared config establishes the baseline; exact trusted repository roots allow repo-local config to apply. Provider choice is machine-local, and model/effort/service-tier selection is client-owned. See [ownership](../references/codex-control-plane-ownership.md) for exceptions that sync must preserve.
 
-## Main Flow
+## Applying Changes
 
-```mermaid
-flowchart TD
-    A["Edit ~/GitHub/agents"] --> B["bootstrap-machine-agent-control-planes.sh"]
-    B --> C["sync-skills-registry.sh"]
-    B --> D["sync-codex-previews.py"]
-    B --> E["bootstrap-machine-codex.sh"]
-    B --> F["sync-managed-git-hooks.sh"]
-    C --> G["~/.agents/skills + repo .agents/skills"]
-    D --> H["repo .codex/environments/environment.toml"]
-    E --> I["~/.codex + repo .codex"]
-    F --> J["repo core.hooksPath -> ~/GitHub/agents/hooks/git"]
-```
+Edit the canonical source and use the [shared bootstrap/check workflow](../references/agent-control-plane-operations.md). Machine Git sync carries changes to the other machine and invokes `auto-apply-agent-control-planes.sh`; machine-local stamps let it reconcile changed inputs. Offline machines catch up after the next successful sync.
 
-## Key Boundaries
-
-- Canonical and sync-worthy belongs in `~/GitHub/agents`.
-- Codex user skill discovery belongs in `~/.agents/skills`.
-- Applied Codex runtime and volatile state belongs in `~/.codex`.
-- Generic machine bootstrap belongs in `~/GitHub/scripts`.
-- Repo-specific agent behavior belongs in repo-local `.codex/` and `.agents/` surfaces generated from this repo unless the repo intentionally owns it.
-
-## Notes
-
-- Do not symlink the entire `~/GitHub/agents` checkout to `~/.agents`; that would mix canonical source, generated runtime links, dashboard assets, and client-specific state in one discovery path.
-- Keep global skills minimal. Promote repo-local skills only when they are genuinely useful across repos.
-- If a file must exist under a runtime home for a client to load it, keep the canonical source in `~/GitHub/agents` and render or link it into place.
-
-See [Codex Control Plane Ownership](/Users/dobby/GitHub/agents/docs/references/codex-control-plane-ownership.md) for the exact split.
-See [Codex Control Plane Operations](/Users/dobby/GitHub/agents/docs/references/codex-control-plane-operations.md) for exact commands, healthy-state checks, and common failure modes.
-See [Capability Bootstrap Model](/Users/dobby/GitHub/agents/docs/architecture/capability-bootstrap-model.md) for the skills / MCPs / plugins structure.
-See [Codex Config Layers](/Users/dobby/GitHub/agents/docs/architecture/codex-config-layers.md) for the config-specific layering model.
-See [Codex Control Plane Script Flows](/Users/dobby/GitHub/agents/docs/architecture/codex-control-plane-script-flows.md) for smaller diagrams showing what each main script group does.
+Lifecycle automation publishes checked repository state; it does not build production applications in the Stop hook. Repo context and explicit finalization policy use the [lifecycle adapter contract](../references/repo-lifecycle-hook-adapter.md). Exact script order and flags live in executable source, while [Codex operations](../references/codex-control-plane-operations.md) retains useful recovery and runtime constraints.

@@ -1,49 +1,23 @@
 ---
 name: client-interface-guidelines
-description: "Design or review machine-primary command-line client interfaces for agent execution. Use when creating or improving CLI/client tools that require stable JSON contracts, deterministic outputs, structured errors, non-interactive operation, robust exit codes, secure secret handling, and operator inspection paths without turning the CLI into a human-first UI."
+description: Design or review command-line interfaces used by agents, including machine output, errors, non-interactive operation, retries, credentials, and delivery-route reporting.
 ---
 
 # Client Interface Guidelines
 
-## Overview
+Design for callers that need to identify state, act without prompts, inspect the result, and recover from failure. Honor the owning repo's existing interface contract; do not redesign an established CLI simply to match this skill's examples.
 
-Apply this skill as the default gate for agent-native CLI/client tools.
+Keep machine output deterministic and separate from diagnostics. Use stable failure codes, secure secret input, and explicit retry/timeout semantics. Normal operations must run without interactive prompts. Support operator inspection when useful without changing the semantic contract based on TTY detection.
 
-Optimize for machine reliability first.
-Treat operator inspection as a secondary debugging and status layer, not as a co-equal interface mode.
+## References by Decision
 
-## Workflow
+- New machine contract or envelope: `references/09-agent-first-contract.md`.
+- Help and discovery: `references/02-basics-help-docs.md`.
+- Output and errors: `references/03-output-errors.md`.
+- Arguments and interaction: `references/04-arguments-interactivity-subcommands.md`.
+- Retries, interruption, compatibility: `references/05-robustness-future-signals.md`.
+- Configuration and secrets: `references/06-configuration-environment.md`.
+- Packaging and naming: `references/07-naming-distribution-analytics.md`.
+- Choosing among local/remote/cloud delivery paths: `references/12-delivery-route-selection.md`.
 
-1. Read `references/00-how-to-use-this-skill.md`.
-2. Start with `references/09-agent-first-contract.md`.
-3. Apply `references/10-agent-must-should-checklist.md`.
-4. Validate using `references/11-agent-test-matrix-template.md`.
-5. Use `references/12-delivery-route-selection.md` when a CLI chooses between local device, remote beta, cloud build, or other delivery routes.
-6. Use `references/02` to `07` for detailed guidance.
-7. Optionally run `references/08-quick-review-checklist.md` for full coverage.
-
-## Reference Files
-
-- `references/00-how-to-use-this-skill.md`
-- `references/01-philosophy.md`
-- `references/02-basics-help-docs.md`
-- `references/03-output-errors.md`
-- `references/04-arguments-interactivity-subcommands.md`
-- `references/05-robustness-future-signals.md`
-- `references/06-configuration-environment.md`
-- `references/07-naming-distribution-analytics.md`
-- `references/08-quick-review-checklist.md`
-- `references/09-agent-first-contract.md`
-- `references/10-agent-must-should-checklist.md`
-- `references/11-agent-test-matrix-template.md`
-- `references/12-delivery-route-selection.md`
-
-## Non-Negotiables
-
-- Stable machine-readable contract and schema versioning.
-- Non-interactive operation with `--no-input` support.
-- Structured errors with stable codes and mapped exit codes.
-- Strict stdout/stderr separation.
-- Secure secret handling with no flag/env secret input.
-- Additive interface evolution with explicit deprecation path.
-- JSON is the default behavioral contract unless there is a strong reason otherwise.
+Use existing contract tests for affected behavior. `references/11-agent-test-matrix-template.md` supplies examples when designing coverage, not a mandatory suite. For an explicitly broad review, `references/08-quick-review-checklist.md` offers additional prompts. Report consequential gaps and evidence in the format the task needs.
