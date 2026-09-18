@@ -6,33 +6,14 @@
       "event": "SessionStart",
       "id": "repo-session-start",
       "matchers": {
-        "codex": "startup|clear|compact",
-        "claude": "startup|resume|clear|compact"
+        "codex": "startup|clear|compact"
       },
       "repos": [
         "adi",
         "angie"
       ],
       "runtimes": [
-        "codex",
-        "claude",
-        "copilot"
-      ],
-      "scope": "repo",
-      "timeout": 5
-    },
-    {
-      "command": "python3 \"$HOME/GitHub/agents/hooks/scripts/user_prompt_submit.py\" --runtime {runtime}",
-      "enabled": true,
-      "event": "UserPromptSubmit",
-      "id": "repo-user-prompt-submit",
-      "repos": [
-        "adi",
-        "angie"
-      ],
-      "runtimes": [
-        "claude",
-        "copilot"
+        "codex"
       ],
       "scope": "repo",
       "timeout": 5
@@ -43,8 +24,7 @@
       "event": "Stop",
       "id": "global-stop",
       "runtimes": [
-        "codex",
-        "copilot"
+        "codex"
       ],
       "scope": "global",
       "timeout": 900

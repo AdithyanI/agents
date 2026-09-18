@@ -48,7 +48,7 @@ flowchart TD
 
 - `codex/config/global.config.toml` defines the managed baseline for terminal Codex.
 - `codex/config/bundled-skills-policy.json` classifies OpenAI-bundled runtime skills as allowed or disabled so upstream bundled skills cannot silently drift into the local control plane.
-- `mcp/config/presets.json` defines shared MCP transports and repository/client targets.
+- `mcp/config/presets.json` defines shared MCP transports and repository scopes.
 - `plugins/registry.json` defines native Codex plugin scope and enable/disable state.
 - `hooks/registry.json` defines shared lifecycle hooks rendered into global and repo-local Codex hook files.
 - `codex/config/repo-bootstrap.json` defines managed repos, trust behavior, and optional per-repo behavior such as personality and instructions. Model, reasoning effort, and service tier remain client-owned thread selections.
@@ -71,7 +71,7 @@ flowchart TD
 
 ## Repo-Local Config
 
-- `codex/scripts/sync-repo-codex-configs.sh` generates repo-local `.codex/config.toml` files from `repo-bootstrap.json`, Codex cells in the shared MCP target matrix, and plugin assignments.
+- `codex/scripts/sync-repo-codex-configs.sh` generates repo-local `.codex/config.toml` files from `repo-bootstrap.json`, repository scopes in the MCP registry, and plugin assignments.
 - The same script renders repo-local `.codex/hooks.json` for repo-scoped hooks.
 - Most repos can have a minimal managed file with no repo-local overrides.
 - Some repos get Codex-targeted MCPs, instruction/personality overrides, or project-root markers.
@@ -89,7 +89,7 @@ Current per-repo fields in `repo-bootstrap.json`:
 ## Main Flow
 
 1. Edit canonical config in `~/GitHub/agents/codex/config/`, `~/GitHub/agents/mcp/`, `~/GitHub/agents/plugins/`, or `~/GitHub/agents/hooks/`.
-2. Run `~/GitHub/agents/codex/scripts/bootstrap-machine-codex.sh --apply` for Codex-only apply, or `~/GitHub/agents/scripts/bootstrap-machine-agent-control-planes.sh --apply` for all client surfaces.
+2. Run `~/GitHub/agents/codex/scripts/bootstrap-machine-codex.sh --apply` for the Codex runtime, or `~/GitHub/agents/scripts/bootstrap-machine-agent-control-planes.sh --apply` for skills, plugins, previews, and the Codex runtime together.
 3. Codex starts with `~/.codex/config.toml` and layers trusted repo-local config on top.
 
 ## Notes

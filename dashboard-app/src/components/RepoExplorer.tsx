@@ -3,10 +3,6 @@ import { useNavigateItem } from '../primitives';
 import { cleanArray, itemAppliesToRepo, repoCapabilitySummary, repoKey } from '../selectors';
 import type { ControlPlaneData, Item, SectionId } from '../types';
 
-function Badge({ text }: { text: string }) {
-  return <span className="re-badge">{text}</span>;
-}
-
 // Count ringed in its scope colour (gold = global base kit, sage = repo's own),
 // so the base-kit line reads as its own legend for the chips below.
 function ScopeCount({ n, scope }: { n: number; scope: 'global' | 'local' }) {
@@ -70,12 +66,10 @@ function ScopedChips({
 
 function CapGroup({
   title,
-  runtime,
   count,
   children,
 }: {
   title: string;
-  runtime: string;
   count?: number;
   children: React.ReactNode;
 }) {
@@ -83,7 +77,6 @@ function CapGroup({
     <section className="re-cap">
       <div className="re-cap-head">
         <h2>{title}</h2>
-        <Badge text={runtime} />
         {count != null ? <strong>{count}</strong> : null}
       </div>
       {children}
@@ -140,7 +133,7 @@ function RepoDetail({ data, repo }: { data: ControlPlaneData; repo: Item }) {
         ))}
       </div>
 
-      <CapGroup title="Runtime config" runtime="Codex" count={features.length}>
+      <CapGroup title="Runtime config" count={features.length}>
         <div className="re-config">
           <Chips items={features} accent empty="No repo runtime feature overrides" />
         </div>
@@ -148,7 +141,6 @@ function RepoDetail({ data, repo }: { data: ControlPlaneData; repo: Item }) {
 
       <CapGroup
         title="Skills"
-        runtime="Codex + Claude + Copilot"
         count={caps.globalSkills.length + caps.repoSkills.length}
       >
         <p className="re-base">
@@ -158,29 +150,28 @@ function RepoDetail({ data, repo }: { data: ControlPlaneData; repo: Item }) {
         <ScopedChips global={caps.globalSkills} local={caps.repoSkills} kind="skills" empty="No skills" />
       </CapGroup>
 
-      <CapGroup title="Plugins" runtime="Codex" count={caps.globalPlugins.length}>
+      <CapGroup title="Plugins" count={caps.globalPlugins.length}>
         <p className="re-base">
           Base kit: <ScopeCount n={caps.globalPlugins.length} scope="global" /> global plugins
         </p>
         <ScopedChips global={caps.globalPlugins} local={[]} kind="plugins" empty="No plugins" />
       </CapGroup>
 
-      <CapGroup title="Tools · MCP" runtime="Target matrix" count={caps.globalMcp.length + caps.directMcp.length}>
+      <CapGroup title="Tools · MCP" count={caps.globalMcp.length + caps.directMcp.length}>
         <p className="re-base">
-          Availability can differ across Codex, Claude, and Copilot. Open MCP to inspect the matrix.
+          MCP servers configured for Codex in this repository. Open MCP to inspect repository coverage.
         </p>
         <ScopedChips global={caps.globalMcp} local={caps.directMcp} kind="mcp" empty="No MCP presets" />
       </CapGroup>
 
       <CapGroup
         title="Lifecycle · Hooks"
-        runtime="Codex · Stop on Claude"
         count={caps.globalHooks.length + caps.repoHooks.length}
       >
         <ScopedChips global={caps.globalHooks} local={caps.repoHooks} kind="hooks" empty="No hooks" />
       </CapGroup>
 
-      <CapGroup title="Agent Preview" runtime="Codex + Claude + Copilot" count={devNames.length}>
+      <CapGroup title="Agent Preview" count={devNames.length}>
         <Chips items={devNames} accent empty="No preview server. Add in dev-servers/registry.json" />
       </CapGroup>
     </div>

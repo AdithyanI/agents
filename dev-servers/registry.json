@@ -1,6 +1,6 @@
 {
   "version": 1,
-  "description": "Canonical agent preview server definitions per repo. Rendered into each runtime's own format (Claude Code: .claude/launch.json; Codex: .codex/environments/environment.toml; GitHub Copilot app: .github/github-app.yml). Opt-in only: a repo gets a launch surface ONLY if it appears here. The `port` and `host` fields are the single source of truth; reference them inside runtimeArgs with the {port} and {host} placeholders rather than hardcoding the literals. Use {repo_root} for the active repo checkout; Copilot app configs render it through COPILOT_WORKSPACE_PATH so worktree sessions preview their own checkout. Keep production/public Cloudflare services in the scripts repo inventory, not here.",
+  "description": "Canonical Codex preview server definitions. Only listed repos receive .codex/environments/environment.toml. Port and host are the source of truth; use {port}, {host}, and {repo_root} in runtimeArgs to follow the selected checkout. Public Cloudflare services remain in the scripts repo inventory.",
   "paths": {
     "github_root": "~/GitHub"
   },

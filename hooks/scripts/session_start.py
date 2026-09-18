@@ -10,7 +10,6 @@ SPEC = RepoHookSpec(
     event="SessionStart",
     repo_script=Path("scripts/hooks/session_start.py"),
     description="Shared SessionStart hook.",
-    valid_runtimes=frozenset({"codex", "claude", "copilot"}),
     label="session_start",
     forward_stdout_as_context=True,
 )

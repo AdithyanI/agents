@@ -2,26 +2,21 @@ from __future__ import annotations
 
 import argparse
 import json
-import shlex
 import sys
 from pathlib import Path
 from typing import Any
 
 
-VALID_RUNTIMES = {"codex", "claude", "copilot"}
+VALID_RUNTIMES = {"codex"}
 VALID_SCOPES = {"global", "repo"}
 ALL_REPOS = "*"
 EVENT_RUNTIME_SUPPORT = {
-    # Codex, Claude, and Copilot share lifecycle scripts (each takes
-    # --runtime <name>). Claude's Stop hook is wired separately
-    # (claude_stop.py via sync-claude), so Stop stays codex/copilot here.
-    "SessionStart": {"codex", "claude", "copilot"},
-    "UserPromptSubmit": {"codex", "claude", "copilot"},
-    "Stop": {"codex", "copilot"},
+    "SessionStart": {"codex"},
+    "UserPromptSubmit": {"codex"},
+    "Stop": {"codex"},
 }
 VALID_EVENTS = set(EVENT_RUNTIME_SUPPORT)
 EVENTS_WITH_MATCHERS = {"SessionStart"}
-COPILOT_EVENTS_WITH_MATCHERS = set()
 
 
 class HookRegistryError(RuntimeError):
@@ -245,80 +240,6 @@ def render_codex_hooks(
     return render_runtime_hooks(registry, "codex", repo_name=repo_name)
 
 
-def render_claude_hooks(
-    registry: dict[str, Any],
-    *,
-    repo_name: str | None = None,
-) -> dict[str, Any]:
-    return render_runtime_hooks(registry, "claude", repo_name=repo_name)
-
-
-def _managed_copilot_user_hooks(registry: dict[str, Any]) -> list[dict[str, Any]]:
-    hooks = registry.get("managed_hooks", [])
-    selected: list[dict[str, Any]] = []
-    for hook in hooks:
-        if not isinstance(hook, dict):
-            continue
-        if not hook.get("enabled", True):
-            continue
-        if "copilot" in hook.get("runtimes", []):
-            selected.append(hook)
-    return selected
-
-
-def _render_copilot_command(
-    hook: dict[str, Any],
-    *,
-    runtime: str,
-    event: str,
-    disabled_repo_names: set[str] | None = None,
-) -> str:
-    command = _render_command(str(hook["command"]), runtime=runtime, event=event)
-    command = f"{command} --no-input"
-    if hook.get("scope") == "repo":
-        repos = hook.get("repos", [])
-        if isinstance(repos, list):
-            if disabled_repo_names is not None:
-                repos = [repo for repo in repos if str(repo) not in disabled_repo_names]
-            repo_arg = ",".join(str(repo) for repo in repos)
-            command = f"{command} --repos {shlex.quote(repo_arg)}"
-    return command
-
-
-def render_copilot_hooks(
-    registry: dict[str, Any],
-    *,
-    disabled_repo_names: set[str] | None = None,
-) -> dict[str, Any]:
-    events: dict[str, list[dict[str, Any]]] = {}
-    for hook in _managed_copilot_user_hooks(registry):
-        event = str(hook["event"])
-        if hook.get("scope") == "repo" and disabled_repo_names is not None:
-            repos = hook.get("repos", [])
-            if not any(str(repo) not in disabled_repo_names for repo in repos):
-                continue
-        handler: dict[str, Any] = {
-            "bash": _render_copilot_command(
-                hook,
-                runtime="copilot",
-                event=event,
-                disabled_repo_names=disabled_repo_names,
-            ),
-            "timeoutSec": hook["timeout"],
-            "type": "command",
-        }
-        matchers = hook.get("matchers", {})
-        matcher = matchers.get("copilot") if isinstance(matchers, dict) else None
-        if (
-            event in COPILOT_EVENTS_WITH_MATCHERS
-            and isinstance(matcher, str)
-            and matcher.strip()
-        ):
-            handler["matcher"] = matcher
-        events.setdefault(event, []).append(handler)
-    return {"hooks": events, "version": 1}
-
-
 def _write_output(path: Path, data: dict[str, Any]) -> None:
     path.parent.mkdir(parents=True, exist_ok=True)
     path.write_text(render_json(data), encoding="utf-8")
@@ -336,19 +257,6 @@ def parse_args(argv: list[str]) -> argparse.Namespace:
     codex.add_argument("--output", required=True)
     codex.add_argument("--repo-name")
 
-    claude = subparsers.add_parser(
-        "render-claude", help="Render Claude settings.json hooks block"
-    )
-    claude.add_argument("--registry", required=True)
-    claude.add_argument("--output", required=True)
-    claude.add_argument("--repo-name")
-
-    copilot = subparsers.add_parser(
-        "render-copilot", help="Render Copilot user-level hooks file"
-    )
-    copilot.add_argument("--registry", required=True)
-    copilot.add_argument("--output", required=True)
-
     return parser.parse_args(argv)
 
 
@@ -362,18 +270,6 @@ def main(argv: list[str] | None = None) -> int:
             _write_output(
                 Path(args.output).expanduser().resolve(),
                 render_codex_hooks(registry, repo_name=args.repo_name),
-            )
-            return 0
-        if args.command == "render-claude":
-            _write_output(
-                Path(args.output).expanduser().resolve(),
-                render_claude_hooks(registry, repo_name=args.repo_name),
-            )
-            return 0
-        if args.command == "render-copilot":
-            _write_output(
-                Path(args.output).expanduser().resolve(),
-                render_copilot_hooks(registry),
             )
             return 0
     except HookRegistryError as exc:

@@ -1126,19 +1126,19 @@ class CodexMultiRepoStopTests(TempDirTestCase):
         )
 
     def test_missing_task_id_does_not_fall_back_to_single_repo(self) -> None:
-        with patch.object(stop, "process_repo") as single_repo:
+        with patch.object(stop, "finalize_codex_repositories") as finalizer:
             output = stop.process_codex_repositories(str(self.temp_path), {"hook_event_name": "Stop"})
-        single_repo.assert_not_called()
+        finalizer.assert_not_called()
         self.assertEqual(output["decision"], "block")
         self.assertIn("missing session_id", output["reason"])
 
     def test_repeated_discovery_failure_reports_incomplete_without_retry_loop(self) -> None:
         with patch.dict(os.environ, {"HOME": str(self.temp_path / "home")}):
-            with patch.object(stop, "collect_codex_turn_changes", side_effect=stop.CodexTurnChangesError("unavailable")), patch.object(stop, "process_repo") as single_repo:
+            with patch.object(stop, "collect_codex_turn_changes", side_effect=stop.CodexTurnChangesError("unavailable")), patch.object(stop, "finalize_codex_repositories") as finalizer:
                 output = stop.process_codex_repositories(
                     str(self.temp_path), {"session_id": "thread", "stop_hook_active": True}
                 )
-        single_repo.assert_not_called()
+        finalizer.assert_not_called()
         self.assertNotIn("decision", output)
         self.assertIn("repository discovery is incomplete", output["systemMessage"])
         self.assertIn("No repositories were finalized", output["systemMessage"])

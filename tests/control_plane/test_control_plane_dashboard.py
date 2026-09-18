@@ -94,17 +94,17 @@ class ControlPlaneDashboardDataTests(TempDirTestCase):
         write_json(
             root / "mcp/config/presets.json",
             {
-                "version": 2,
+                "version": 3,
                 "presets": {
                     "openaiDeveloperDocs": {
                         "transport": "http",
                         "url": "https://developers.openai.com/mcp",
-                        "targets": [{"clients": "all", "repos": "all"}],
+                        "repos": "all",
                     },
                     "cloudflare-docs": {
                         "transport": "http",
                         "url": "https://docs.mcp.cloudflare.com/mcp",
-                        "targets": [{"clients": ["codex"], "repos": [str(adi)]}],
+                        "repos": [str(adi)],
                     },
                 },
             },
@@ -141,45 +141,9 @@ class ControlPlaneDashboardDataTests(TempDirTestCase):
             },
         )
         write_json(root / "dev-servers/registry.json", {"repos": []})
-        write_json(
-            root / "config/copilot-settings.json",
-            {
-                "settings": {
-                    "askUser": False,
-                    "banner": "never",
-                    "effortLevel": "high",
-                },
-                "trust": {
-                    "githubRoot": True,
-                    "directChildren": True,
-                    "extraFolders": [str(root), str(github_root)],
-                },
-                "launcher": {
-                    "enabled": True,
-                    "defaultArgs": [
-                        "--yolo",
-                        "--no-ask-user",
-                        "--effort",
-                        "high",
-                        "--mode",
-                        "autopilot",
-                        "--max-autopilot-continues",
-                        "10",
-                    ],
-                    "managementCommands": ["help", "skill", "mcp"],
-                },
-                "skills": {
-                    "copilotSkillDirectoryPolicy": "empty",
-                    "projectGithubSkillDirectoryPolicy": "empty",
-                    "appSkillsPolicy": "allow-known-only",
-                    "expectedAppBundledSkills": ["impeccable"],
-                },
-                "hooks": {
-                    "managedCopilotHooks": True,
-                    "userHookFile": "~/.copilot/hooks/agents-control-plane.json",
-                    "forbiddenCommandSubstrings": ["herdr"],
-                },
-            },
+        write_text(
+            root / "codex/config/global.config.toml",
+            'approval_policy = "never"\n[features]\nshell_tool = true\n',
         )
 
     def test_data_command_emits_agent_contract_and_normalized_groups(self) -> None:
@@ -198,7 +162,7 @@ class ControlPlaneDashboardDataTests(TempDirTestCase):
 
         payload = json.loads(result.stdout)
         self.assertEqual(result.stderr, "")
-        self.assertEqual(payload["schema_version"], "1.1")
+        self.assertEqual(payload["schema_version"], "2.0")
         self.assertEqual(payload["command"], "control-plane-dashboard data")
         self.assertEqual(payload["status"], "ok")
         self.assertIsNone(payload["error"])
@@ -210,8 +174,12 @@ class ControlPlaneDashboardDataTests(TempDirTestCase):
         self.assertEqual(data["counts"]["mcp"], 2)
         self.assertEqual(data["counts"]["repos"], 2)
         self.assertEqual(data["counts"]["hooks"], 1)
+        self.assertNotIn("runtimes", data["groups"]["hooks"][0]["details"])
         self.assertEqual(data["counts"]["warnings"], 0)
-        self.assertEqual(data["runtimes"], ["codex", "claude", "copilot"])
+        self.assertNotIn("runtimes", data)
+        self.assertNotIn("claude_settings", data["sources"])
+        self.assertNotIn("copilot_settings", data["sources"])
+        self.assertEqual(data["warnings"], [])
         self.assertEqual(data["groups"]["repos"][0]["details"]["skill_count"], 3)
         self.assertEqual(data["groups"]["repos"][1]["details"]["skill_count"], 2)
         self.assertEqual(data["groups"]["repos"][0]["details"]["mcp_count"], 2)
@@ -221,13 +189,17 @@ class ControlPlaneDashboardDataTests(TempDirTestCase):
         openai_docs = [
             item for item in data["groups"]["mcp"] if item["name"] == "openaiDeveloperDocs"
         ][0]
-        self.assertEqual(
-            openai_docs["details"]["global_clients"],
-            ["codex", "claude", "copilot"],
+        self.assertEqual(openai_docs["repos"], ["adi", "dobby-ios"])
+        self.assertTrue(openai_docs["details"]["global"])
+        self.assertFalse(
+            {"clients", "global_clients", "repo_clients", "targets"} & openai_docs["details"].keys()
         )
         self.assertEqual(openai_docs["scope"], "global")
         cloudflare = [item for item in data["groups"]["mcp"] if item["name"] == "cloudflare-docs"][0]
-        self.assertEqual(cloudflare["details"]["repo_clients"], {"adi": ["codex"]})
+        self.assertEqual(cloudflare["repos"], ["adi"])
+        self.assertEqual(cloudflare["scope"], "targeted")
+        self.assertFalse(cloudflare["details"]["global"])
+        self.assertEqual(data["groups"]["repos"][1]["details"]["mcp_count"], 1)
         plugin_skill = [
             item for item in data["groups"]["skills"] if item["name"] == "ios-debugger-agent"
         ][0]
@@ -245,11 +217,75 @@ class ControlPlaneDashboardDataTests(TempDirTestCase):
         self.assertTrue(repo_skill["details"]["codex_allow_implicit_invocation"])
         self.assertEqual(repo_skill["details"]["codex_invocation"], "implicit + explicit")
         runtime_capability = [cap for cap in data["capabilities"] if cap["key"] == "runtime"][0]
-        self.assertEqual(runtime_capability["copilot"]["status"], "new")
+        self.assertEqual(runtime_capability["status"], "stable")
+        self.assertEqual(runtime_capability["note"], ".codex/config.toml")
         lifecycle_capability = [cap for cap in data["capabilities"] if cap["key"] == "lifecycle"][0]
-        self.assertEqual(lifecycle_capability["copilot"]["status"], "stable")
-        self.assertIn("copilot", data["global_config"])
-        self.assertEqual(data["global_config"]["copilot"][0]["title"], "CLI settings")
+        self.assertEqual(lifecycle_capability["status"], "stable")
+        self.assertTrue(all("claude" not in cap and "copilot" not in cap for cap in data["capabilities"]))
+        config = {group["title"]: group for group in data["global_config"]}
+        self.assertEqual(config["Runtime defaults"]["rows"], [{"label": "approval_policy", "value": "never"}])
+        self.assertEqual(config["Features"]["rows"], [{"label": "shell_tool", "value": "on", "tone": "on"}])
+        self.assertEqual(config["Global plugins"]["rows"][0]["label"], "browser")
+        self.assertEqual(config["MCP delivery"]["source"], "mcp/config/presets.json")
+
+    def read_data(self) -> dict:
+        result = run_command(
+            [
+                sys.executable,
+                str(REPO_ROOT / "scripts/control-plane-dashboard.py"),
+                "data",
+                "--root",
+                str(self.temp_path),
+                "--no-input",
+            ]
+        )
+        return json.loads(result.stdout)["data"]
+
+    def test_unassigned_mcp_stays_visible_without_repository_coverage(self) -> None:
+        self.write_minimal_control_plane()
+        registry_path = self.temp_path / "mcp/config/presets.json"
+        registry = json.loads(registry_path.read_text())
+        registry["presets"]["parked-server"] = {
+            "transport": "stdio",
+            "command": "parked-server",
+            "repos": [],
+        }
+        write_json(registry_path, registry)
+
+        data = self.read_data()
+
+        parked = next(item for item in data["groups"]["mcp"] if item["name"] == "parked-server")
+        self.assertEqual(parked["scope"], "unassigned")
+        self.assertEqual(parked["status"], "unassigned")
+        self.assertEqual(parked["repos"], [])
+        self.assertFalse(parked["details"]["global"])
+        self.assertEqual(data["counts"]["mcp"], 3)
+        self.assertEqual([repo["details"]["mcp_count"] for repo in data["groups"]["repos"]], [2, 1])
+        self.assertEqual(data["warnings"], [])
+
+    def test_invalid_mcp_repository_scope_warns_without_inventing_coverage(self) -> None:
+        self.write_minimal_control_plane()
+        registry_path = self.temp_path / "mcp/config/presets.json"
+        registry = json.loads(registry_path.read_text())
+        registry["presets"]["cloudflare-docs"]["repos"] = ["unknown-repo"]
+        write_json(registry_path, registry)
+
+        data = self.read_data()
+
+        self.assertEqual(data["counts"]["warnings"], 1)
+        self.assertEqual(data["warnings"][0]["code"], "invalid_mcp_registry")
+        self.assertIn("unknown-repo", data["warnings"][0]["message"])
+        self.assertTrue(all(item["repos"] == [] for item in data["groups"]["mcp"]))
+        self.assertTrue(all(repo["details"]["mcp_count"] == 0 for repo in data["groups"]["repos"]))
+
+    def test_invalid_codex_config_is_included_in_warning_total(self) -> None:
+        self.write_minimal_control_plane()
+        write_text(self.temp_path / "codex/config/global.config.toml", "[broken\n")
+
+        data = self.read_data()
+
+        self.assertEqual(data["counts"]["warnings"], 1)
+        self.assertEqual(data["warnings"][0]["code"], "invalid_codex_global")
 
     def test_data_warns_for_missing_managed_repo_path(self) -> None:
         self.write_minimal_control_plane()

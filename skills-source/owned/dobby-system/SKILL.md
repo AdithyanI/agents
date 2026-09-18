@@ -21,7 +21,7 @@ This skill is the canonical cross-repo orientation layer for Dobby. Future agent
 | `~/GitHub/documents` | Canonical local document tooling: inventory, copy-only ingest/import, extraction, review, cleanup scripts, catalog/search CLI, and JSON/SQLite metadata contracts for `/Volumes/DobbyData/Documents` | Shared Dobby engine behavior, person memory/canon, workspace identity, raw document files in git |
 | `~/GitHub/dobby-gateway` | Dobby's HTTP gateway/front door: mobile/web-facing gateway contracts, assistant runtime routing, bearer auth, launchd runtime, Cloudflare-facing service behavior, CLI/shared client contracts | iOS app implementation, Dobby identity data, core Dobby engine logic unless through documented CLI/API boundary |
 | `~/GitHub/dobby-ios` | Dobby iOS app, SwiftUI surfaces, iOS build/deploy/TestFlight scripts, iOS-only docs, and the app's local config examples | Gateway runtime implementation, shared Dobby engine logic, person-private workspace data |
-| `~/GitHub/agents` | Agent control plane: shared skills, Codex/Claude config, hooks, MCP/plugin registries, skill distribution | Dobby product behavior, Dobby personal data, engine runtime behavior |
+| `~/GitHub/agents` | Agent control plane: shared skills, Codex config, hooks, MCP/plugin registries, skill distribution | Dobby product behavior, Dobby personal data, engine runtime behavior |
 | `~/GitHub/scripts` | Machine ops: bootstrap, launchd wiring, scheduler profiles, recurring machine wrappers, machine-local materializers | Dobby domain behavior, person memory/data, dashboard/API implementation, agent control-plane policy |
 
 ## Core Model
@@ -75,12 +75,8 @@ Inside a person workspace:
   the shared engine.
 - `dobby/constitution.md` is Dobby behavior and boundaries. It is declared once
   as `model_instructions_file` in
-  `~/GitHub/agents/codex/config/repo-bootstrap.json`; the optional
-  `model_instructions_clients` selector controls which clients receive it.
-  Codex loads it through `.codex/config.toml`; Claude and Copilot bridges remain
-  available for workspaces that enable them. Adi is intentionally Codex-only,
-  while Angie retains the default cross-client propagation. The session-start
-  hook does not emit the constitution.
+  `~/GitHub/agents/codex/config/repo-bootstrap.json` and loaded by Codex through
+  `.codex/config.toml`. The session-start hook does not emit the constitution.
 - Codex `SessionStart` is bounded and source-aware: startup/clear receive the
   wake card, compact receives a smaller reorientation card, and resume emits
   nothing. Exact contents and budgets belong in the engine lifecycle docs.

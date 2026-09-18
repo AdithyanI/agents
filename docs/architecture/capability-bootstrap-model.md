@@ -62,12 +62,12 @@ Skills are standalone agent guidance. They can be global, repo-scoped, unmanaged
 
 Source of truth:
 
-- MCP definitions and repository/client targets in `mcp/config/presets.json`
+- MCP definitions and repository scopes in `mcp/config/presets.json`
 - managed repo inventory in `codex/config/repo-bootstrap.json`
 
-MCPs are standalone endpoints and transports. Every definition owns a two-axis target matrix: repositories down one axis and clients (`codex`, `claude`, `copilot`) across the other. A selector can target explicit values or `"all"`. If a plugin contains MCP internally, that remains plugin-owned unless it is manually promoted into this registry.
+MCPs are standalone endpoints and transports. Schema version 3 gives each definition a `repos` scope: `"all"`, explicit managed repository paths, or `[]` for an unassigned definition. Selected endpoints render only to repo `.codex/config.toml`. There is no client matrix or cross-client configuration merge.
 
-Codex cells render to repo `.codex/config.toml`. Claude and Copilot can share root `.mcp.json`. An exclusive Copilot target with `repos: "all"` renders once to `~/.copilot/mcp-config.json`; narrower Copilot-only targets render to `.github/mcp.json` only where no root `.mcp.json` exists. Because Copilot CLI 1.0.70 selects root `.mcp.json` instead of merging the two workspace files, the compiler rejects a repo matrix that would require both. It also rejects Claude-without-Copilot targets because Copilot discovers Claude's root project file.
+If a plugin contains an MCP internally, that remains plugin-owned unless explicitly promoted into this registry.
 
 ## Working Rules
 

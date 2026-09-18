@@ -189,11 +189,7 @@ export function navCount(d: ControlPlaneData, section: SectionId): number {
     case 'hooks':
       return enabledHooks(d).length;
     case 'codex':
-      return d.global_config?.codex.length ?? 0;
-    case 'claude':
-      return d.global_config?.claude.length ?? 0;
-    case 'copilot':
-      return d.global_config?.copilot.length ?? 0;
+      return d.global_config?.length ?? 0;
   }
 }
 

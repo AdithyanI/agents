@@ -10,15 +10,14 @@ Use [Codex Control Plane](/Users/dobby/GitHub/agents/docs/architecture/codex-con
 - `~/.agents/skills` owns generated Codex user-scope skill links only.
 - `~/GitHub/scripts` owns generic machine bootstrap entrypoints and shared shell glue that are not agent-client-owned.
 - `~/.codex` owns live Codex runtime state and generated applied outputs.
-- `~/.claude` owns live Claude Code runtime state and generated applied outputs.
-- Repo-local `.codex/`, `.claude/`, and `.agents/` own project-specific agent surfaces.
+- Repo-local `.codex/` and `.agents/` own project-specific agent surfaces.
 
 ## Keep / Move / Generate
 
 ### Keep in `~/GitHub/agents`
 
 - architecture, ownership, and operations docs
-- managed scripts for Codex, Claude Code, shared hooks, skills, plugins, MCPs, dashboard, and client sync
+- managed scripts for Codex, shared hooks, skills, plugins, MCPs, dashboard, and client sync
 - `config/global.agents.md`
 - `skills/registry.json` and `skills-source/...`
 - `plugins/registry.json`
@@ -74,14 +73,10 @@ Use [Codex Control Plane](/Users/dobby/GitHub/agents/docs/architecture/codex-con
 - repo `.codex/config.toml`
 - repo `.codex/hooks.json`
 - repo `.agents/skills/<skill>` links
-- repo `.claude/skills/<skill>` links
-- repo `.claude/CLAUDE.md` import bridge with `@../AGENTS.md`
-- repo `.claude/launch.json` for repos listed in `dev-servers/registry.json`
 - repo `.codex/environments/environment.toml` for repos listed in `dev-servers/registry.json`
-- repo `.github/github-app.yml` for repos listed in `dev-servers/registry.json`
 
 Agent preview ports are canonical in `dev-servers/registry.json` and generated
-for both Claude Code and Codex. Public Cloudflare/LaunchAgent service ports stay
+for Codex. Public Cloudflare/LaunchAgent service ports stay
 owned by `~/GitHub/scripts` and the owning app repos.
 
 ## Current Notable Files
@@ -117,5 +112,5 @@ owned by `~/GitHub/scripts` and the owning app repos.
 - Keep `~/GitHub/agents` as the durable source for agent policy, config templates, managed scripts, skills, plugins, MCPs, hooks, dashboard, and repo bootstrap state.
 - Keep `~/.agents` thin, with `~/.agents/skills` as the Codex user-scope discovery surface.
 - Keep `~/GitHub/scripts` focused on generic machine bootstrap and shared shell glue that can call into this control plane.
-- Keep `~/.codex` and `~/.claude` as applied runtime homes for auth, sessions, generated config, logs, caches, and runtime-managed state.
+- Keep `~/.codex` as the applied runtime home for auth, sessions, generated config, logs, caches, and runtime-managed state.
 - Move any newly discovered durable policy out of runtime paths and into this repo.

@@ -14,7 +14,6 @@ MACHINE_CONTROL_ROOT="${AGENTS_MANAGED_REPO_CHECK_ROOT:-${ROOT_DIR}}"
 CHECK_SKILLS_SCRIPT="${SCRIPT_DIR}/check-skills-registry.sh"
 CHECK_PLUGINS_SCRIPT="${SCRIPT_DIR}/check-plugins-registry.sh"
 CHECK_HYGIENE_SCRIPT="${SCRIPT_DIR}/check-repo-hygiene.sh"
-CHECK_COPILOT_SCRIPT="${MACHINE_CONTROL_ROOT}/scripts/sync-copilot.sh"
 CHECK_GIT_HOOKS_SCRIPT="${MACHINE_CONTROL_ROOT}/scripts/sync-managed-git-hooks.sh"
 CHECK_CODEX_SCRIPT="${MACHINE_CONTROL_ROOT}/codex/scripts/check-codex-control-plane.sh"
 AUDIT_RUNTIME_DRIFT_SCRIPT="${MACHINE_CONTROL_ROOT}/scripts/audit-agent-runtime-drift.py"
@@ -69,7 +68,6 @@ fi
 [[ -x "$CHECK_SKILLS_SCRIPT" ]] || die "Missing executable: $CHECK_SKILLS_SCRIPT"
 [[ -x "$CHECK_PLUGINS_SCRIPT" ]] || die "Missing executable: $CHECK_PLUGINS_SCRIPT"
 [[ -x "$CHECK_HYGIENE_SCRIPT" ]] || die "Missing executable: $CHECK_HYGIENE_SCRIPT"
-[[ -x "$CHECK_COPILOT_SCRIPT" ]] || die "Missing executable: $CHECK_COPILOT_SCRIPT"
 [[ -x "$CHECK_GIT_HOOKS_SCRIPT" ]] || die "Missing executable: $CHECK_GIT_HOOKS_SCRIPT"
 [[ -x "$CHECK_CODEX_SCRIPT" ]] || die "Missing executable: $CHECK_CODEX_SCRIPT"
 [[ -x "$AUDIT_RUNTIME_DRIFT_SCRIPT" ]] || die "Missing executable: $AUDIT_RUNTIME_DRIFT_SCRIPT"
@@ -94,18 +92,13 @@ plugins_cmd=("$CHECK_PLUGINS_SCRIPT")
 log "+ ${plugins_cmd[*]}"
 "${plugins_cmd[@]}"
 
-copilot_cmd=(
-  "$CHECK_COPILOT_SCRIPT"
-  --check
-)
-if (( ${#REPO_ARGS[@]} > 0 )); then
-  copilot_cmd+=("${REPO_ARGS[@]}")
-fi
-log "+ ${copilot_cmd[*]}"
-(
-  cd "$MACHINE_CONTROL_ROOT"
-  "${copilot_cmd[@]}"
-)
+retire_cmd=(python3 "${MACHINE_CONTROL_ROOT}/scripts/retire-agent-clients.py" --check "${REPO_ARGS[@]}")
+log "+ ${retire_cmd[*]}"
+"${retire_cmd[@]}"
+
+preview_cmd=(python3 "${MACHINE_CONTROL_ROOT}/scripts/sync-codex-previews.py" --check "${REPO_ARGS[@]}")
+log "+ ${preview_cmd[*]}"
+"${preview_cmd[@]}"
 
 git_hooks_cmd=(
   "$CHECK_GIT_HOOKS_SCRIPT"

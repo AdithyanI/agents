@@ -1,40 +1,18 @@
 import type { ConfigGroup, ControlPlaneData } from '../types';
 
-const RUNTIME_META = {
-  codex: {
-    title: 'Codex global config',
-    hint: 'what every Codex session inherits, rendered to ~/.codex/config.toml',
-  },
-  claude: {
-    title: 'Claude global config',
-    hint: 'what every Claude Code session inherits, rendered to ~/.claude/settings.json',
-  },
-  copilot: {
-    title: 'Copilot client config',
-    hint: 'what terminal Copilot sessions inherit, rendered to ~/.copilot plus ~/bin/copilot',
-  },
-} as const;
-
-export function GlobalConfigSection({
-  data,
-  runtime,
-}: {
-  data: ControlPlaneData;
-  runtime: 'codex' | 'claude' | 'copilot';
-}) {
-  const meta = RUNTIME_META[runtime];
-  const groups: ConfigGroup[] = data.global_config?.[runtime] ?? [];
+export function GlobalConfigSection({ data }: { data: ControlPlaneData }) {
+  const groups: ConfigGroup[] = data.global_config ?? [];
 
   return (
     <>
       <div className="cat-head">
-        <h1>{meta.title}</h1>
-        <span className="cat-hint">{meta.hint}</span>
+        <h1>Codex global config</h1>
+        <span className="cat-hint">what every Codex session inherits, rendered to ~/.codex/config.toml</span>
       </div>
 
       {groups.length === 0 ? (
         <div className="empty-state">
-          <p>No global configuration found for {runtime}.</p>
+          <p>No global configuration found for Codex.</p>
         </div>
       ) : (
         <div className="gc-grid">

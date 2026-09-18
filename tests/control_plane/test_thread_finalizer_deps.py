@@ -202,7 +202,7 @@ class ThreadFinalizerBootstrapTests(TempDirTestCase):
             "sync-config.sh", "sync-global-agents-md.sh", "sync-trusted-projects.sh",
             "sync-repo-codex-configs.sh", "sync-hook-trust-state.py", "install-pdf-skill-deps.sh",
             "install-finalize-stale-codex-threads-launchagent.sh",
-            "install-archive-stale-claude-sessions-launchagent.sh", "check-codex-control-plane.sh",
+            "check-codex-control-plane.sh",
         )
         stub = """#!/usr/bin/env bash
 set -euo pipefail

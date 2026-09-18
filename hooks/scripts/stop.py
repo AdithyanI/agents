@@ -35,7 +35,7 @@ except ModuleNotFoundError:  # Direct script execution adds this directory to sy
     )
 
 
-VALID_RUNTIMES = {"antigravity", "claude", "codex", "copilot"}
+VALID_RUNTIMES = {"codex"}
 
 GIT_STATUS_TIMEOUT_SEC = 60
 GIT_ADD_TIMEOUT_SEC = 120
@@ -76,31 +76,6 @@ NON_ACTIONABLE_COMMIT_PATTERNS = {
     "failed to sign the data": "gpg signing failed",
     "no signing key": "gpg signing failed",
 }
-
-
-def record_timing(timings: list[tuple[str, float]], phase: str, started_at: float) -> None:
-    timings.append((phase, max(0.0, time.monotonic() - started_at)))
-
-
-def format_ms(seconds: float) -> str:
-    return f"{seconds * 1000:.1f}"
-
-
-def log_timing(
-    runtime: str,
-    *,
-    repo: str,
-    outcome: str,
-    total_started_at: float,
-    timings: list[tuple[str, float]],
-) -> None:
-    parts = [
-        f"outcome={outcome}",
-        f"repo={repo}",
-        f"total_ms={format_ms(max(0.0, time.monotonic() - total_started_at))}",
-    ]
-    parts.extend(f"{phase}_ms={format_ms(duration)}" for phase, duration in timings)
-    log(runtime, "timing " + " ".join(parts))
 
 
 def parse_args() -> argparse.Namespace:
@@ -255,11 +230,6 @@ def run(
     )
 
 
-def is_git_repo(cwd: str) -> bool:
-    result = run(["git", "rev-parse", "--is-inside-work-tree"], cwd, timeout=GIT_STATUS_TIMEOUT_SEC)
-    return result.returncode == 0 and result.stdout.strip() == "true"
-
-
 def git_dir(cwd: str) -> str | None:
     result = run(["git", "rev-parse", "--git-dir"], cwd, timeout=GIT_STATUS_TIMEOUT_SEC)
     if result.returncode != 0:
@@ -272,11 +242,6 @@ def repo_root(cwd: str) -> str | None:
     if result.returncode != 0:
         return None
     return result.stdout.strip()
-
-
-def has_changes(cwd: str) -> bool:
-    result = run(["git", "status", "--porcelain"], cwd, timeout=GIT_STATUS_TIMEOUT_SEC)
-    return result.returncode == 0 and bool(result.stdout.strip())
 
 
 def git_status(cwd: str) -> str:
@@ -447,34 +412,6 @@ def state_failure_reason(cwd: str, message: str) -> str:
     if status:
         lines.extend(["", "git status --porcelain:", "```", status, "```"])
     return "\n".join(lines)
-
-
-def commit_with_retry(
-    cwd: str,
-    message: str,
-    pre_commit_status: str,
-) -> tuple[subprocess.CompletedProcess[str], bool]:
-    commit = run(["git", "commit", "-m", message], cwd, timeout=GIT_COMMIT_TIMEOUT_SEC)
-    if commit.returncode == 0:
-        return commit, False
-    post_status = run(
-        ["git", "status", "--porcelain"],
-        cwd,
-        timeout=GIT_STATUS_TIMEOUT_SEC,
-    )
-    if post_status.returncode != 0:
-        return commit, False
-    if post_status.stdout == pre_commit_status:
-        return commit, False
-    add_retry = run(["git", "add", "-A"], cwd, timeout=GIT_ADD_TIMEOUT_SEC)
-    if add_retry.returncode != 0:
-        return commit, False
-    retry = run(
-        ["git", "commit", "-m", message],
-        cwd,
-        timeout=GIT_COMMIT_TIMEOUT_SEC,
-    )
-    return retry, True
 
 
 def is_non_actionable_failure(command: list[str], result: subprocess.CompletedProcess[str]) -> tuple[bool, str]:
@@ -1661,217 +1598,6 @@ def finalize_codex_repositories(
     return None
 
 
-def process_repo(cwd: str, payload: dict[str, Any], *, runtime: str) -> dict[str, Any] | None:
-    total_started_at = time.monotonic()
-    timings: list[tuple[str, float]] = []
-    log_repo = cwd
-
-    def finish(outcome: str, output: dict[str, Any] | None) -> dict[str, Any] | None:
-        log_timing(
-            runtime,
-            repo=log_repo,
-            outcome=outcome,
-            total_started_at=total_started_at,
-            timings=timings,
-        )
-        return output
-
-    started_at = time.monotonic()
-    is_repo = is_git_repo(cwd)
-    record_timing(timings, "is_git_repo", started_at)
-    if not is_repo:
-        log(runtime, f"skip not-git cwd={cwd}")
-        return finish("not_git", None)
-
-    started_at = time.monotonic()
-    root = repo_root(cwd) or cwd
-    record_timing(timings, "repo_root", started_at)
-    log_repo = root
-
-    started_at = time.monotonic()
-    in_progress = has_in_progress_ops(root)
-    lock_clear = clear_stale_index_lock(root) if not in_progress else True
-    record_timing(timings, "state", started_at)
-    if in_progress:
-        log(runtime, f"block in-progress-git-op repo={root}")
-        return finish(
-            "block_in_progress_git_op",
-            maybe_continue(
-                payload,
-                state_failure_reason(root, "a merge, rebase, cherry-pick, or revert is in progress"),
-                cwd=root,
-            ),
-        )
-    if not lock_clear:
-        log(runtime, f"block active-index-lock repo={root}")
-        return finish(
-            "block_active_index_lock",
-            maybe_continue(payload, state_failure_reason(root, "git index.lock appears active"), cwd=root),
-        )
-
-    started_at = time.monotonic()
-    changed = has_changes(root)
-    record_timing(timings, "status", started_at)
-    if not changed:
-        if runtime == "codex":
-            pending_head = unpushed_head(root)
-            if pending_head:
-                push, command, failure_title = push_committed_repo(root)
-                if push is None:
-                    return finish(
-                        "warn_no_remote",
-                        warning(f"Local commits in {root} could not be pushed: {failure_title}."),
-                    )
-                if push.returncode != 0:
-                    return finish(
-                        "block_existing_commit_push",
-                        maybe_continue(
-                            payload,
-                            command_failure_reason(root, failure_title, command, push),
-                            cwd=root,
-                        ),
-                    )
-                notify_local_production("codex", root, head_commit(root) or pending_head)
-                log("codex", f"ok pushed-existing-commits repo={root} head={pending_head}")
-                return finish("pushed_existing_commits", None)
-        log(runtime, f"skip clean repo={root}")
-        return finish("clean", None)
-
-    message = build_commit_message(payload)
-    started_at = time.monotonic()
-    add = run(["git", "add", "-A"], root, timeout=GIT_ADD_TIMEOUT_SEC)
-    if add.returncode != 0:
-        if "index.lock" in f"{add.stdout}\n{add.stderr}".lower() and clear_stale_index_lock(root):
-            add = run(["git", "add", "-A"], root, timeout=GIT_ADD_TIMEOUT_SEC)
-        if add.returncode != 0:
-            record_timing(timings, "add", started_at)
-            log(runtime, f"block git-add repo={root} exit={add.returncode}")
-            return finish(
-                "block_git_add",
-                maybe_continue(
-                    payload,
-                    command_failure_reason(root, "git add", ["git", "add", "-A"], add),
-                    cwd=root,
-                ),
-            )
-    record_timing(timings, "add", started_at)
-
-    started_at = time.monotonic()
-    pre_commit_status = run(
-        ["git", "status", "--porcelain"],
-        root,
-        timeout=GIT_STATUS_TIMEOUT_SEC,
-    )
-    pre_commit_snapshot = pre_commit_status.stdout if pre_commit_status.returncode == 0 else ""
-    commit, _retried = commit_with_retry(root, message, pre_commit_snapshot)
-    record_timing(timings, "commit_check", started_at)
-    if commit.returncode != 0:
-        skip, skip_reason = is_non_actionable_failure(["git", "commit", "-m", message], commit)
-        if skip and skip_reason == "nothing to commit":
-            log(runtime, f"skip nothing-to-commit repo={root}")
-            return finish("nothing_to_commit", None)
-        if skip:
-            log(runtime, f"warn git-commit repo={root} reason={skip_reason} exit={commit.returncode}")
-            return finish(
-                "warn_git_commit",
-                warning(
-                    command_failure_reason(
-                        root,
-                        f"git commit ({skip_reason})",
-                        ["git", "commit", "-m", message],
-                        commit,
-                        retryable=False,
-                    )
-                ),
-            )
-        log(runtime, f"block git-commit repo={root} exit={commit.returncode}")
-        return finish(
-            "block_git_commit",
-            maybe_continue(
-                payload,
-                command_failure_reason(root, "git commit / pre-commit checks", ["git", "commit", "-m", message], commit),
-                cwd=root,
-            ),
-        )
-
-    started_at = time.monotonic()
-    remote = resolve_push_remote(root)
-    tracked_branch = has_tracking_upstream(root) if remote else False
-    record_timing(timings, "remote", started_at)
-    if not remote:
-        log(runtime, f"warn no-remote repo={root}")
-        return finish(
-            "warn_no_remote",
-            warning(f"Committed changes in {root}, but no push remote could be resolved."),
-        )
-
-    if tracked_branch:
-        push_cmd = ["git", "push", remote, "HEAD"]
-    else:
-        log(runtime, f"initial-push repo={root} remote={remote} branch={current_branch_name(root)}")
-        push_cmd = ["git", "push", "-u", remote, "HEAD"]
-
-    started_at = time.monotonic()
-    push = run(push_cmd, root, timeout=GIT_PUSH_TIMEOUT_SEC)
-    record_timing(timings, "push", started_at)
-    if push.returncode != 0 and tracked_branch and push_needs_rebase(push):
-        pull_cmd = ["git", "pull", "--rebase"]
-        started_at = time.monotonic()
-        pull = run(pull_cmd, root, timeout=GIT_PULL_TIMEOUT_SEC)
-        record_timing(timings, "pull_rebase", started_at)
-        if pull.returncode != 0:
-            log(runtime, f"block git-pull-rebase repo={root} exit={pull.returncode}")
-            return finish(
-                "block_git_pull_rebase",
-                maybe_continue(
-                    payload,
-                    command_failure_reason(root, "git pull --rebase", pull_cmd, pull),
-                    cwd=root,
-                ),
-            )
-        started_at = time.monotonic()
-        validation, validation_cmd, validation_title = validate_rebased_repo(root)
-        record_timing(timings, "post_rebase_check", started_at)
-        if validation is not None:
-            log(runtime, f"block post-rebase-validation repo={root} exit={validation.returncode}")
-            return finish(
-                "block_post_rebase_validation",
-                maybe_continue(
-                    payload,
-                    command_failure_reason(
-                        root,
-                        validation_title,
-                        validation_cmd,
-                        validation,
-                    ),
-                    cwd=root,
-                ),
-            )
-        started_at = time.monotonic()
-        push = run(push_cmd, root, timeout=GIT_PUSH_TIMEOUT_SEC)
-        record_timing(timings, "push_retry", started_at)
-
-    if push.returncode != 0:
-        skip, skip_reason = is_non_actionable_failure(push_cmd, push)
-        if skip:
-            log(runtime, f"warn git-push repo={root} reason={skip_reason} exit={push.returncode}")
-            return finish(
-                "warn_git_push",
-                warning(
-                    command_failure_reason(root, f"git push ({skip_reason})", push_cmd, push, retryable=False)
-                ),
-            )
-        log(runtime, f"block git-push repo={root} exit={push.returncode}")
-        return finish(
-            "block_git_push",
-            maybe_continue(payload, command_failure_reason(root, "git push", push_cmd, push), cwd=root),
-        )
-
-    notify_local_production(runtime, root, head_commit(root))
-    log(runtime, f"ok committed-and-pushed repo={root} branch={current_branch_name(root)} remote={remote}")
-    return finish("committed_pushed", None)
-
-
 def main() -> int:
     args = parse_args()
     payload = read_payload(args.debug) or {}
@@ -1880,10 +1606,7 @@ def main() -> int:
     cwd = str(payload.get("cwd") or os.getcwd())
 
     try:
-        if args.runtime == "codex":
-            output = process_codex_repositories(cwd, payload)
-        else:
-            output = process_repo(cwd, payload, runtime=args.runtime)
+        output = process_codex_repositories(cwd, payload)
     except subprocess.TimeoutExpired as exc:
         cmd = " ".join(exc.cmd) if isinstance(exc.cmd, (list, tuple)) else str(exc.cmd)
         timeout = exc.timeout if exc.timeout is not None else "unknown"

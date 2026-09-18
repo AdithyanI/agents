@@ -160,22 +160,17 @@ def make_plugin_source(path: Path, plugin_name: str) -> Path:
 
 def default_mcp_registry() -> dict[str, Any]:
     return {
-        "version": 2,
+        "version": 3,
         "presets": {
             "openaiDeveloperDocs": {
                 "transport": "http",
                 "url": "https://developers.openai.com/mcp",
-                "targets": [
-                    {
-                        "clients": "all",
-                        "repos": "all",
-                    }
-                ],
+                "repos": "all",
             },
             "cloudflare-docs": {
                 "transport": "http",
                 "url": "https://docs.mcp.cloudflare.com/mcp",
-                "targets": [],
+                "repos": [],
             },
         },
     }

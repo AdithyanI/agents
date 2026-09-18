@@ -25,7 +25,7 @@ function subtitle(item: Item): string {
   if (item.kind === 'plugin') return [d.category, d.marketplace].filter(Boolean).join(' · ');
   if (item.kind === 'mcp') return [d.transport, d.url].filter(Boolean).join(' · ');
   if (item.kind === 'hook') {
-    return [d.event, cleanArray(d.runtimes).join('/'), d.timeout ? `${d.timeout}s` : '']
+    return [d.event, d.timeout ? `${d.timeout}s` : '']
       .filter(Boolean)
       .join(' · ');
   }

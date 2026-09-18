@@ -7,13 +7,11 @@ import subprocess
 import sys
 from contextlib import redirect_stderr, redirect_stdout
 from io import StringIO
-from types import SimpleNamespace
 from unittest.mock import patch
 
 from hooks.control_plane import (
     HookRegistryError,
     load_hooks_registry,
-    render_copilot_hooks,
     render_codex_hooks,
 )
 from hooks.scripts.codex_turn_changes import CodexTurnChanges
@@ -123,34 +121,6 @@ class HooksControlPlaneTests(TempDirTestCase):
             set(render_codex_hooks(registry, repo_name="win")["hooks"].keys()),
             set(),
         )
-
-    def test_registry_renders_copilot_user_hooks_with_repo_filters(self) -> None:
-        registry = load_hooks_registry(REPO_ROOT / "hooks/registry.json")
-
-        copilot_hooks = render_copilot_hooks(registry)
-
-        self.assertEqual(
-            set(copilot_hooks["hooks"].keys()),
-            {"SessionStart", "UserPromptSubmit", "Stop"},
-        )
-        self.assertEqual(copilot_hooks["version"], 1)
-        session_command = copilot_hooks["hooks"]["SessionStart"][0]["bash"]
-        self.assertIn("--runtime copilot", session_command)
-        self.assertIn("--no-input", session_command)
-        self.assertIn("--repos adi,angie", session_command)
-        self.assertEqual(copilot_hooks["hooks"]["SessionStart"][0]["timeoutSec"], 5)
-        self.assertNotIn("matcher", copilot_hooks["hooks"]["SessionStart"][0])
-        stop_command = copilot_hooks["hooks"]["Stop"][0]["bash"]
-        self.assertIn("--runtime copilot", stop_command)
-        self.assertNotIn("--repos", stop_command)
-
-        filtered = render_copilot_hooks(
-            registry,
-            disabled_repo_names={"adi"},
-        )
-        filtered_session = filtered["hooks"]["SessionStart"][0]["bash"]
-        self.assertIn("--repos angie", filtered_session)
-        self.assertNotIn("--repos adi,angie", filtered_session)
 
     def test_registry_rejects_unsupported_runtime(self) -> None:
         registry_path = self.temp_path / "hooks/registry.json"
@@ -321,84 +291,6 @@ class HooksControlPlaneTests(TempDirTestCase):
                 }
             },
         )
-
-    def test_session_start_renders_copilot_additional_context(self) -> None:
-        repo = init_git_repo(self.temp_path / "repo")
-        write_executable(
-            repo / "scripts/hooks/session_start.py",
-            "\n".join(
-                [
-                    "#!/usr/bin/env python3",
-                    "print('copilot context')",
-                    "",
-                ]
-            ),
-        )
-        payload = {
-            "cwd": str(repo),
-            "hook_event_name": "SessionStart",
-            "session_id": "session",
-        }
-
-        result = subprocess.run(
-            [
-                sys.executable,
-                str(REPO_ROOT / "hooks/scripts/session_start.py"),
-                "--runtime",
-                "copilot",
-                "--repos",
-                "repo",
-            ],
-            input=json.dumps(payload),
-            capture_output=True,
-            text=True,
-            check=False,
-        )
-
-        self.assertEqual(result.returncode, 0)
-        self.assertEqual(result.stderr, "")
-        self.assertEqual(json.loads(result.stdout), {"additionalContext": "copilot context\n"})
-
-    def test_repo_filter_skips_unlisted_copilot_repo(self) -> None:
-        repo = init_git_repo(self.temp_path / "repo")
-        marker = repo / "tmp/session-start-ran.txt"
-        write_executable(
-            repo / "scripts/hooks/session_start.py",
-            "\n".join(
-                [
-                    "#!/usr/bin/env python3",
-                    "import pathlib",
-                    "pathlib.Path('tmp').mkdir(exist_ok=True)",
-                    "pathlib.Path('tmp/session-start-ran.txt').write_text('ran', encoding='utf-8')",
-                    "",
-                ]
-            ),
-        )
-        payload = {
-            "cwd": str(repo),
-            "hook_event_name": "SessionStart",
-            "session_id": "session",
-        }
-
-        result = subprocess.run(
-            [
-                sys.executable,
-                str(REPO_ROOT / "hooks/scripts/session_start.py"),
-                "--runtime",
-                "copilot",
-                "--repos",
-                "other-repo",
-            ],
-            input=json.dumps(payload),
-            capture_output=True,
-            text=True,
-            check=False,
-        )
-
-        self.assertEqual(result.returncode, 0)
-        self.assertEqual(result.stdout, "")
-        self.assertEqual(result.stderr, "")
-        self.assertFalse(marker.exists())
 
     def test_session_start_is_silent_when_repo_script_is_absent(self) -> None:
         repo = init_git_repo(self.temp_path / "repo")
@@ -748,6 +640,19 @@ class HooksControlPlaneTests(TempDirTestCase):
 
         self.assertFalse(module.has_tracking_upstream(str(repo)))
 
+    def test_hook_runners_reject_retired_runtimes(self) -> None:
+        for script in ("session_start.py", "user_prompt_submit.py", "stop.py"):
+            for runtime in ("claude", "copilot", "antigravity"):
+                with self.subTest(script=script, runtime=runtime):
+                    result = subprocess.run(
+                        [sys.executable, str(REPO_ROOT / "hooks/scripts" / script),
+                         "--runtime", runtime],
+                        input="{}", capture_output=True, text=True, check=False,
+                    )
+                    self.assertEqual(result.returncode, 2)
+                    self.assertIn("invalid choice", result.stderr)
+                    self.assertEqual(result.stdout, "")
+
     def test_stop_hook_uses_initial_push_for_branch_without_upstream(self) -> None:
         module = self.load_stop_module()
         remote = init_git_repo(self.temp_path / "remote.git")
@@ -757,57 +662,35 @@ class HooksControlPlaneTests(TempDirTestCase):
         run_command(["git", "-C", str(repo), "push", "-u", "origin", "main"])
         run_command(["git", "-C", str(repo), "checkout", "-b", "feature/test"])
         (repo / "note.txt").write_text("hello\n", encoding="utf-8")
+        run_command(["git", "-C", str(repo), "add", "note.txt"])
+        run_command(["git", "-C", str(repo), "commit", "-m", "fixture change"])
 
-        with patch.dict(os.environ, {"HOME": str(self.temp_path / "test-home")}):
-            with patch.object(module, "log"):
-                output = module.process_repo(str(repo), {"hook_event_name": "Stop"}, runtime="codex")
+        result, command, _title = module.push_committed_repo(str(repo))
 
-        self.assertIsNone(output)
-        upstream = run_command(
-            [
-                "git",
-                "-C",
-                str(repo),
-                "rev-parse",
-                "--abbrev-ref",
-                "--symbolic-full-name",
-                "@{upstream}",
-            ]
-        )
+        self.assertIsNotNone(result)
+        self.assertEqual(result.returncode, 0)
+        self.assertEqual(command, ["git", "push", "-u", "origin", "HEAD"])
+        upstream = run_command([
+            "git", "-C", str(repo), "rev-parse", "--abbrev-ref",
+            "--symbolic-full-name", "@{upstream}",
+        ])
         self.assertEqual(upstream.stdout.strip(), "origin/feature/test")
 
     def test_stop_hook_uses_optimistic_push_for_branch_with_upstream(self) -> None:
         module = self.load_stop_module()
-        repo = init_git_repo(self.temp_path / "repo", with_initial_commit=True)
-        captured_commands: list[list[str]] = []
+        completed = subprocess.CompletedProcess([], 0, "", "")
+        with (
+            patch.object(module, "resolve_push_remote", return_value="origin"),
+            patch.object(module, "has_tracking_upstream", return_value=True),
+            patch.object(module, "run", return_value=completed) as run_mock,
+        ):
+            result, command, _title = module.push_committed_repo(str(self.temp_path))
 
-        def fake_run(args, cwd, *, timeout, env=None):  # noqa: ANN001, ARG001
-            captured_commands.append(list(args))
-            if args[:3] == ["git", "status", "--porcelain"]:
-                return SimpleNamespace(returncode=0, stdout=" M file.txt\n", stderr="")
-            if args[:4] == ["git", "symbolic-ref", "--quiet", "--short"]:
-                return SimpleNamespace(returncode=0, stdout="main\n", stderr="")
-            if args[:3] == ["git", "config", "--get"]:
-                return SimpleNamespace(returncode=0, stdout="origin\n", stderr="")
-            if args[:4] == ["git", "rev-parse", "--abbrev-ref", "--symbolic-full-name"]:
-                return SimpleNamespace(returncode=0, stdout="origin/main\n", stderr="")
-            return SimpleNamespace(returncode=0, stdout="", stderr="")
-
-        with patch.object(module, "run", side_effect=fake_run):
-            with patch.object(module, "is_git_repo", return_value=True):
-                with patch.object(module, "has_in_progress_ops", return_value=False):
-                    with patch.object(module, "clear_stale_index_lock", return_value=True):
-                        with patch.object(module, "log"):
-                            output = module.process_repo(
-                                str(repo),
-                                {"hook_event_name": "Stop"},
-                                runtime="codex",
-                            )
-
-        self.assertIsNone(output)
-        self.assertIn(["git", "push", "origin", "HEAD"], captured_commands)
-        self.assertNotIn(["git", "pull", "--rebase"], captured_commands)
-        self.assertNotIn(["git", "push", "-u", "origin", "HEAD"], captured_commands)
+        self.assertEqual(result.returncode, 0)
+        self.assertEqual(command, ["git", "push", "origin", "HEAD"])
+        run_mock.assert_called_once_with(
+            command, str(self.temp_path), timeout=module.GIT_PUSH_TIMEOUT_SEC,
+        )
 
     def test_stop_hook_rebases_and_retries_push_when_remote_is_ahead(self) -> None:
         module = self.load_stop_module()
@@ -815,49 +698,34 @@ class HooksControlPlaneTests(TempDirTestCase):
         write_executable(repo / "scripts/check-fast.sh", "#!/bin/sh\nexit 0\n")
         captured_commands: list[list[str]] = []
         push_attempts = 0
-        rebased = False
 
         def fake_run(args, cwd, *, timeout, env=None):  # noqa: ANN001, ARG001
-            nonlocal push_attempts, rebased
+            nonlocal push_attempts
             captured_commands.append(list(args))
-            if args[:3] == ["git", "status", "--porcelain"]:
-                status = "" if rebased else " M file.txt\n"
-                return SimpleNamespace(returncode=0, stdout=status, stderr="")
-            if args[:4] == ["git", "symbolic-ref", "--quiet", "--short"]:
-                return SimpleNamespace(returncode=0, stdout="main\n", stderr="")
-            if args[:3] == ["git", "config", "--get"]:
-                return SimpleNamespace(returncode=0, stdout="origin\n", stderr="")
-            if args[:4] == ["git", "rev-parse", "--abbrev-ref", "--symbolic-full-name"]:
-                return SimpleNamespace(returncode=0, stdout="origin/main\n", stderr="")
             if args == ["git", "push", "origin", "HEAD"]:
                 push_attempts += 1
                 if push_attempts == 1:
-                    return SimpleNamespace(
-                        returncode=1,
-                        stdout="",
-                        stderr="! [rejected] HEAD -> main (fetch first)\n"
-                        "hint: Updates were rejected because the remote contains work.\n",
+                    return subprocess.CompletedProcess(
+                        args, 1, "", "! [rejected] HEAD -> main (fetch first)\n",
                     )
-                return SimpleNamespace(returncode=0, stdout="", stderr="")
-            if args == ["git", "pull", "--rebase"]:
-                rebased = True
-            return SimpleNamespace(returncode=0, stdout="", stderr="")
+            return subprocess.CompletedProcess(args, 0, "", "")
 
-        with patch.object(module, "run", side_effect=fake_run):
-            with patch.object(module, "is_git_repo", return_value=True):
-                with patch.object(module, "has_in_progress_ops", return_value=False):
-                    with patch.object(module, "clear_stale_index_lock", return_value=True):
-                        with patch.object(module, "log"):
-                            output = module.process_repo(
-                                str(repo),
-                                {"hook_event_name": "Stop"},
-                                runtime="codex",
-                            )
+        with (
+            patch.object(module, "resolve_push_remote", return_value="origin"),
+            patch.object(module, "has_tracking_upstream", return_value=True),
+            patch.object(module, "run", side_effect=fake_run),
+        ):
+            result, _command, _title = module.push_committed_repo(str(repo))
 
-        self.assertIsNone(output)
+        self.assertEqual(result.returncode, 0)
         self.assertEqual(push_attempts, 2)
-        self.assertIn(["git", "pull", "--rebase"], captured_commands)
-        self.assertIn(["bash", "scripts/check-fast.sh"], captured_commands)
+        self.assertEqual(captured_commands, [
+            ["git", "push", "origin", "HEAD"],
+            ["git", "pull", "--rebase"],
+            ["bash", "scripts/check-fast.sh"],
+            ["git", "status", "--porcelain"],
+            ["git", "push", "origin", "HEAD"],
+        ])
 
     def test_stop_hook_blocks_when_post_rebase_fast_check_fails(self) -> None:
         module = self.load_stop_module()
@@ -867,66 +735,58 @@ class HooksControlPlaneTests(TempDirTestCase):
 
         def fake_run(args, cwd, *, timeout, env=None):  # noqa: ANN001, ARG001
             nonlocal push_attempts
-            if args[:3] == ["git", "status", "--porcelain"]:
-                return SimpleNamespace(returncode=0, stdout=" M file.txt\n", stderr="")
-            if args[:4] == ["git", "symbolic-ref", "--quiet", "--short"]:
-                return SimpleNamespace(returncode=0, stdout="main\n", stderr="")
-            if args[:3] == ["git", "config", "--get"]:
-                return SimpleNamespace(returncode=0, stdout="origin\n", stderr="")
-            if args[:4] == ["git", "rev-parse", "--abbrev-ref", "--symbolic-full-name"]:
-                return SimpleNamespace(returncode=0, stdout="origin/main\n", stderr="")
             if args == ["git", "push", "origin", "HEAD"]:
                 push_attempts += 1
-                return SimpleNamespace(
-                    returncode=1,
-                    stdout="",
-                    stderr="! [rejected] HEAD -> main (fetch first)\n",
+                return subprocess.CompletedProcess(
+                    args, 1, "", "! [rejected] HEAD -> main (fetch first)\n",
                 )
             if args == ["bash", "scripts/check-fast.sh"]:
-                return SimpleNamespace(
-                    returncode=17,
-                    stdout="",
-                    stderr="rebased tree failed validation\n",
-                )
-            return SimpleNamespace(returncode=0, stdout="", stderr="")
+                return subprocess.CompletedProcess(args, 17, "", "rebased tree failed validation\n")
+            return subprocess.CompletedProcess(args, 0, "", "")
 
-        with patch.object(module, "run", side_effect=fake_run):
-            with patch.object(module, "is_git_repo", return_value=True):
-                with patch.object(module, "has_in_progress_ops", return_value=False):
-                    with patch.object(module, "clear_stale_index_lock", return_value=True):
-                        with patch.object(module, "log"):
-                            output = module.process_repo(
-                                str(repo),
-                                {"hook_event_name": "Stop"},
-                                runtime="claude",
-                            )
+        with (
+            patch.object(module, "resolve_push_remote", return_value="origin"),
+            patch.object(module, "has_tracking_upstream", return_value=True),
+            patch.object(module, "run", side_effect=fake_run),
+        ):
+            result, command, title = module.push_committed_repo(str(repo))
 
-        self.assertIsNotNone(output)
-        assert output is not None
-        self.assertEqual(output["decision"], "block")
-        self.assertIn("scripts/check-fast.sh after git pull --rebase", output["reason"])
-        self.assertIn("rebased tree failed validation", output["reason"])
+        self.assertEqual(result.returncode, 17)
+        self.assertEqual(command, ["bash", "scripts/check-fast.sh"])
+        self.assertEqual(title, "scripts/check-fast.sh after git pull --rebase")
+        self.assertIn("rebased tree failed validation", result.stderr)
         self.assertEqual(push_attempts, 1)
 
-    def test_stop_hook_blocks_on_pre_commit_failure(self) -> None:
+    def test_codex_stop_blocks_on_repo_check_failure_before_commit(self) -> None:
         module = self.load_stop_module()
         repo = init_git_repo(self.temp_path / "repo", with_initial_commit=True)
+        original_head = run_command(["git", "-C", str(repo), "rev-parse", "HEAD"]).stdout
         write_executable(
-            repo / ".git/hooks/pre-commit",
+            repo / "scripts/check-fast.sh",
             "#!/bin/sh\nprintf 'repo check failed\\n' >&2\nexit 1\n",
         )
         (repo / "note.txt").write_text("hello\n", encoding="utf-8")
-
-        with patch.dict(os.environ, {"HOME": str(self.temp_path / "test-home")}):
-            with patch.object(module, "log"):
-                output = module.process_repo(str(repo), {"hook_event_name": "Stop"}, runtime="codex")
+        changes = CodexTurnChanges(
+            thread_id="thread", session_id="thread", parent_thread_id="",
+            descendant_thread_ids=(), turn_id="turn", turn_started_at=100,
+            touched_paths=(str(repo / "note.txt"),),
+        )
+        with (
+            patch.dict(os.environ, {"HOME": str(self.temp_path / "test-home")}),
+            patch.object(module, "collect_codex_turn_changes", return_value=changes),
+            patch.object(module, "log"),
+        ):
+            output = module.process_codex_repositories(
+                str(repo), {"hook_event_name": "Stop", "session_id": "thread"},
+            )
 
         self.assertIsNotNone(output)
-        assert output is not None
         self.assertEqual(output["decision"], "block")
-        self.assertIn("git commit / pre-commit checks", output["reason"])
         self.assertIn("repo check failed", output["reason"])
-        self.assertIn("Please fix the issue", output["reason"])
+        self.assertEqual(
+            run_command(["git", "-C", str(repo), "rev-parse", "HEAD"]).stdout,
+            original_head,
+        )
 
     def test_stop_feedback_turn_starts_app_server_turn(self) -> None:
         fake_bin = self.temp_path / "bin"

@@ -7,9 +7,7 @@ export type SectionId =
   | 'plugins'
   | 'mcp'
   | 'hooks'
-  | 'codex'
-  | 'claude'
-  | 'copilot';
+  | 'codex';
 
 export type ConfigTone = '' | 'on' | 'off' | 'muted';
 
@@ -23,12 +21,6 @@ export interface ConfigGroup {
   title: string;
   source: string;
   rows: ConfigRow[];
-}
-
-export interface GlobalConfig {
-  codex: ConfigGroup[];
-  claude: ConfigGroup[];
-  copilot: ConfigGroup[];
 }
 
 export type ItemKind = 'skill' | 'plugin' | 'mcp' | 'hook' | 'repo' | 'dev_server' | 'warning';
@@ -49,13 +41,8 @@ export interface ItemDetails {
   path?: string;
   model?: string;
   reasoning?: string;
-  clients?: string[];
-  global_clients?: string[];
-  repo_clients?: Record<string, string[]>;
-  targets?: Array<{ clients: 'all' | string[]; repos: 'all' | string[] }>;
   features?: Record<string, unknown>;
   event?: string;
-  runtimes?: string[];
   timeout?: number;
   code?: string;
   servers?: string[];
@@ -119,31 +106,27 @@ export interface Groups {
   dev_servers: Item[];
 }
 
-export type RuntimeStatus = 'stable' | 'new' | 'planned' | 'na';
+export type CapabilityStatus = 'stable' | 'new' | 'planned' | 'na';
 
-export interface RuntimeCell {
-  status: RuntimeStatus;
+export interface CapabilityState {
+  status: CapabilityStatus;
   note: string;
 }
 
-export interface Capability {
+export interface Capability extends CapabilityState {
   key: string;
   name: string;
   desc: string;
   source: string;
   count: number | null;
-  codex: RuntimeCell;
-  claude: RuntimeCell;
-  copilot: RuntimeCell;
 }
 
 export interface ControlPlaneData {
   schema_version: string;
   generated_at_utc: string;
   repo_root: string;
-  runtimes?: string[];
   capabilities?: Capability[];
-  global_config?: GlobalConfig;
+  global_config?: ConfigGroup[];
   sources: Record<string, SourceRef>;
   counts: Counts;
   warnings: Warning[];

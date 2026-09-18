@@ -5,7 +5,7 @@ import json
 import os
 import subprocess
 import sys
-from dataclasses import dataclass, field
+from dataclasses import dataclass
 from pathlib import Path
 from typing import Any
 
@@ -16,7 +16,6 @@ GIT_ROOT_TIMEOUT_SEC = 5
 MAX_CONTEXT_TOKENS = 30000
 APPROX_CHARS_PER_TOKEN = 4
 MAX_CONTEXT_CHARS = MAX_CONTEXT_TOKENS * APPROX_CHARS_PER_TOKEN
-ALL_REPOS = "*"
 
 
 @dataclass(frozen=True)
@@ -24,26 +23,15 @@ class RepoHookSpec:
     event: str
     repo_script: Path
     description: str
-    valid_runtimes: frozenset[str]
     label: str
     forward_stdout_as_context: bool = False
     forward_stdout_raw: bool = False
-    ignore_stdout_context_runtimes: frozenset[str] = field(
-        default_factory=frozenset
-    )
     ignore_mismatched_event_name: bool = False
 
 
 def parse_args(spec: RepoHookSpec) -> argparse.Namespace:
     parser = argparse.ArgumentParser(description=spec.description)
-    parser.add_argument("--runtime", choices=sorted(spec.valid_runtimes), required=True)
-    parser.add_argument(
-        "--repos",
-        help=(
-            "Comma-separated repo allowlist for user-level hooks. "
-            "Omit to run in any repo; use * for all repos."
-        ),
-    )
+    parser.add_argument("--runtime", choices=("codex",), required=True)
     parser.add_argument(
         "--no-input",
         action="store_true",
@@ -97,26 +85,8 @@ def truncate_text(text: str, limit: int) -> str:
     return text[: max(0, limit - len(suffix))] + suffix
 
 
-def allowed_repo_names(raw: str | None) -> set[str] | None:
-    if raw is None or not raw.strip():
-        return None
-    values = {item.strip() for item in raw.split(",") if item.strip()}
-    return values or None
-
-
-def repo_allowed(root: Path, raw: str | None) -> bool:
-    allowed = allowed_repo_names(raw)
-    if allowed is None or ALL_REPOS in allowed:
-        return True
-    return root.name in allowed
-
-
-def write_context_output(*, event: str, runtime: str, stdout: str) -> None:
+def write_context_output(*, event: str, stdout: str) -> None:
     context = truncate_text(stdout, MAX_CONTEXT_CHARS)
-    if runtime == "copilot":
-        sys.stdout.write(json.dumps({"additionalContext": context}, sort_keys=True))
-        sys.stdout.write("\n")
-        return
     sys.stdout.write(
         json.dumps(
             {
@@ -178,11 +148,8 @@ def run_repo_hook(
     if result.stdout:
         if spec.forward_stdout_raw:
             sys.stdout.write(result.stdout)
-        elif (
-            spec.forward_stdout_as_context
-            and runtime not in spec.ignore_stdout_context_runtimes
-        ):
-            write_context_output(event=spec.event, runtime=runtime, stdout=result.stdout)
+        elif spec.forward_stdout_as_context:
+            write_context_output(event=spec.event, stdout=result.stdout)
 
     if result.stderr:
         sys.stderr.write(result.stderr)
@@ -201,8 +168,6 @@ def run_lifecycle_hook(spec: RepoHookSpec) -> int:
     cwd = str((payload or {}).get("cwd") or os.getcwd())
     root = resolve_repo_root(cwd)
     if root is None:
-        return 0
-    if not repo_allowed(root, args.repos):
         return 0
     return run_repo_hook(
         spec,

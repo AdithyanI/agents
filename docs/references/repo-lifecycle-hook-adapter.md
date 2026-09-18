@@ -166,8 +166,7 @@ All repo lifecycle hooks are Python. Do not add shell compatibility shims.
   not settle within three passes return the latest check errors with edits
   preserved. No formatter-specific output parsing or relaxed checks are used.
 - Subagent Stop events do not finalize independently; their parent Stop owns the
-  full turn tree. Copilot, Claude, and Antigravity keep the current-repository
-  adapter behavior.
+  full turn tree.
 - Do not use `scripts/check-fast.sh` as a general after-turn hook.
 
 Codex now exposes a native `SessionEnd` event, but it is synchronous and has a

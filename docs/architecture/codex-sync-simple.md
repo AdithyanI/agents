@@ -17,8 +17,7 @@ flowchart TD
     E --> F["sync-skills-registry.sh when needed"]
     E --> G["sync-plugins-registry.sh when needed"]
     E --> H["sync-managed-git-hooks.sh when needed"]
-    E --> I["sync-claude.sh when needed"]
-    E --> K["sync-copilot.sh when needed"]
+    E --> I["sync-codex-previews.py when needed"]
     E --> J["bootstrap-machine-codex.sh when needed"]
 ```
 
@@ -27,11 +26,11 @@ flowchart TD
 - `skills/registry.json`: source of truth for managed skills.
 - `skills-source/`: canonical skill content.
 - `plugins/registry.json`: native Codex plugin scope and enablement.
-- `config/global.agents.md`: shared global guidance rendered into Codex and Claude.
+- `config/global.agents.md`: global guidance rendered into Codex.
 - `codex/config/`: canonical Codex machine config and repo bootstrap inputs.
-- `mcp/config/presets.json`: shared MCP definitions and repository/client targets.
+- `mcp/config/presets.json`: shared MCP definitions and repository scopes.
 - `codex/config/repo-bootstrap.json`: managed repo inventory and repo-local Codex behavior.
-- `dev-servers/registry.json`: shared Claude Code, Codex, and GitHub Copilot app agent-preview launch configs.
+- `dev-servers/registry.json`: Codex preview environments.
 - `~/GitHub/scripts/sync/git-auto-sync.sh`: launchd-driven 15-minute machine sync loop.
 
 ## What Auto-Sync Does

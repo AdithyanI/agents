@@ -9,6 +9,8 @@ Canonical inputs stay split by ownership:
 - `mcp/config/presets.json`
 - `hooks/registry.json`
 - `codex/config/repo-bootstrap.json`
+- `codex/config/global.config.toml`
+- `dev-servers/registry.json`
 
 The dashboard server reads those files on each request and exposes one normalized payload at:
 
@@ -115,7 +117,7 @@ atomically switches `current`/`previous`, and restores the old release if activa
 fails. The production API reports the exact release SHA, and activation succeeds only after the
 restarted process reports that captured revision. Code, registry, and test validation stays inside
 the frozen worktree; machine-rendered
-Copilot/Codex state, Git-hook enrollment, and runtime drift are checked through the canonical
+Codex state, Git-hook enrollment, and runtime drift are checked through the canonical
 `~/GitHub/agents` checkout because ephemeral worktree paths are neither managed repos nor valid
 runtime symlink targets. Control-plane tests receive a disposable `HOME` under `tmp/`, and renderer
 tests skip default per-repo dev-server and Codex-environment targets unless a test supplies an
@@ -196,21 +198,26 @@ The JSON command follows the repo's agent-facing client shape:
 - `error`
 - `meta`
 
-The normalized `data` object contains:
+The dashboard contract is version `2.0` and describes Codex only. The normalized
+`data` object contains:
 
 - `sources`: canonical source files used by the dashboard
 - `counts`: total counts by registry family and status
 - `warnings`: lightweight registry issues visible to the dashboard
+- `capabilities`: Codex capability delivery, with `status` and `note` on each entry
+- `global_config`: a list of Codex configuration groups sourced from canonical files
 - `items`: one flat searchable list
-- `groups`: grouped lists for skills, plugins, MCP presets, repos, and hooks
+- `groups`: grouped lists for skills, plugins, MCP presets, repos, hooks, and previews
 
-The MCP section is a dedicated distribution matrix: managed repositories are
-rows, Codex/Claude/Copilot are columns, and each active cell lists the MCPs
-delivered to that exact combination. Server filters isolate one definition and
-show its endpoint, repo coverage, client coverage, and registry source. This is
-the operator view of `mcp/config/presets.json`; assignments are not duplicated
-in the repo bootstrap registry. A global client target remains visible in every
-managed repo row and is labeled with the client whose user surface carries it.
+The MCP section lists each managed repository and its configured Codex servers.
+Server filters isolate one definition and show its endpoint, repository coverage,
+and registry source. The Python catalog resolves the version `3` MCP registry's
+`repos` selector: `"all"` covers every managed repo, a list covers the selected
+repos, and an empty list leaves a preset unassigned. Each MCP item's `repos`
+contains that resolved coverage, with `scope` set to `global`, `targeted`, or
+`unassigned`. The rendered surface is the repo's `.codex/config.toml`.
+Assignments live only in `mcp/config/presets.json`; the UI renders the normalized
+coverage without interpreting registry selectors itself.
 
 Repo entries come from `codex/config/repo-bootstrap.json`. If a managed repo
 path no longer exists on the current machine, the dashboard keeps the row but

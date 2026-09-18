@@ -1,8 +1,8 @@
 # Codex Control Plane
 
-This repo is the canonical personal agent control plane across both machines. The durable source of truth lives in `~/GitHub/agents`; the live Codex runtime home lives in `~/.codex`; Codex user-scope skills are rendered into `~/.agents/skills`.
+This repo is the canonical personal Codex control plane across both machines. The durable source of truth lives in `~/GitHub/agents`; the live Codex runtime home lives in `~/.codex`; Codex user-scope skills are rendered into `~/.agents/skills`.
 
-That split keeps reusable skills, registries, docs, hooks, MCP presets, plugins, and client bootstrap scripts in one normal GitHub checkout without using `~/.agents` as a catch-all repo. `~/.agents` remains useful because Codex natively discovers user skills there, but it should be a thin runtime surface, not the canonical checkout.
+That split keeps reusable skills, registries, docs, hooks, MCP presets, plugins, and bootstrap scripts in one normal GitHub checkout without using `~/.agents` as a catch-all repo. `~/.agents` remains useful because Codex natively discovers user skills there, but it should be a thin runtime surface, not the canonical checkout.
 
 ## Figure 1: Ownership Layout
 
@@ -11,27 +11,25 @@ flowchart TD
     A["~/GitHub/agents<br/>canonical control-plane repo"]
     B["~/.agents/skills<br/>Codex USER skill runtime"]
     C["~/.codex<br/>Codex runtime home"]
-    D["~/.claude<br/>Claude Code runtime home"]
-    E["Repo-local .codex / .claude / .agents<br/>project surfaces"]
+    E["Repo-local .codex / .agents<br/>project surfaces"]
     F["~/GitHub/scripts<br/>generic machine bootstrap"]
 
     A --> B
     A --> C
-    A --> D
     A --> E
     F --> A
 ```
 
 ## Canonical Inputs
 
-- `config/global.agents.md`: shared machine-wide guidance source rendered into `~/.codex/AGENTS.md` and `~/.claude/CLAUDE.md`.
+- `config/global.agents.md`: shared machine-wide guidance source rendered into `~/.codex/AGENTS.md`.
 - `skills/registry.json`: canonical managed skill registry.
 - `skills-source/owned/` and `skills-source/external/`: canonical managed skill content.
 - `plugins/registry.json`: native Codex plugin scope and enablement.
-- `mcp/config/presets.json`: shared MCP definitions and repository/client target matrix.
+- `mcp/config/presets.json`: shared MCP definitions and repository scopes.
 - `hooks/registry.json` and `hooks/scripts/`: shared lifecycle hook definitions and dispatchers.
 - `codex/config/repo-bootstrap.json`: managed repo inventory and repo-local Codex behavior.
-- `dev-servers/registry.json`: opt-in repo agent-preview surface for Claude Code, Codex, and the GitHub Copilot app. It is for short-lived local dev previews only; public Cloudflare/LaunchAgent service ports stay in `~/GitHub/scripts`.
+- `dev-servers/registry.json`: opt-in Codex preview environments. It is for short-lived local dev previews only; public Cloudflare/LaunchAgent service ports stay in `~/GitHub/scripts`.
 - `dashboard-app/`: source for the local read-only control-plane dashboard; production serves a
   versioned external release, not tracked build output.
 
@@ -42,12 +40,7 @@ flowchart TD
 - `~/.codex/config.toml` and `~/.codex/hooks.json`: live global Codex runtime config.
 - repo `.codex/config.toml` and `.codex/hooks.json`: generated repo-local Codex behavior.
 - repo `.agents/skills/<skill>`: Codex repo-scope skill symlinks.
-- `~/.claude/CLAUDE.md`: global Claude Code guidance linked to `config/global.agents.md`.
-- `~/.claude/skills/<skill>` and repo `.claude/skills/<skill>`: Claude Code skill links.
-- repo `.claude/CLAUDE.md`: small bridge file with `@../AGENTS.md`, leaving room for Claude-specific instructions later.
-- repo `.claude/launch.json`: generated agent-preview launch configs for repos listed in `dev-servers/registry.json`.
 - repo `.codex/environments/environment.toml`: generated Codex action for the same agent-preview target.
-- repo `.github/github-app.yml`: generated GitHub Copilot app Run/browser-ready config for the same agent-preview target.
 
 ## Main Flow
 
@@ -55,11 +48,11 @@ flowchart TD
 flowchart TD
     A["Edit ~/GitHub/agents"] --> B["bootstrap-machine-agent-control-planes.sh"]
     B --> C["sync-skills-registry.sh"]
-    B --> D["sync-claude.sh"]
+    B --> D["sync-codex-previews.py"]
     B --> E["bootstrap-machine-codex.sh"]
     B --> F["sync-managed-git-hooks.sh"]
     C --> G["~/.agents/skills + repo .agents/skills"]
-    D --> H["~/.claude + repo .claude"]
+    D --> H["repo .codex/environments/environment.toml"]
     E --> I["~/.codex + repo .codex"]
     F --> J["repo core.hooksPath -> ~/GitHub/agents/hooks/git"]
 ```
@@ -69,9 +62,8 @@ flowchart TD
 - Canonical and sync-worthy belongs in `~/GitHub/agents`.
 - Codex user skill discovery belongs in `~/.agents/skills`.
 - Applied Codex runtime and volatile state belongs in `~/.codex`.
-- Applied Claude Code runtime and volatile state belongs in `~/.claude`.
 - Generic machine bootstrap belongs in `~/GitHub/scripts`.
-- Repo-specific agent behavior belongs in repo-local `.codex/`, `.claude/`, and `.agents/` surfaces generated from this repo unless the repo intentionally owns it.
+- Repo-specific agent behavior belongs in repo-local `.codex/` and `.agents/` surfaces generated from this repo unless the repo intentionally owns it.
 
 ## Notes
 

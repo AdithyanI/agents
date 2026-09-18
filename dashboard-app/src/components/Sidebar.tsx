@@ -26,8 +26,6 @@ const NAV_GROUPS: Array<{ label: string; items: NavItem[] }> = [
     label: 'Global config',
     items: [
       { id: 'codex', label: 'Codex', short: 'Cx' },
-      { id: 'claude', label: 'Claude', short: 'Cl' },
-      { id: 'copilot', label: 'Copilot', short: 'Cp' },
     ],
   },
 ];

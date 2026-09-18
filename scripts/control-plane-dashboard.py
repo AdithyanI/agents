@@ -20,9 +20,9 @@ _AGENTS_ROOT = Path(__file__).resolve().parent.parent
 if str(_AGENTS_ROOT) not in sys.path:
     sys.path.insert(0, str(_AGENTS_ROOT))
 
-from mcp.control_plane import MCP_CLIENTS, load_mcp_catalog_data  # noqa: E402
+from mcp.control_plane import load_mcp_catalog_data  # noqa: E402
 
-SCHEMA_VERSION = "1.1"
+SCHEMA_VERSION = "2.0"
 COMMAND = "control-plane-dashboard"
 
 EXIT_SUCCESS = 0
@@ -37,78 +37,55 @@ REGISTRY_SOURCES = {
     "hooks": "hooks/registry.json",
     "repos": "codex/config/repo-bootstrap.json",
     "dev_servers": "dev-servers/registry.json",
-    "claude_settings": "config/claude-settings.json",
-    "copilot_settings": "config/copilot-settings.json",
     "codex_global": "codex/config/global.config.toml",
     "global_guidance": "config/global.agents.md",
 }
 
-RUNTIMES = ["codex", "claude", "copilot"]
-
 
 def build_capability_board(counts: dict[str, Any]) -> list[dict[str, Any]]:
-    """Declarative capability x runtime model, populated with live counts.
-
-    status is one of: stable | new | planned | na. The wiring (which runtime
-    consumes which lever) is the durable model of this control plane; the counts
-    come from the live registries.
-    """
+    """Codex capability delivery, populated with canonical registry counts."""
     return [
         {
             "key": "knowledge", "name": "Knowledge",
             "desc": "Global guidance the agent wakes up with",
             "source": "config/global.agents.md", "count": None,
-            "codex": {"status": "stable", "note": "~/.codex/AGENTS.md"},
-            "claude": {"status": "stable", "note": "~/.claude/CLAUDE.md"},
-            "copilot": {"status": "stable", "note": "repo AGENTS.md"},
+            "status": "stable", "note": "~/.codex/AGENTS.md",
         },
         {
             "key": "skills", "name": "Skills",
             "desc": "Reusable procedures",
             "source": "skills/registry.json", "count": counts.get("skills"),
-            "codex": {"status": "stable", "note": "~/.agents/skills + repo"},
-            "claude": {"status": "stable", "note": "~/.claude/skills + repo"},
-            "copilot": {"status": "stable", "note": ".agents + ~/.agents"},
+            "status": "stable", "note": "~/.agents/skills + repo",
         },
         {
             "key": "mcp", "name": "Tools · MCP",
             "desc": "External endpoints the agent can call",
             "source": "mcp/config/presets.json", "count": counts.get("mcp"),
-            "codex": {"status": "stable", "note": "rendered to config.toml"},
-            "claude": {"status": "stable", "note": "rendered to .mcp.json"},
-            "copilot": {"status": "stable", "note": "user + workspace MCP"},
+            "status": "stable", "note": ".codex/config.toml by repository",
         },
         {
             "key": "plugins", "name": "Plugins",
             "desc": "Codex-native capability bundles",
             "source": "plugins/registry.json", "count": counts.get("plugins"),
-            "codex": {"status": "stable", "note": "global · repo · dormant"},
-            "claude": {"status": "na", "note": ""},
-            "copilot": {"status": "na", "note": ""},
+            "status": "stable", "note": "~/.codex/config.toml",
         },
         {
             "key": "lifecycle", "name": "Lifecycle",
             "desc": "Hooks around each turn — commit, checks, finalize",
             "source": "hooks/registry.json", "count": counts.get("hooks"),
-            "codex": {"status": "stable", "note": "SessionStart · Prompt · Stop"},
-            "claude": {"status": "stable", "note": "Stop (via settings.json)"},
-            "copilot": {"status": "stable", "note": "user hooks + repo filter"},
+            "status": "stable", "note": "SessionStart · Prompt · Stop",
         },
         {
             "key": "runtime", "name": "Runtime config",
             "desc": "Per-repo behavior and exposure",
             "source": "codex/config/repo-bootstrap.json", "count": counts.get("repos"),
-            "codex": {"status": "stable", "note": ".codex/config.toml"},
-            "claude": {"status": "stable", "note": "~/.claude/settings.json"},
-            "copilot": {"status": "new", "note": "~/.copilot + launcher"},
+            "status": "stable", "note": ".codex/config.toml",
         },
         {
             "key": "dev", "name": "Agent Preview",
             "desc": "One fixed local preview target per repo",
             "source": "dev-servers/registry.json", "count": counts.get("dev_servers"),
-            "codex": {"status": "stable", "note": ".codex/environments"},
-            "claude": {"status": "stable", "note": ".claude/launch.json"},
-            "copilot": {"status": "stable", "note": ".github/github-app.yml"},
+            "status": "stable", "note": ".codex/environments/environment.toml",
         },
     ]
 
@@ -458,28 +435,13 @@ def _scalar_value(value: Any) -> str:
 def build_global_config(
     root: Path,
     plugins_registry: dict[str, Any],
-    mcp_registry: dict[str, Any],
     repo_bootstrap: dict[str, Any],
     warnings: list[dict[str, Any]],
-) -> dict[str, Any]:
-    """Per-runtime view of the global configuration each agent client inherits.
-
-    Sourced from the git-tracked canonical files (not the rendered runtime), so
-    the dashboard shows the reproducible source of truth for both Codex and
-    Claude global state side by side.
-    """
-    claude_src = REGISTRY_SOURCES["claude_settings"]
-    copilot_src = REGISTRY_SOURCES["copilot_settings"]
+) -> list[dict[str, Any]]:
+    """Codex configuration from canonical files, without inspecting runtime state."""
     codex_src = REGISTRY_SOURCES["codex_global"]
-    guidance_src = REGISTRY_SOURCES["global_guidance"]
     none_row = [{"label": "(none)", "value": "—", "tone": "muted"}]
 
-    # Note: the global-skills enumeration is intentionally NOT shown here. It is
-    # identical for both runtimes and already has a dedicated home (the Skills
-    # catalog, filterable by Global), so listing it on each config page would just
-    # duplicate that inventory. Config pages show runtime-distinctive global state.
-
-    # ---------------- Codex ----------------
     codex_cfg: dict[str, Any] = {}
     codex_path = root / codex_src
     if codex_path.exists():
@@ -529,125 +491,11 @@ def build_global_config(
         _config_group(
             "MCP delivery",
             REGISTRY_SOURCES["mcp"],
-            [{"label": "Scope", "value": "repo × client target matrix", "tone": "muted"}],
+            [{"label": "Scope", "value": "All managed repos or selected repos", "tone": "muted"}],
         ),
     ]
 
-    # ---------------- Claude ----------------
-    claude_settings = load_json(root / claude_src, warnings)
-    enabled_plugins = claude_settings.get("enabledPlugins")
-    enabled_plugins = enabled_plugins if isinstance(enabled_plugins, dict) else {}
-    skill_overrides = claude_settings.get("skillOverrides")
-    skill_overrides = skill_overrides if isinstance(skill_overrides, dict) else {}
-
-    plugin_rows = [
-        {"label": name, "value": "enabled" if on else "disabled", "tone": "on" if on else "off"}
-        for name, on in enabled_plugins.items()
-    ]
-    override_rows = [
-        {"label": name, "value": mode, "tone": "off" if mode in ("off", "name-only") else ""}
-        for name, mode in sorted(skill_overrides.items())
-    ]
-
-    claude_groups = [
-        _config_group(
-            "Permission mode",
-            "scripts/sync-claude.py",
-            [
-                {"label": "defaultMode", "value": "bypassPermissions (YOLO)"},
-                {"label": "skipDangerousModePermissionPrompt", "value": "on", "tone": "on"},
-                {"label": "skipAutoPermissionPrompt", "value": "on", "tone": "on"},
-                {"label": "skipWorkflowUsageWarning", "value": "on", "tone": "on"},
-                {"label": "enableAllProjectMcpServers", "value": "on", "tone": "on"},
-            ],
-        ),
-        _config_group(
-            "System prompt",
-            "scripts/sync-claude.py",
-            [
-                {"label": "includeGitInstructions", "value": "off (git via Stop hook)", "tone": "off"},
-            ],
-        ),
-        _config_group(
-            "Bundled plugins",
-            claude_src,
-            plugin_rows or [{"label": "All bundled plugins enabled", "value": "—", "tone": "muted"}],
-        ),
-        _config_group(
-            "Bundled skill visibility",
-            claude_src,
-            override_rows or [{"label": "All bundled skills visible", "value": "—", "tone": "muted"}],
-        ),
-        _config_group(
-            "Guidance",
-            guidance_src,
-            [
-                {"label": "Global CLAUDE.md", "value": "config/global.agents.md → ~/.claude/CLAUDE.md"},
-                {"label": "Lifecycle", "value": "Stop hook → claude_stop.py"},
-            ],
-        ),
-    ]
-
-    # ---------------- Copilot ----------------
-    copilot_settings = load_json(root / copilot_src, warnings)
-    copilot_scalar_settings = copilot_settings.get("settings")
-    copilot_scalar_settings = copilot_scalar_settings if isinstance(copilot_scalar_settings, dict) else {}
-    copilot_trust = copilot_settings.get("trust")
-    copilot_trust = copilot_trust if isinstance(copilot_trust, dict) else {}
-    copilot_launcher = copilot_settings.get("launcher")
-    copilot_launcher = copilot_launcher if isinstance(copilot_launcher, dict) else {}
-    copilot_skills = copilot_settings.get("skills")
-    copilot_skills = copilot_skills if isinstance(copilot_skills, dict) else {}
-    copilot_hooks = copilot_settings.get("hooks")
-    copilot_hooks = copilot_hooks if isinstance(copilot_hooks, dict) else {}
-
-    copilot_groups = [
-        _config_group(
-            "CLI settings",
-            copilot_src,
-            [{"label": k, "value": _scalar_value(v), "tone": "on" if v is True else "off" if v is False else ""} for k, v in copilot_scalar_settings.items()]
-            or none_row,
-        ),
-        _config_group(
-            "Trusted folders",
-            copilot_src,
-            [
-                {"label": "githubRoot", "value": _scalar_value(copilot_trust.get("githubRoot")), "tone": "on" if copilot_trust.get("githubRoot") else "off"},
-                {"label": "directChildren", "value": _scalar_value(copilot_trust.get("directChildren")), "tone": "on" if copilot_trust.get("directChildren") else "off"},
-                {"label": "extraFolders", "value": _scalar_value(copilot_trust.get("extraFolders"))},
-                {"label": "target", "value": "~/.copilot/config.json"},
-            ],
-        ),
-        _config_group(
-            "Terminal launcher",
-            copilot_src,
-            [
-                {"label": "enabled", "value": _scalar_value(copilot_launcher.get("enabled")), "tone": "on" if copilot_launcher.get("enabled") else "off"},
-                {"label": "defaultArgs", "value": _scalar_value(copilot_launcher.get("defaultArgs"))},
-                {"label": "managementCommands", "value": f"{len(clean_list(copilot_launcher.get('managementCommands')))} commands"},
-            ],
-        ),
-        _config_group(
-            "Skill policy",
-            copilot_src,
-            [
-                {"label": "copilotSkillDirectoryPolicy", "value": _scalar_value(copilot_skills.get("copilotSkillDirectoryPolicy"))},
-                {"label": "appSkillsPolicy", "value": _scalar_value(copilot_skills.get("appSkillsPolicy"))},
-                {"label": "expectedAppBundledSkills", "value": f"{len(clean_list(copilot_skills.get('expectedAppBundledSkills')))} observed"},
-            ],
-        ),
-        _config_group(
-            "Hooks",
-            copilot_src,
-            [
-                {"label": "managedCopilotHooks", "value": _scalar_value(copilot_hooks.get("managedCopilotHooks")), "tone": "on" if copilot_hooks.get("managedCopilotHooks") else "off"},
-                {"label": "userHookFile", "value": _scalar_value(copilot_hooks.get("userHookFile"))},
-                {"label": "forbiddenCommandSubstrings", "value": _scalar_value(copilot_hooks.get("forbiddenCommandSubstrings"))},
-            ],
-        ),
-    ]
-
-    return {"codex": codex_groups, "claude": claude_groups, "copilot": copilot_groups}
+    return codex_groups
 
 
 def build_control_plane_data(root: Path) -> dict[str, Any]:
@@ -837,7 +685,7 @@ def build_control_plane_data(root: Path) -> dict[str, Any]:
         warnings.append(
             {
                 "severity": "error",
-                "code": "invalid_mcp_targets",
+                "code": "invalid_mcp_registry",
                 "message": str(exc),
                 "source": REGISTRY_SOURCES["mcp"],
             }
@@ -848,13 +696,7 @@ def build_control_plane_data(root: Path) -> dict[str, Any]:
             config = {}
         assigned_repo_refs = mcp_catalog.repos_for(str(name)) if mcp_catalog else []
         assigned_repos = sorted(repo_name(repo) for repo in assigned_repo_refs)
-        clients = mcp_catalog.clients_used_by(str(name)) if mcp_catalog else []
-        global_clients = mcp_catalog.global_clients_used_by(str(name)) if mcp_catalog else []
-        repo_clients = {
-            repo_name(repo): list(mcp_catalog.clients_for(str(name), repo))
-            for repo in assigned_repo_refs
-        } if mcp_catalog else {}
-        is_global = bool(global_clients)
+        is_global = bool(mcp_catalog and mcp_catalog.scopes[str(name)] == "all")
         scope = "global" if is_global else "targeted" if assigned_repos else "unassigned"
         mcp_presets.append(
             base_item(
@@ -868,10 +710,6 @@ def build_control_plane_data(root: Path) -> dict[str, Any]:
                     "transport": config.get("transport"),
                     "url": config.get("url"),
                     "command": config.get("command"),
-                    "clients": clients,
-                    "global_clients": global_clients,
-                    "repo_clients": repo_clients,
-                    "targets": mcp_catalog.target_dicts(str(name)) if mcp_catalog else [],
                     "global": is_global,
                 },
             )
@@ -897,7 +735,6 @@ def build_control_plane_data(root: Path) -> dict[str, Any]:
                 repos=repos_for_entry,
                 details={
                     "event": entry.get("event"),
-                    "runtimes": clean_list(entry.get("runtimes")),
                     "timeout": entry.get("timeout"),
                     "command": entry.get("command"),
                     "matchers": entry.get("matchers") if isinstance(entry.get("matchers"), dict) else {},
@@ -956,6 +793,7 @@ def build_control_plane_data(root: Path) -> dict[str, Any]:
     attach_repo_counts(repos, skills, plugins, mcp_presets, hooks, dev_servers)
 
     items = skills + plugins + mcp_presets + repos + hooks + dev_servers
+    global_config = build_global_config(root, plugins_registry, repo_bootstrap, warnings)
     counts = {
         "items": len(items),
         "skills": len(skills),
@@ -974,13 +812,10 @@ def build_control_plane_data(root: Path) -> dict[str, Any]:
         "schema_version": SCHEMA_VERSION,
         "generated_at_utc": utc_timestamp(),
         "repo_root": str(root),
-        "runtimes": RUNTIMES,
         "sources": sources,
         "counts": counts,
         "capabilities": build_capability_board(counts),
-        "global_config": build_global_config(
-            root, plugins_registry, mcp_registry, repo_bootstrap, warnings
-        ),
+        "global_config": global_config,
         "warnings": warnings,
         "items": items,
         "groups": {

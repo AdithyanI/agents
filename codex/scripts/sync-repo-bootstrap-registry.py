@@ -28,8 +28,6 @@ ALLOWED_SCALAR_KEYS = {
     "sandbox_mode",
     "personality",
 }
-ALLOWED_REPO_METADATA_KEYS = {"enabled_clients", "model_instructions_clients"}
-SUPPORTED_CLIENTS = {"codex", "claude", "copilot"}
 ALLOWED_DEFAULT_TABLE_KEYS = {"features"}
 CLIENT_OWNED_THREAD_SELECTION_KEYS = {
     "model",
@@ -120,77 +118,12 @@ def validate_registry(
             if (
                 key not in ALLOWED_SCALAR_KEYS
                 and key not in ALLOWED_DEFAULT_TABLE_KEYS
-                and key not in ALLOWED_REPO_METADATA_KEYS
             ):
                 raise ValueError(f"repos[{idx}] unsupported key: {key}")
         if "codex_trust" in item and not isinstance(item["codex_trust"], bool):
             raise ValueError(f"repos[{idx}].codex_trust must be a boolean")
         if "features" in item and not isinstance(item["features"], dict):
             raise ValueError(f"repos[{idx}].features must be an object")
-        enabled_clients = item.get("enabled_clients")
-        if enabled_clients is None:
-            enabled_clients = sorted(SUPPORTED_CLIENTS)
-        if not isinstance(enabled_clients, list) or not enabled_clients:
-            raise ValueError(
-                f"repos[{idx}].enabled_clients must be a non-empty array"
-            )
-        if not all(isinstance(client, str) for client in enabled_clients):
-            raise ValueError(
-                f"repos[{idx}].enabled_clients must contain only strings"
-            )
-        unknown_clients = sorted(set(enabled_clients) - SUPPORTED_CLIENTS)
-        if unknown_clients:
-            raise ValueError(
-                f"repos[{idx}].enabled_clients has unsupported clients: "
-                + ", ".join(unknown_clients)
-            )
-        if len(enabled_clients) != len(set(enabled_clients)):
-            raise ValueError(
-                f"repos[{idx}].enabled_clients must not contain duplicates"
-            )
-        if "codex" not in enabled_clients:
-            raise ValueError(
-                f"repos[{idx}].enabled_clients must include codex because "
-                "repo-bootstrap.json is the managed Codex repo inventory"
-            )
-        identity_clients = item.get("model_instructions_clients")
-        if identity_clients is not None:
-            if not isinstance(identity_clients, list) or not identity_clients:
-                raise ValueError(
-                    f"repos[{idx}].model_instructions_clients must be a non-empty array"
-                )
-            if not all(isinstance(client, str) for client in identity_clients):
-                raise ValueError(
-                    f"repos[{idx}].model_instructions_clients must contain only strings"
-                )
-            unknown_clients = sorted(set(identity_clients) - SUPPORTED_CLIENTS)
-            if unknown_clients:
-                raise ValueError(
-                    f"repos[{idx}].model_instructions_clients has unsupported clients: "
-                    + ", ".join(unknown_clients)
-                )
-            if len(identity_clients) != len(set(identity_clients)):
-                raise ValueError(
-                    f"repos[{idx}].model_instructions_clients must not contain duplicates"
-                )
-            if "codex" not in identity_clients:
-                raise ValueError(
-                    f"repos[{idx}].model_instructions_clients must include codex"
-                )
-            if not item.get("model_instructions_file"):
-                raise ValueError(
-                    f"repos[{idx}].model_instructions_clients requires model_instructions_file"
-                )
-            disabled_identity_clients = sorted(
-                set(identity_clients) - set(enabled_clients)
-            )
-            if disabled_identity_clients:
-                raise ValueError(
-                    f"repos[{idx}].model_instructions_clients must be a subset of "
-                    "enabled_clients; disabled clients: "
-                    + ", ".join(disabled_identity_clients)
-                )
-
         repos.append(
             {
                 "path": str(repo_root),
@@ -278,7 +211,7 @@ def main() -> int:
     print("Repo bootstrap registry validated.")
     print(f"Repos: {len(repos)}")
     print(f"MCP presets: {len(catalog.definitions)}")
-    print(f"MCP target rules: {sum(len(targets) for targets in catalog.targets.values())}")
+    print(f"MCP repository assignments: {sum(len(names) for names in catalog.assignments.values())}")
     print(f"Managed plugins: {len(managed_plugins)}")
     print(f"Repo-local plugins: {len(unmanaged_plugins)}")
     return 0

@@ -17,7 +17,7 @@ and validation belong in one workflow.
   list exact control-plane changes unless the user explicitly asked to edit the
   agents repo.
 - Edit canonical sources, not generated runtime symlinks under `.agents/skills`,
-  `.claude/skills`, or `~/.agents/skills`.
+  or `~/.agents/skills`.
 - Keep `skills/registry.json` as the only mapping manifest.
 
 ## Read References
@@ -45,7 +45,7 @@ Choose placement before creating or editing files:
    over `global` unless the skill clearly belongs in the small default kit for
    unrelated repos.
 6. When a skill depends on a repo-level MCP preset, align the repo-scoped skill
-   targets with repos declaring that preset in `codex/config/repo-bootstrap.json`.
+   targets with that preset's `repos` scope in `mcp/config/presets.json`.
 7. If placement is still ambiguous after inspecting context, ask one question:
    "Should this be external, owned, repo-local, or dormant?"
 

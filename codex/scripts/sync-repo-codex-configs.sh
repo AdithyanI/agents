@@ -400,7 +400,7 @@ for item in repo_items_all:
         actual_repo,
         defaults,
         item,
-        mcp_catalog.presets_for(item["path"], "codex"),
+        mcp_catalog.presets_for(item["path"]),
         repo_plugins_by_root.get(actual_repo, []),
     )
     rendered_path = tmp_dir / f"{hashlib.sha256(actual_repo.encode()).hexdigest()}.toml"

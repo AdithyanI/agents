@@ -1,15 +1,15 @@
 import { enabledHooks, enabledPlugins, repoDisplayName } from '../selectors';
 import { useNavigateRepo } from '../primitives';
-import type { Capability, ControlPlaneData, Item, RuntimeCell } from '../types';
+import type { Capability, ControlPlaneData, Item, CapabilityState } from '../types';
 
-const STATUS_LABEL: Record<RuntimeCell['status'], string> = {
+const STATUS_LABEL: Record<CapabilityState['status'], string> = {
   stable: 'Stable',
   new: 'New',
   planned: 'Planned',
   na: 'not applicable',
 };
 
-function Cell({ cell }: { cell: RuntimeCell }) {
+function Cell({ cell }: { cell: CapabilityState }) {
   return (
     <div className="cp-cell">
       <span className={`cp-chip ${cell.status}`}>
@@ -27,8 +27,6 @@ function Board({ capabilities }: { capabilities: Capability[] }) {
       <div className="cp-row cp-head">
         <div>Capability</div>
         <div>Codex</div>
-        <div>Claude</div>
-        <div>Copilot</div>
         <div className="cp-src-h">Source</div>
       </div>
       {capabilities.map((cap) => (
@@ -40,9 +38,7 @@ function Board({ capabilities }: { capabilities: Capability[] }) {
             </div>
             <div className="cp-cap-desc">{cap.desc}</div>
           </div>
-          <Cell cell={cap.codex} />
-          <Cell cell={cap.claude} />
-          <Cell cell={cap.copilot} />
+          <Cell cell={cap} />
           <div className="cp-cell cp-src">
             <code>{cap.source}</code>
           </div>
@@ -120,11 +116,11 @@ export function BoardSection({ data }: { data: ControlPlaneData }) {
             <h1>Control Plane</h1>
           </div>
           <p className="cp-tagline">
-            How the agents are set up to write better code: every capability the runtimes inherit, and which runtime gets it.
+            How Codex is configured: shared capabilities and what each repository inherits.
           </p>
         </div>
         <div className="cp-meta">
-          <b>{c.repos}</b> repos · <b>{(data.runtimes ?? []).length}</b> runtimes ·{' '}
+          <b>{c.repos}</b> repos ·{' '}
           <b className={c.warnings ? 'cp-warn' : ''}>{c.warnings}</b> warnings
         </div>
       </header>
@@ -139,12 +135,12 @@ export function BoardSection({ data }: { data: ControlPlaneData }) {
       </div>
 
       <div className="cp-sec-head">
-        <h2>Capabilities × Runtimes</h2>
-        <span className="cp-hint">what each lever enables, and where it lands</span>
+        <h2>Codex capabilities</h2>
+        <span className="cp-hint">configuration and delivery</span>
       </div>
       <Board capabilities={caps} />
       <div className="cp-legend">
-        <span><span className="cp-b" style={{ background: 'var(--accent)' }} />Stable · wired &amp; in use</span>
+        <span><span className="cp-b" style={{ background: 'var(--accent)' }} />Stable · configured</span>
         <span><span className="cp-b" style={{ background: 'var(--amber)' }} />New · just landed</span>
         <span><span className="cp-b" style={{ background: 'var(--faint)' }} />Planned · next</span>
         <span><span className="cp-b cp-b-dash" />Not applicable</span>

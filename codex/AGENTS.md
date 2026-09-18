@@ -13,7 +13,7 @@ Canonical personal Codex control-plane assets live here.
 
 - `config/`: canonical Codex config fragments and templates.
   - `config/bundled-skills-policy.json`: allow/disable policy for OpenAI-bundled Codex runtime skills.
-- `../config/global.agents.md`: shared machine-wide guidance source for `~/.codex/AGENTS.md` and `~/.claude/CLAUDE.md`.
+- `../config/global.agents.md`: machine-wide guidance source for `~/.codex/AGENTS.md`.
 - `scripts/`: canonical Codex-specific automation scripts.
   - includes Ghostty/Codex helper scripts and any thin helper invoked by Keyboard Maestro for Codex workflows.
   - `scripts/sync-native-env.py` connects `config/secrets.env.map` to the
@@ -39,7 +39,7 @@ Canonical personal Codex control-plane assets live here.
 
 - `config/repo-bootstrap.json` decides managed repo inventory plus per-repo Codex defaults and overrides.
 - `config/bundled-skills-policy.json` decides which OpenAI-bundled Codex skills are allowed to remain available and which are disabled in managed runtime config.
-- MCP definitions and repository/client targets belong in `../mcp/config/presets.json`, not in `repo-bootstrap.json`.
+- MCP definitions and repository scopes belong in `../mcp/config/presets.json`, not in `repo-bootstrap.json`.
 - Browser dashboard data is served from canonical registries by `../scripts/control-plane-dashboard.py`.
 
 ## References

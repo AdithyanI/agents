@@ -145,7 +145,7 @@ cd /Users/dobby/GitHub/agents
 ```
 
 Use `scripts/sync-skills-registry.sh` only for focused troubleshooting; the
-shared bootstrap wrapper keeps Codex and Claude surfaces aligned.
+shared bootstrap wrapper keeps Codex configuration, previews, and skills aligned.
 
 ## Safety
 

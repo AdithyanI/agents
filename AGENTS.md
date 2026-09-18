@@ -1,111 +1,62 @@
 # Agents Control-Plane Repo
 
-Personal agent, Codex, Claude, Copilot, and repo-local lifecycle hook control plane.
+Personal Codex configuration, skills, plugins, MCPs, previews, and lifecycle hooks, reproduced across MacBook and Mac Mini.
 
-## Purpose
+## Orientation
 
-- Keep global skill sources and runtime links reproducible across MacBook + MacMini.
-- Keep canonical personal Codex control-plane assets reproducible across MacBook + MacMini.
-- Keep canonical personal Copilot CLI settings and launcher behavior reproducible across MacBook + MacMini.
-- Track one canonical skill registry in git.
-- Keep repo-local skills in their repos unless explicitly promoted.
+For changes affecting Dobby ownership, engine/workspace boundaries, dashboard/gateway flow, or more than one Dobby repo, read `skills-source/owned/dobby-system/SKILL.md`. Keep cross-repo orientation there and control-plane contracts in this repo's docs.
 
-## Dobby System Orientation
+## Canonical Sources
 
-For any control-plane, skill, hook, or repo-bootstrap change that affects Dobby
-ownership, engine/workspace boundaries, dashboard/gateway flow, or more than one
-Dobby repo, check
-`~/GitHub/agents/skills-source/owned/dobby-system/SKILL.md` first.
-Keep cross-repo Dobby orientation in that skill; keep agent control-plane
-contracts in this repo's docs.
+| Source | Owns |
+| --- | --- |
+| `config/global.agents.md` | Machine-wide guidance rendered to `~/.codex/AGENTS.md` |
+| `codex/config/` | Personal Codex config, bundled-skill policy, and shared repo inventory in `repo-bootstrap.json` |
+| `skills/registry.json` | Standalone skill ownership and distribution |
+| `skills-source/owned/`, `skills-source/external/` | Canonical managed skill content |
+| `plugins/registry.json` | Native Codex plugin enablement and installation |
+| `mcp/config/presets.json` | MCP definitions and repository scopes |
+| `hooks/registry.json`, `hooks/scripts/` | Codex lifecycle hook configuration and implementations |
+| `hooks/git/` | Shared local Git hooks |
+| `dev-servers/registry.json` | Opt-in local previews rendered to `.codex/environments/environment.toml` |
+| `dashboard-app/` | Read-only control-plane dashboard |
 
-## Source of Truth
+Edit these inputs and rerun bootstrap; do not hand-edit generated `.codex/config.toml`, `.codex/hooks.json`, preview environments, or managed skill symlink destinations.
 
-- `skills/registry.json` is the canonical skill registry.
-- `plugins/registry.json` is the canonical plugin registry.
-- `mcp/config/presets.json` is the canonical MCP definition and target registry. Each MCP declares one or more `targets` across managed repos and `codex`, `claude`, or `copilot`; selectors can use `"all"` for either axis. Codex targets render to repo `.codex/config.toml`, shared Claude/Copilot targets render to root `.mcp.json`, exclusive global Copilot targets render to `~/.copilot/mcp-config.json`, and remaining Copilot-only repo targets render to repo `.github/mcp.json` when no root `.mcp.json` conflicts.
-- `hooks/registry.json` is the canonical Codex lifecycle hook registry.
-- `dev-servers/registry.json` is the canonical agent-preview server registry. The shared client sync renders per-repo `.claude/launch.json`, `.codex/environments/environment.toml`, and `.github/github-app.yml` from it. It is opt-in per repo: a repo gets a launch surface only if listed. Use `{repo_root}` for commands that should follow the active checkout; the Copilot app renderer maps it to `COPILOT_WORKSPACE_PATH` for worktree sessions. Keep public Cloudflare/LaunchAgent service ports in `~/GitHub/scripts`, not this preview registry.
-- `codex/` holds canonical personal Codex control-plane inputs. The Codex sync renders terminal Codex config under `~/.codex`.
-- `config/global.agents.md` is the canonical machine-wide guidance source for client-specific global guidance such as `~/.codex/AGENTS.md` and `~/.claude/CLAUDE.md`.
-- `config/claude-settings.json` is the canonical managed overlay of global Claude Code `settings.json` keys (`enabledPlugins` for Anthropic-bundled Claude plugins like `anthropic-skills@inline`, `skillOverrides` for bundled-skill visibility, `sshConfigs` for Claude Desktop SSH entries such as `macmini`, and `desktopPreferences` for selected Claude Desktop app preferences such as `chromeExtensionEnabled`). `scripts/sync-claude.py` merges Claude Code keys into `~/.claude/settings.json`, pins `autoUpdates=false` in Claude's mutable runtime state, renders the no-auto-update terminal launcher, and merges desktop preferences into `~/Library/Application Support/Claude/config.json` so this state is reproducible across machines and tracked in git. This is distinct from `plugins/registry.json` (Codex-native plugins) and `skills/registry.json` (managed standalone skills); it governs only Claude runtime surfaces those registries do not own.
-- `config/copilot-settings.json` is the canonical managed overlay for GitHub Copilot CLI settings, trusted folders, terminal launcher defaults, Copilot user-level hooks, and the Copilot skill-noise policy. `scripts/sync-copilot.py` renders `~/.copilot/settings.json` with `autoUpdate=false`, renders trusted folders into `~/.copilot/config.json` where the installed CLI stores them, renders `~/.copilot/hooks/agents-control-plane.json`, and renders `~/bin/copilot`; it intentionally does not copy skills into `.github/skills` or `~/.copilot/skills`.
-- `config/vscode-agent-defaults.json` is the canonical managed overlay for VS Code's own Chat/Agent extension defaults — a distinct surface from `config/copilot-settings.json`, which governs the standalone terminal `copilot` CLI, not VS Code's built-in Chat/Agents window. `scripts/sync-vscode-agent-defaults.py` renders managed keys into the machine-local Copilot-CLI-in-VS-Code agent-host config (`~/.vscode-server/data/User/globalStorage/agent-host-config.json`) and the real local VS Code user `settings.json` (`~/Library/Application Support/Code/User/settings.json`), both best-effort/skipped when that surface isn't present on the machine. This is what makes a brand-new VS Code chat session start on Bypass Approvals + Autopilot instead of VS Code's built-in default. The agent-host config is app-owned and can drift back to its own defaults during normal operation, so it is reconciled every 15 minutes from `~/GitHub/scripts/sync/git-auto-sync.sh` rather than check-gated in `scripts/check-agent-control-planes.sh`.
-- `codex/config/bundled-skills-policy.json` is the canonical policy for classifying OpenAI-bundled Codex skills that appear under `~/.codex/skills/.system` or `~/.codex/skills/codex-primary-runtime`.
-- `codex/config/repo-bootstrap.json` is the canonical shared repo registry for managed repo-local behavior.
-  - Per repo it can define:
-    - `enabled_clients` (`codex` is mandatory; omit for all clients)
-    - `personality`
-    - `model_instructions_file`
-    - `developer_instructions`
-    - `project_root_markers`
-    - `features`
-  - Model, reasoning effort, profile, and Fast/service-tier selection are client-owned and must not be set in this registry or its defaults.
-- Managed canonical skill content lives in:
-  - `skills-source/external/<skill>/`
-  - `skills-source/owned/<skill>/`
-- Codex-native plugin scope and enablement lives in `plugins/registry.json`.
-- Global Codex runtime skills live in `~/.agents/skills/<skill>` as symlinks rendered from `skills/registry.json`.
-- Read-only browser dashboard source lives in `dashboard-app/`. Local production serves only an
-  exact, versioned build from `~/.local/share/agents-control-plane-dashboard/current`.
-- Shared lifecycle hook scripts live in:
-  - `hooks/scripts/`
-- Shared local Git hook scripts live in:
-  - `hooks/git/`
+## Entry Points
 
-## Key Entry Points
+- Apply: `./scripts/bootstrap-machine-agent-control-planes.sh --apply`
+- Reconcile after Git sync: `./scripts/auto-apply-agent-control-planes.sh --apply`
+- Validate runtime and regressions: `./scripts/check-agent-control-planes.sh`
+- Hermetic tests: `./scripts/test-control-plane.sh`
+- Machine-health audit: `./scripts/audit-agent-runtime-drift.py --plain`
+- Install a standalone skill: `./scripts/bootstrap-skill.sh <skills.sh-url-or-upstream-ref> --repo <repo>`
+- Install a native plugin: `./scripts/bootstrap-plugin.sh <plugin-name-or-id> [--scope global|repo|dormant] [--repo <repo>]`
 
-- Apply all shared agent control planes: `./scripts/bootstrap-machine-agent-control-planes.sh --apply`
-- Reconcile after git sync: `./scripts/auto-apply-agent-control-planes.sh --apply`
-- Validate shared skills, plugins, Codex, and regression tests: `./scripts/check-agent-control-planes.sh`
-- Audit applied local agent runtime drift for machine health checks: `./scripts/audit-agent-runtime-drift.py --plain`
-- Run hermetic regression tests only: `./scripts/test-control-plane.sh`
-- Bootstrap external skills/plugins through the agent-facing clients:
-  - `./scripts/bootstrap-skill.sh <skills.sh-url-or-upstream-ref> --repo <repo>`
-  - `./scripts/bootstrap-plugin.sh <plugin-name-or-id> [--scope global|repo|dormant] [--repo <repo>]`
+Shared bootstrap/check support exact repository paths, such as `--repo ~/GitHub/agents`. Prefer shared bootstrap for registry changes so related outputs stay consistent. Use component commands for intentional single-surface troubleshooting.
 
-Detailed operations live in:
+## Contracts
 
-- `docs/references/agent-control-plane-operations.md`
-- `docs/references/repo-lifecycle-hook-adapter.md`
-- `docs/references/codex-control-plane-operations.md`
-- `docs/references/cli-interface-contract.md`
+- Codex is the sole supported development client. Retired-client cleanup is a removal migration, not an optional runtime framework.
+- Repo bootstrap entries define behavior such as `personality`, `model_instructions_file`, `developer_instructions`, `project_root_markers`, and `features`. Model, reasoning effort, profile, and Fast/service tier remain client-owned.
+- A repo's identity prompt is declared once as `model_instructions_file`; it reaches Codex through the generated repo config.
+- MCP schema version 3 assigns each definition to `repos: "all"` or an explicit array of managed repository paths. Empty arrays leave a definition unassigned. Output lives only in repo `.codex/config.toml`.
+- Standalone skills use symlinks at `~/.agents/skills/<skill>` or repo `.agents/skills/<skill>`. Keep repo-local skills in their owning repos unless explicitly promoted.
+- Keep `unmanaged_repo_local_skills` and `unmanaged_repo_local_plugins` in their existing registries. An existing repo must contain every declared local skill; fix stale entries rather than hiding errors. Do not add mapping manifests.
+- Keep global skills/plugins a minimal default kit. Native plugins use global/manual enablement; their repo scope is not reliable. If a bundled MCP needs one-repo scope, promote that MCP into the standalone MCP registry.
+- Do not decompose native plugins into standalone skills/MCPs without an explicit need. A rendered plugin entry is distinct from an installed package: bootstrap installs missing enabled packages, and runtime drift checks verify availability.
+- Classify new OpenAI-bundled skills in `codex/config/bundled-skills-policy.json` as allowed or disabled.
+- New agent-facing CLI clients follow `docs/references/cli-interface-contract.md`.
+- Preview commands use `{repo_root}` to follow the active checkout. Public Cloudflare/LaunchAgent services and ports belong in `~/GitHub/scripts`, outside the preview registry.
+- Dashboard production serves an exact versioned build from `~/.local/share/agents-control-plane-dashboard/current`; source edits are not a production deployment.
 
-## Rules
+## Hooks and Validation
 
-- Runtime distribution is link-first for standalone skills; Codex plugins stay native plugin entries in `plugins/registry.json`.
-- Treat global skills and global plugins as a minimal default kit. For native Codex plugins, use global/manual enablement only for now; current Codex docs and runtime behavior treat plugin enablement as user-level, not reliably repo-scoped.
-- When a user provides a `skills.sh` URL or upstream skill reference and wants it installed into a repo, prefer `./scripts/bootstrap-skill.sh` over manual registry edits.
-- Do not edit managed skills through repo symlink destinations; edit canonical source paths.
-- Do not split Codex plugins into skill or MCP registries by default. If a plugin capability should become standalone, promote it manually into `skills/registry.json` or `mcp/config/presets.json`.
-- Managed plugin entries render global plugin state into `~/.codex/config.toml`; standalone skills and MCPs remain separate registries.
-- A rendered native plugin entry is not the same as an installed Codex plugin package. `scripts/bootstrap-machine-agent-control-planes.sh --apply` installs missing enabled non-bundled packages through `scripts/sync-codex-plugin-installs.py`; `scripts/check-agent-control-planes.sh` runs the runtime drift audit to catch missing or stale runtime plugin state.
-- Do not bootstrap native Codex plugins as repo-scoped by default. If a plugin's bundled MCP must be reliably available for one repo, promote that MCP as a standalone repo MCP preset instead of widening the whole plugin or decomposing the plugin into skills.
-- Keep repo-local skills listed in `skills/registry.json` under `unmanaged_repo_local_skills`.
-- Keep `unmanaged_repo_local_skills` honest: if the target repo exists locally, the repo must contain `.agents/skills/<skill>/SKILL.md` or skill sync should fail until the stale registry entry is removed.
-- Keep unmanaged repo-local plugins listed in `plugins/registry.json` under `unmanaged_repo_local_plugins`.
-- Do not add additional manifest files for skill mapping; update `skills/registry.json`.
-- Do not add additional manifest files for plugin mapping; update `plugins/registry.json`.
-- New or promoted agent-facing CLI clients must follow `docs/references/cli-interface-contract.md`.
-- Do not hand-edit rendered runtime hook files. Update `hooks/registry.json` or `hooks/scripts/*`, then rerun the shared bootstrap/check.
-- Repo lifecycle hook authoring contract lives in `docs/references/repo-lifecycle-hook-adapter.md`.
-- Repo-specific lifecycle behavior belongs in optional Python scripts under `scripts/hooks/session_start.py`, `scripts/hooks/user_prompt_submit.py`, and explicit finalization policy at `scripts/hooks/finalize_codex_thread.py`.
-- Managed repos get rendered repo-local hook config at `.codex/hooks.json` according to `hooks/registry.json`; do not hand-edit that surface. Update `hooks/registry.json`, `hooks/scripts/*`, or `codex/config/repo-bootstrap.json`, then rerun the shared bootstrap wrapper.
-- Managed repos use local Git `core.hooksPath` pointing at `hooks/git/`; the shared commit-time hook delegates to repo-owned `scripts/check-fast.sh` when present.
-- Use `scripts/check-fast.sh` as the fast, deterministic, repo-owned validation entrypoint. Prefer staged/affected checks there; keep slower repo-wide validation in `scripts/check-full.sh`.
-- If `skills/registry.json` changes, run sync/check in the same change.
-- If `plugins/registry.json` changes, run plugin sync/check in the same change.
-- If `config/vscode-agent-defaults.json` or `scripts/sync-vscode-agent-defaults.py` changes, run `./scripts/sync-vscode-agent-defaults.sh --check` plus `./scripts/test-control-plane.sh` in the same change, and update `~/GitHub/scripts/sync/git-auto-sync.sh`'s `apply_vscode_agent_defaults_reconcile` step if the script's CLI contract changes.
-- Do not hand-edit generated repo-local `.codex/config.toml` files in managed repos; update `codex/config/repo-bootstrap.json` and re-run the sync scripts.
-- Do not hand-edit generated repo-local `.codex/hooks.json` files in managed repos; update `hooks/registry.json` and re-run the sync scripts.
-- Do not hand-edit generated repo-local `.claude/launch.json`, `.codex/environments/environment.toml`, or `.github/github-app.yml` files in managed repos; update `dev-servers/registry.json` and re-run `scripts/sync-claude.sh` plus `scripts/sync-copilot.sh`.
-- A repo's identity prompt is declared once as `model_instructions_file` in `codex/config/repo-bootstrap.json`. It reaches Codex through `.codex/config.toml` and, by default, also reaches Copilot through `.github/copilot-instructions.md` and Claude Code through `.claude/CLAUDE.md`. Use `model_instructions_clients` to narrow that propagation for a repo; it must include `codex` (`adi` is intentionally Codex-only). Do not hand-edit generated surfaces; change the registry entry and re-run the sync scripts.
-- `enabled_clients` is the repo-wide runtime filter. Codex remains mandatory for repos in this registry; disabled optional clients must not receive repo guidance, hooks, skill links, MCP files, or preview files, and sync removes only stale surfaces it can identify as control-plane-managed. `model_instructions_clients` is a subset that controls identity-prompt propagation.
-- Do not hand-edit generated repo-local `.mcp.json` or `.github/mcp.json` files in managed repos. Update the MCP definitions and target matrix in `mcp/config/presets.json`, then re-run the shared bootstrap/check.
-- Do not copy managed skills into `.github/skills` or `~/.copilot/skills` for Copilot by default. Copilot already reads `.agents/skills`, `.claude/skills`, `~/.agents/skills`, and app-bundled skills; use `config/copilot-settings.json`, `hooks/registry.json`, and `scripts/sync-copilot.py` for Copilot CLI settings, trust, hooks, launcher state, and skill-noise checks.
-- When a new OpenAI-bundled Codex skill appears locally, classify it in `codex/config/bundled-skills-policy.json` as either `allowed` or `disabled`; do not leave it as untracked local runtime drift.
-- When changing shared bootstrap inputs such as `mcp/config/presets.json` or `codex/config/repo-bootstrap.json`, prefer `./scripts/bootstrap-machine-agent-control-planes.sh --apply --repo <repo>` so every affected client surface is re-rendered together. Use component-only scripts only for intentional single-surface troubleshooting.
-- If an MCP definition or target changes, run the shared bootstrap/check in the same change and verify every selected client surface. Note: repo filters use exact paths (`--repo ~/GitHub/<repo>`), not bare repo names; inspect `.codex/config.toml`, `.mcp.json`, and `.github/mcp.json` as applicable.
-- If `hooks/registry.json`, `hooks/scripts/*`, `hooks/git/*`, or `scripts/sync-managed-git-hooks.sh` changes, run shared bootstrap/check plus `./scripts/test-control-plane.sh` in the same change.
-- If `codex/config/global.config.toml` or `codex/config/repo-bootstrap.json` changes, run the Codex control-plane validation script in the same change.
-- Do not hand-edit `enabledPlugins`, `skillOverrides`, or managed `sshConfigs` in the global `~/.claude/settings.json`; do not hand-edit managed `desktopPreferences` in `~/Library/Application Support/Claude/config.json`. That state is rendered from `config/claude-settings.json`. Update the overlay, then rerun the shared bootstrap/check (`./scripts/sync-claude.sh --apply` or the bootstrap wrapper). To disable an Anthropic-bundled Claude plugin set its `enabledPlugins` entry to `false`; to hide a bundled Claude skill from model context set its `skillOverrides` entry to `name-only` (still typable) or `off`.
+- Optional repo lifecycle scripts live at `scripts/hooks/session_start.py`, `scripts/hooks/user_prompt_submit.py`, and `scripts/hooks/finalize_codex_thread.py`. Follow `docs/references/repo-lifecycle-hook-adapter.md` for their contracts.
+- Managed repos use `core.hooksPath` pointing at this repo's `hooks/git/`. Commit-time validation delegates to repo `scripts/check-fast.sh` when present. Keep it local, deterministic, and quick; slower checks belong in `scripts/check-full.sh`.
+- Skill/plugin registry changes require their sync/check in the same change.
+- MCP, bootstrap, or preview registry changes require shared bootstrap/check and inspection of affected Codex output.
+- Hook registry, lifecycle scripts, shared Git hooks, or Git-hook installer changes require shared bootstrap/check and hermetic regression tests.
+- Global Codex config or repo-bootstrap changes require Codex control-plane validation.
+
+Detailed commands and ownership live in `docs/references/agent-control-plane-operations.md`, `codex-control-plane-operations.md`, and `codex-control-plane-ownership.md`.

@@ -21,6 +21,14 @@ printf '%s|%s\\n' "$(basename "$0")" "$*" >> "${LOG_FILE:?}"
 """
 
 
+PYTHON_STUB = """from pathlib import Path
+import os
+import sys
+with Path(os.environ["LOG_FILE"]).open("a") as log:
+    log.write(Path(__file__).name + "|" + " ".join(sys.argv[1:]) + "\\n")
+"""
+
+
 class SharedBootstrapWrapperTests(TempDirTestCase):
     def _make_stub_control_plane(self) -> tuple[Path, Path]:
         root = self.temp_path / "stub-agents"
@@ -33,12 +41,10 @@ class SharedBootstrapWrapperTests(TempDirTestCase):
         write_executable(root / "scripts/sync-skills-registry.sh", STUB_SCRIPT)
         write_executable(root / "scripts/sync-plugins-registry.sh", STUB_SCRIPT)
         write_executable(root / "scripts/sync-codex-plugin-installs.py", STUB_SCRIPT)
-        write_executable(root / "scripts/sync-claude.sh", STUB_SCRIPT)
-        write_executable(root / "scripts/sync-copilot.sh", STUB_SCRIPT)
-        write_executable(root / "scripts/install-prune-stale-copilot-sessions-launchagent.sh", STUB_SCRIPT)
-        write_executable(root / "scripts/sync-vscode-agent-defaults.sh", STUB_SCRIPT)
         write_executable(root / "scripts/sync-managed-git-hooks.sh", STUB_SCRIPT)
         write_executable(root / "codex/scripts/bootstrap-machine-codex.sh", STUB_SCRIPT)
+        write_text(root / "scripts/retire-agent-clients.py", PYTHON_STUB)
+        write_text(root / "scripts/sync-codex-previews.py", PYTHON_STUB)
         return root, log_path
 
     def test_apply_mode_runs_shared_bootstrap_steps_with_forwarded_args(self) -> None:
@@ -47,7 +53,6 @@ class SharedBootstrapWrapperTests(TempDirTestCase):
         repo_a = self.temp_path / "repo-a"
         repo_b = self.temp_path / "repo-b"
         home = self.temp_path / "home"
-        (home / ".copilot/session-state").mkdir(parents=True)
 
         result = run_command(
             [
@@ -63,16 +68,13 @@ class SharedBootstrapWrapperTests(TempDirTestCase):
             env={"HOME": str(home), "LOG_FILE": str(log_path)},
         )
 
-        self.assertIn("SKIP Antigravity spike sync (disabled)", result.stdout)
         self.assertEqual(
             [
+                f"retire-agent-clients.py|--apply --github-root {github_root} --repo {repo_a} --repo {repo_b}",
                 f"sync-skills-registry.sh|--apply --repo {repo_a} --repo {repo_b}",
                 "sync-plugins-registry.sh|--apply",
                 "sync-codex-plugin-installs.py|--apply --no-input",
-                f"sync-claude.sh|--apply --github-root {github_root} --repo {repo_a} --repo {repo_b}",
-                f"sync-copilot.sh|--apply --github-root {github_root} --repo {repo_a} --repo {repo_b}",
-                "install-prune-stale-copilot-sessions-launchagent.sh|--apply",
-                "sync-vscode-agent-defaults.sh|--apply",
+                f"sync-codex-previews.py|--apply --github-root {github_root} --repo {repo_a} --repo {repo_b}",
                 f"sync-managed-git-hooks.sh|--apply --repo {repo_a} --repo {repo_b}",
                 f"bootstrap-machine-codex.sh|--apply --github-root {github_root} --repo {repo_a} --repo {repo_b}",
             ],
@@ -92,11 +94,12 @@ class SharedCheckWrapperTests(TempDirTestCase):
         write_executable(root / "scripts/check-repo-hygiene.sh", STUB_SCRIPT)
         write_executable(root / "scripts/check-skills-registry.sh", STUB_SCRIPT)
         write_executable(root / "scripts/check-plugins-registry.sh", STUB_SCRIPT)
-        write_executable(root / "scripts/sync-copilot.sh", STUB_SCRIPT)
         write_executable(root / "scripts/sync-managed-git-hooks.sh", STUB_SCRIPT)
         write_executable(root / "codex/scripts/check-codex-control-plane.sh", STUB_SCRIPT)
         write_executable(root / "scripts/audit-agent-runtime-drift.py", STUB_SCRIPT)
         write_executable(root / "scripts/test-control-plane.sh", STUB_SCRIPT)
+        write_text(root / "scripts/retire-agent-clients.py", PYTHON_STUB)
+        write_text(root / "scripts/sync-codex-previews.py", PYTHON_STUB)
         return root, log_path
 
     def test_repo_filter_is_forwarded_to_codex_checks(self) -> None:
@@ -120,7 +123,8 @@ class SharedCheckWrapperTests(TempDirTestCase):
                 "check-repo-hygiene.sh|",
                 "check-skills-registry.sh|",
                 "check-plugins-registry.sh|",
-                f"sync-copilot.sh|--check --repo {repo_a} --repo {repo_b}",
+                f"retire-agent-clients.py|--check --repo {repo_a} --repo {repo_b}",
+                f"sync-codex-previews.py|--check --repo {repo_a} --repo {repo_b}",
                 f"sync-managed-git-hooks.sh|--check --repo {repo_a} --repo {repo_b}",
                 f"check-codex-control-plane.sh|--repo {repo_a} --repo {repo_b}",
                 "audit-agent-runtime-drift.py|--plain --skip-control-plane-check --no-input",
@@ -149,7 +153,6 @@ class AutoApplyRoutingTests(TempDirTestCase):
         write_executable(root / "scripts/bootstrap-machine-agent-control-planes.sh", STUB_SCRIPT)
         write_executable(root / "scripts/sync-skills-registry.sh", STUB_SCRIPT)
         write_executable(root / "scripts/sync-plugins-registry.sh", STUB_SCRIPT)
-        write_executable(root / "scripts/sync-copilot.sh", STUB_SCRIPT)
         write_executable(root / "scripts/sync-managed-git-hooks.sh", STUB_SCRIPT)
         write_executable(root / "codex/scripts/bootstrap-machine-codex.sh", STUB_SCRIPT)
         commit_all(root, "initial")
@@ -353,7 +356,7 @@ class AutoApplyRoutingTests(TempDirTestCase):
             log_path.read_text(encoding="utf-8").splitlines(),
         )
 
-    def test_mcp_target_change_runs_all_client_bootstrap(self) -> None:
+    def test_mcp_scope_change_runs_shared_bootstrap(self) -> None:
         root, log_path, stamp_file = self._make_agents_repo()
         baseline_sha = run_command(
             ["git", "-C", str(root), "rev-parse", "HEAD"],
@@ -363,18 +366,13 @@ class AutoApplyRoutingTests(TempDirTestCase):
         write_json(
             root / "mcp/config/presets.json",
             {
-                "version": 2,
+                "version": 3,
                 "presets": {
                     "playwright": {
                         "transport": "stdio",
                         "command": "npx",
                         "args": ["-y", "@playwright/mcp@latest"],
-                        "targets": [
-                            {
-                                "clients": ["copilot"],
-                                "repos": ["~/GitHub/agents"],
-                            }
-                        ],
+                        "repos": ["~/GitHub/agents"],
                     }
                 },
             },
@@ -391,7 +389,7 @@ class AutoApplyRoutingTests(TempDirTestCase):
             log_path.read_text(encoding="utf-8").splitlines(),
         )
 
-    def test_repo_inventory_change_runs_all_client_bootstrap(self) -> None:
+    def test_repo_inventory_change_runs_shared_bootstrap(self) -> None:
         root, log_path, stamp_file = self._make_agents_repo()
         baseline_sha = run_command(
             ["git", "-C", str(root), "rev-parse", "HEAD"],

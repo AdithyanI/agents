@@ -66,14 +66,6 @@ Use [Codex Control Plane Ownership](/Users/dobby/GitHub/agents/docs/references/c
   - [`install-finalize-stale-codex-threads-launchagent.sh`](/Users/dobby/GitHub/agents/codex/scripts/install-finalize-stale-codex-threads-launchagent.sh)
   - `~/GitHub/agents/codex/scripts/install-finalize-stale-codex-threads-launchagent.sh --apply`
   - default schedule is every hour, finalizing managed-repo threads whose last update is older than 24 hours
-- Check stale Claude Desktop sidebar sessions without archiving:
-  - [`archive-stale-claude-sessions.py`](/Users/dobby/GitHub/agents/codex/scripts/archive-stale-claude-sessions.py)
-  - `~/GitHub/agents/codex/scripts/archive-stale-claude-sessions.py --plain --older-than-hours 24`
-  - eligibility is based on the session metadata `lastActivityAt`; currently-running sessions and transcripts under `~/.claude/projects` are never touched
-- Install/update the Claude session archiver LaunchAgent:
-  - [`install-archive-stale-claude-sessions-launchagent.sh`](/Users/dobby/GitHub/agents/codex/scripts/install-archive-stale-claude-sessions-launchagent.sh)
-  - `~/GitHub/agents/codex/scripts/install-archive-stale-claude-sessions-launchagent.sh --apply`
-  - default schedule is every hour, flipping `isArchived` on Claude Desktop sessions idle longer than 24 hours; archived sessions leave the sidebar on the next Claude Desktop restart
 - Auto-apply the Codex control plane after `~/GitHub/agents` sync when `codex/` changed:
   - [`auto-apply-codex-control-plane.sh`](/Users/dobby/GitHub/agents/codex/scripts/auto-apply-codex-control-plane.sh)
   - `~/GitHub/agents/codex/scripts/auto-apply-codex-control-plane.sh --apply`
@@ -137,7 +129,6 @@ Use [Codex Control Plane Ownership](/Users/dobby/GitHub/agents/docs/references/c
   - brand-new branches without upstream tracking use an initial `git push -u <remote> HEAD`, so the hook can publish the branch before future tracked-branch pulls
   - after each successful `main` push, best-effort notifies `~/GitHub/scripts/sync/local-production-notify.sh` with the repo root and final commit SHA; the hook never builds an app, skips non-`main` branches and unregistered repos, and does not turn a successful Git publication into a failure when the local notifier is unavailable; Mac mini Git auto-sync emits the same event for a changed `main` revision it pulls, while the separate writer health sweep reports remaining revision drift without deploying it
   - logs phase timing to `~/.local/state/agents-control-plane/log/hooks-stop.log`
-  - leaves Copilot, Claude, and Antigravity on the existing current-repository finalization path; multi-repository attribution is Codex-only
 - Bootstrap and sync scripts remain renderers: they do not commit or push repositories directly. When `CODEX_THREAD_ID` is absent, such as unattended machine reconciliation, they apply runtime state without creating a Codex Stop transaction.
 - `~/.codex/config.toml` contains exact trusted repo entries for local repos such as `focus`
 - `~/.codex/config.toml` enables Codex hooks through `[features].hooks = true`
@@ -205,8 +196,8 @@ Use [Codex Control Plane Ownership](/Users/dobby/GitHub/agents/docs/references/c
   - runs `sync-repo-codex-configs.sh --check`, so stale or hand-edited repo-local `.codex/config.toml`, `.codex/hooks.json`, and older managed `.codex/agents/*.toml` files fail validation
 - [`sync-repo-bootstrap-registry.sh`](/Users/dobby/GitHub/agents/codex/scripts/sync-repo-bootstrap-registry.sh)
   - validates [`repo-bootstrap.json`](/Users/dobby/GitHub/agents/codex/config/repo-bootstrap.json)
-  - validates MCP definitions and repository/client targets from [`mcp/config/presets.json`](/Users/dobby/GitHub/agents/mcp/config/presets.json)
-  - rejects unknown repos or clients and target combinations that cannot be isolated by the available runtime surfaces
+  - validates MCP definitions and repository scopes from [`mcp/config/presets.json`](/Users/dobby/GitHub/agents/mcp/config/presets.json)
+  - rejects unknown repositories, invalid transport definitions, and retired client selectors
 - [`bootstrap-machine-codex.sh`](/Users/dobby/GitHub/agents/codex/scripts/bootstrap-machine-codex.sh)
   - runs config sync
   - runs trusted-project sync
@@ -241,18 +232,6 @@ Use [Codex Control Plane Ownership](/Users/dobby/GitHub/agents/docs/references/c
   - never rely on the scheduler's bare `python3`: `/opt/homebrew/bin/python3` may point to a different major/minor version than the managed shell. User-installed Python packages belong to an interpreter version, so an interactive import check alone does not validate launchd
   - schedules [`finalize-stale-codex-threads.py`](/Users/dobby/GitHub/agents/codex/scripts/finalize-stale-codex-threads.py) every hour by default
   - removes the legacy `com.<user>.codex-session-archiver` LaunchAgent if present during apply
-  - writes logs under `~/.local/state/codex-control-plane/log/`
-  - supports dry-run output before writing or loading launchd state
-- [`archive-stale-claude-sessions.py`](/Users/dobby/GitHub/agents/codex/scripts/archive-stale-claude-sessions.py)
-  - archives stale Claude Desktop sidebar sessions by flipping `isArchived` in the per-session metadata under `~/Library/Application Support/Claude/{claude-code-sessions,local-agent-mode-sessions}`
-  - eligibility is the metadata `lastActivityAt` cutoff (default 24 hours); already-archived, `--keep-session`, and currently-running sessions are skipped, and transcripts under `~/.claude/projects` are never read or modified
-  - running sessions are detected via the live handshake files under `~/.claude/sessions/` (matching each handshake `sessionId` to the metadata `cliSessionId`)
-  - defaults to dry-run; `--apply` backs up each changed file under `~/.local/state/claude-control-plane/` before writing, behind a machine-local lock
-  - does not quit or reopen Claude Desktop; archived sessions leave the active list on the next app restart
-  - if Claude Desktop ever changes its session metadata shape the archiver fails fast with `E_SCHEMA` and writes nothing; the `claude_session_archiver` check in [`audit-agent-runtime-drift.py`](/Users/dobby/GitHub/agents/scripts/audit-agent-runtime-drift.py) surfaces that drift so the `~/GitHub/scripts` `ops/health-check.sh` run notifies Slack and the archiver can be updated
-- [`install-archive-stale-claude-sessions-launchagent.sh`](/Users/dobby/GitHub/agents/codex/scripts/install-archive-stale-claude-sessions-launchagent.sh)
-  - renders `~/Library/LaunchAgents/com.<user>.claude-session-archiver.plist`
-  - schedules [`archive-stale-claude-sessions.py`](/Users/dobby/GitHub/agents/codex/scripts/archive-stale-claude-sessions.py) every hour by default with a 24-hour stale threshold
   - writes logs under `~/.local/state/codex-control-plane/log/`
   - supports dry-run output before writing or loading launchd state
 - [`auto-apply-codex-control-plane.sh`](/Users/dobby/GitHub/agents/codex/scripts/auto-apply-codex-control-plane.sh)
@@ -292,7 +271,7 @@ Use [Codex Control Plane Ownership](/Users/dobby/GitHub/agents/docs/references/c
   - `developer_instructions`
   - `project_root_markers`
   - `features`
-- Shared MCP definitions and all repo/client targets live separately in [`mcp/config/presets.json`](/Users/dobby/GitHub/agents/mcp/config/presets.json).
+- Shared MCP definitions and all repository scopes live separately in [`mcp/config/presets.json`](/Users/dobby/GitHub/agents/mcp/config/presets.json).
 - Shared lifecycle hook definitions live separately in [`hooks/registry.json`](/Users/dobby/GitHub/agents/hooks/registry.json).
 - Native Codex plugin scope and state lives separately in [`plugins/registry.json`](/Users/dobby/GitHub/agents/plugins/registry.json).
 - The global defaults block supplies fallback values for allowed repo behavior. It must not contain model, effort, profile, Fast/service-tier, or related thread-selection keys.
