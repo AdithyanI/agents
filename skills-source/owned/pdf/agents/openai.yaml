@@ -1,5 +1,5 @@
 interface:
-  display_name: "PDF Skill"
-  short_description: "Create, edit, and review PDFs"
+  display_name: "PDF"
+  short_description: "Create and inspect PDF content and page layout."
   icon_large: "./assets/pdf.png"
-  default_prompt: "Use $pdf to create, edit, or review this PDF, including visual/layout checks when rendering matters."
+  default_prompt: "Use $pdf to create or inspect this PDF and verify the relevant page layout."

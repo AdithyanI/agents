@@ -1,4 +1,4 @@
 interface:
   display_name: "Skill Creator"
-  short_description: "Create, route, and distribute agent skills"
-  default_prompt: "Use $skill-creator to create, route, register, and distribute an agent skill through the local agents control plane."
+  short_description: "Maintain canonical skills and their distribution."
+  default_prompt: "Use $skill-creator to update the canonical skill source and its required distribution metadata."

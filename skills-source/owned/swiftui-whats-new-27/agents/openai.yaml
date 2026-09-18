@@ -1,0 +1,4 @@
+interface:
+  display_name: "SwiftUI SDK 27 Reference"
+  short_description: "Consult imported SwiftUI SDK 27 reference material."
+  default_prompt: "Use $swiftui-whats-new-27 to consult the relevant imported SDK 27 reference for this SwiftUI task."

@@ -1,4 +1,4 @@
 interface:
   display_name: "Agent Native Repo Playbook"
-  short_description: "Audit and improve agent-native repo harnesses."
-  default_prompt: "Use $agent-native-repo-playbook to audit or improve this repository so agents can execute the full job autonomously and prove the result."
+  short_description: "Improve repo guidance and autonomous execution."
+  default_prompt: "Use $agent-native-repo-playbook to audit or simplify this repository while preserving autonomous completion and real boundaries."

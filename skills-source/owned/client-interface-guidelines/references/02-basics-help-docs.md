@@ -1,3 +1,7 @@
+# Help and Discovery
+
+Use these presentation examples only where they fit the owning CLI. Normal agent execution is non-interactive: missing required inputs produce structured errors; a TTY does not select an interactive mode. Help and operator inspection must not replace the machine result contract.
+
 ### The Basics
 
 There are a few basic rules you need to follow.

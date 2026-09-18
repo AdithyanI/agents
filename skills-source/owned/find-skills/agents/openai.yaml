@@ -1,0 +1,4 @@
+interface:
+  display_name: "Find Skills"
+  short_description: "Discover useful skills when explicitly requested."
+  default_prompt: "Use $find-skills to find an existing skill that adds the capability requested here."

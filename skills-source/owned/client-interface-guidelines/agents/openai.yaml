@@ -1,4 +1,4 @@
 interface:
   display_name: "Client Interface Guidelines"
-  short_description: "Design agent-first CLI/client interfaces."
-  default_prompt: "Use $client-interface-guidelines to design or review this agent-first CLI/client tool with stable JSON, structured errors, deterministic output, robust exit codes, non-interactive behavior, and secure secret handling."
+  short_description: "Design reliable command-line interfaces for agents."
+  default_prompt: "Use $client-interface-guidelines to design or review the affected CLI contract and its relevant checks."

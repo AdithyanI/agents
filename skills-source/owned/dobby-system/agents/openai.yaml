@@ -1,4 +1,4 @@
 interface:
   display_name: "Dobby System"
-  short_description: "Map Dobby repos and workspace anatomy"
-  default_prompt: "Use $dobby-system to orient on Dobby repo ownership, workspace anatomy, and memory routing before making a Dobby-related change."
+  short_description: "Find Dobby ownership and private-data boundaries."
+  default_prompt: "Use $dobby-system to identify the owning Dobby layer and the relevant workspace boundaries."

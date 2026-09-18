@@ -35,4 +35,4 @@ python3 /Users/dobby/GitHub/agents/skills-source/owned/skill-creator/scripts/gen
 
 The Python helpers require PyYAML. Test added or changed executable helpers against their actual behavior; wording-only edits need parsing and route checks.
 
-Registry/distribution changes require shared bootstrap and checks in the same change: `scripts/bootstrap-machine-agent-control-planes.sh --apply`, then `scripts/check-fast.sh` and applicable control-plane validation. Scoped bootstrap/check takes an exact `--repo <repo-root>`. Keep generated repo links with their canonical registry/source change; do not include unrelated work in manual staging.
+Registry/distribution changes require shared bootstrap and checks in the same change: `~/GitHub/agents/scripts/bootstrap-machine-agent-control-planes.sh --apply`, then `~/GitHub/agents/scripts/check-fast.sh` and applicable control-plane validation. Scoped bootstrap/check takes an exact `--repo <repo-root>`. Keep generated repo links with their canonical registry/source change; do not include unrelated work in manual staging.

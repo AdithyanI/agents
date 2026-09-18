@@ -20,4 +20,4 @@ Keep machine output deterministic and separate from diagnostics. Use stable fail
 - Packaging and naming: `references/07-naming-distribution-analytics.md`.
 - Choosing among local/remote/cloud delivery paths: `references/12-delivery-route-selection.md`.
 
-Use existing contract tests for affected behavior. `references/11-agent-test-matrix-template.md` supplies examples when designing coverage, not a mandatory suite. For an explicitly broad review, `references/08-quick-review-checklist.md` offers additional prompts. Report consequential gaps and evidence in the format the task needs.
+Use existing contract tests for affected behavior. `references/11-agent-test-matrix-template.md` supplies examples when designing coverage, not a mandatory suite. Report consequential gaps and evidence in the format the task needs.
