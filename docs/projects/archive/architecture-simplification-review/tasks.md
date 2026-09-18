@@ -1,6 +1,6 @@
 # Architecture Simplification Review
 
-Status: assessment complete and archived, September 18, 2026. Recommendations below are not implemented migrations.
+Status: assessment complete and archived, September 18, 2026. The first check repair is now implemented; see the follow-up below. Repository migrations and other recommendations remain unimplemented.
 
 ## Goal
 
@@ -97,6 +97,12 @@ The next measured optimization candidate is Remotion cloud rendering: every invo
 - The agents repo's required `scripts/check-fast.sh` passed: 35 Python tests, the release-source shell check, registry checks, Git-hook drift check, and Codex structural validation. Global guidance sync and local-reference/hygiene checks passed. Application suites were not run because application source did not change.
 - The whole-directory archive helper returned `source_removed: true`; the active tracker directory is gone. The prior-cleanup link was updated for its archived location.
 
-The next implementation batch should fix target-scoped formatter detection, Dobby release dependencies, and misleading delivery status; then adapt one deployed service to consume a captured published commit during ongoing edits. Prepare the AIP code merger after those delivery contracts are proven. This is a recommendation sequence, not a claim that any merger or runtime repair has occurred.
+## Follow-up: First Repair Completed
+
+On September 18, 2026, repaired formatter-change detection in both [WIN](/Users/dobby/GitHub/win/scripts/check-fast.sh) and [Modal](/Users/dobby/GitHub/modal_functions/scripts/check-fast.sh). Each check now compares the actual contents of its selected Python files before/after Ruff. Other files changing, or another agent staging files, no longer cause a false formatter-change failure. Real changes to the checked files still require review/staging and a rerun. Existing Ruff fixes, type/import gates, and CI check-only behavior remain in place. Updated the two existing local-check references; no new workflow or locking requirement was introduced.
+
+Verification: 32 isolated scenarios across both real scripts, including reproduction of the old failures, actual concurrent edits/staging, pre-existing unstaged content, lint/format mutations and failures, missing targets, literal filenames, and CI behavior. Six scenarios used each repo's installed Ruff; the other fixtures isolated the guard with stub tooling. Both repository fast checks and shell syntax checks passed; the working checkouts had no staged Python, so real type/import checks were skipped there and downstream failure propagation was verified in the fixtures. Full application suites and deployments were unnecessary for this shell/doc change. Independent review found no defects. Disposable fixtures were removed after verification.
+
+**Next recommended change:** fix Dobby release dependencies so an engine change refreshes every production surface that uses it. Then repair misleading delivery status and adapt one deployed service to consume a captured published commit during ongoing edits. Prepare the AIP code merger after those delivery contracts are proven. The first formatter repair does not complete those remaining delivery changes.
 
 The earlier completed guidance cleanup is [archived separately](../astra-agent-native-simplification/tasks.md). Keep this assessment as one dated decision record; implementation should update the owning code and only necessary operational context.
