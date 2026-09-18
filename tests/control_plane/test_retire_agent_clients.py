@@ -140,6 +140,12 @@ class RetireAgentClientsTests(TempDirTestCase):
         write_json(self.registry, {"repos": [{"path": "~/GitHub/other", "model_instructions_file": "../CLAUDE.md"}]})
         self.run_retire("--apply")
         self.assertEqual(source.read_text(), "still the Codex identity source\n")
+        source.unlink()
+        identity = write_text(self.other / "identity.md", "keep identity\n")
+        self.link(source, identity)
+        self.run_retire("--apply")
+        self.assertTrue(source.is_symlink())
+        self.assertEqual(source.read_text(), "keep identity\n")
 
     def test_mcp_pruning_preserves_unknown_and_custom_same_name_servers(self) -> None:
         managed = {"type": "http", "url": "https://developers.openai.com/mcp"}
