@@ -1,6 +1,6 @@
 # Architecture Simplification Review
 
-Status: assessment complete and archived, September 18, 2026. The first check repair is now implemented; see the follow-up below. Repository migrations and other recommendations remain unimplemented.
+Status: assessment complete and archived, September 18, 2026. Formatter-check and Dobby release-dependency repairs are implemented; see the follow-ups below. Repository migrations and other recommendations remain unimplemented.
 
 ## Goal
 
@@ -89,7 +89,7 @@ The next measured optimization candidate is Remotion cloud rendering: every invo
 - OpenAI Docs still contains a missing-MCP install/restart recipe despite its official-web fallback and canonical config ownership. Prefer the available fallback for a lookup; repair persistent tool configuration through its owner when required. This is a conditional instruction defect, not an observed MCP outage. [Skill source](/Users/dobby/GitHub/agents/skills-source/external/openai-docs/SKILL.md).
 - Similar developer-instruction blocks exist for Adi and Angie, but private identity prompt dependencies were not inspected. Do not delete them merely because text repeats.
 
-## Completion Evidence and Resume Point
+## Assessment Evidence
 
 - Three independent bounded reviews covered the product/media, Dobby, and supporting-app/operations groups. Parent review checked the major source claims and directly reproduced both formatter false failures in disposable fixtures; fixtures were removed.
 - Refreshed official provider terms by direct public HTTP. No private records, credentials, live databases, health endpoints, provider jobs, deployments, or app migrations were accessed/executed. Current runtime overrides, real contention, transfer usage, and realized savings remain unknown.
@@ -103,6 +103,16 @@ On September 18, 2026, repaired formatter-change detection in both [WIN](/Users/
 
 Verification: 32 isolated scenarios across both real scripts, including reproduction of the old failures, actual concurrent edits/staging, pre-existing unstaged content, lint/format mutations and failures, missing targets, literal filenames, and CI behavior. Six scenarios used each repo's installed Ruff; the other fixtures isolated the guard with stub tooling. Both repository fast checks and shell syntax checks passed; the working checkouts had no staged Python, so real type/import checks were skipped there and downstream failure propagation was verified in the fixtures. Full application suites and deployments were unnecessary for this shell/doc change. Independent review found no defects. Disposable fixtures were removed after verification.
 
-**Next recommended change:** fix Dobby release dependencies so an engine change refreshes every production surface that uses it. Then repair misleading delivery status and adapt one deployed service to consume a captured published commit during ongoing edits. Prepare the AIP code merger after those delivery contracts are proven. The first formatter repair does not complete those remaining delivery changes.
+## Follow-up: Dobby Release Dependencies Repaired
+
+On September 18, 2026, updated the shared [deployment registry](/Users/dobby/GitHub/scripts/sync/local-production-services.json) to release Dobby dashboards when engine code/assets, prompts, runtime body-map/journal documents, or dashboard files change. A real reconciler regression now verifies that an engine-only Git commit invokes deployment; ordinary engine documentation still skips it.
+
+Gateway production now validates and selects `~/.local/share/dobby-dashboard/production/current` for Shelf/Health CLI calls, and owner status reports the published engine root and SHA. Cached clients follow activation and rollback through fresh CLI subprocesses without a gateway restart. Each dashboard runner resolves its physical release once at startup, keeping its server, frontend, and child commands on that revision. Existing candidate activation, health checks, sequential profile restarts, and rollback remain the owner contract; this does not make in-flight requests transactional. Development defaults and explicit gateway CLI overrides remain available.
+
+Real packaged-CLI verification also exposed an existing empty-Health-database crash. The missing sleep/wake-up sample now returns `n/a`, while actual zero stays `0`; empty and historical-data CLI regressions cover that behavior.
+
+Verification passed: the scripts fast gate (including 36 delivery tests and 119 shell syntax checks), 194 engine tests, both engine release-contract checks, 118 gateway package tests, 16 gateway fast-check tests, and dashboard lint/types/build/backend-seam checks. A real Shelf/Health smoke used an archived runtime tree with the current Health repair, a synthetic workspace, and isolated disposable SQLite files. Activation/rollback fixtures verify both stable gateway clients and pinned dashboard processes. Independent integration review found no path or ordering defect. Production services were not deployed or restarted during this work; live rollout remains with normal main-publication automation and has not been verified here.
+
+**Next recommended change:** repair misleading shared delivery status, then adapt one deployed service to consume a captured published commit during ongoing edits. Prepare the AIP code merger after those delivery contracts are proven. Those changes and repository migrations remain pending.
 
 The earlier completed guidance cleanup is [archived separately](../astra-agent-native-simplification/tasks.md). Keep this assessment as one dated decision record; implementation should update the owning code and only necessary operational context.
