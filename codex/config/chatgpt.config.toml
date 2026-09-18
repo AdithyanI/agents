@@ -3,11 +3,3 @@
 
 model_provider = "openai"
 forced_login_method = "chatgpt"
-
-# Override Azure metadata for an explicit codex-openai / --profile chatgpt run.
-# Machine-wide subscription selection removes the custom catalog instead, so
-# ordinary CLI and desktop sessions retain live model discovery.
-model_catalog_json = "models_cache.json"
-
-[features]
-standalone_web_search = true

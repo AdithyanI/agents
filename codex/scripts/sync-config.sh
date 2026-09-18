@@ -1195,17 +1195,6 @@ sync_global() {
     --github-root "$GITHUB_ROOT" \
     "$env_mode"
 
-  # Build the profile's local catalog before installing a profile that needs it.
-  # Runtime model/cache contents never become canonical repo inputs.
-  local catalog_mode="--dry-run"
-  if (( APPLY == 1 )); then
-    catalog_mode="--apply"
-  fi
-  python3 "${SCRIPT_DIR}/sync-azure-model-catalog.py" \
-    --canonical-dir "$CANONICAL_DIR" \
-    --runtime-dir "$(dirname "$GLOBAL_CONFIG")" \
-    "$catalog_mode"
-
   require_readable_file "$CANONICAL_GLOBAL_TEMPLATE"
   require_readable_file "$BUNDLED_SKILLS_POLICY"
   require_readable_file "$MCP_REGISTRY"
@@ -1323,6 +1312,17 @@ sync_profile_configs() {
     fi
   done
   shopt -u nullglob
+}
+
+cleanup_retired_azure_catalog() {
+  local catalog="$(dirname "$GLOBAL_CONFIG")/model-catalogs/azure-astra.json"
+  [[ -f "$CANONICAL_DIR/azure-astra.config.toml" && -f "$catalog" ]] || return 0
+  # Both global and profile configs have been rendered without this owned artifact.
+  log "Retired Azure protocol catalog: $catalog"
+  if (( APPLY == 1 )); then
+    rm -f "$catalog"
+    log "Removed: $catalog"
+  fi
 }
 
 ensure_enabled_openai_bundled_plugins() {
@@ -1468,6 +1468,7 @@ fi
 if (( SYNC_GLOBAL == 1 )); then
   sync_global
   sync_profile_configs
+  cleanup_retired_azure_catalog
 fi
 if (( APPLY == 1 )); then
   ensure_enabled_openai_bundled_plugins

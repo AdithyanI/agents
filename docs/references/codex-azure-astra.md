@@ -194,202 +194,62 @@ for supported model versions, pricing, and fallback conditions.
 
 ## Web search in the Azure profile
 
-Enabled by explicit request on 2026-09-16 in the existing `azure-astra`
-profile, then extended by request to the shared desktop/CLI default. New app
-processes and ordinary `codex` use Azure Astra with hosted search when this Mac selects Azure. Restart the
-Mac app and start a new task to try it. This is a tested Codex compatibility
-workaround, not a standard Azure portal switch.
+On September 18, 2026 the user requested removal of the standard Responses
+workaround introduced on September 16. Azure now uses Codex's default model
+metadata and protocol selection again. The installed Astra metadata selects
+Responses Lite; the control plane does not pin or rewrite that model flag.
 
-### Why the override exists
+- Neither `azure-astra.config.toml` nor `chatgpt.config.toml` sets
+  `model_catalog_json` or `features.standalone_web_search`.
+- The machine-local provider renderer clears the previous catalog/search
+  overrides while preserving each Mac's Azure/subscription choice.
+- Config sync removes its retired `~/.codex/model-catalogs/azure-astra.json`
+  after installing the global config and profiles. The generator and its
+  bootstrap/check dependency have been removed.
+- Codex's normal `models_cache.json` stays untouched. Subscription sessions and
+  explicit subscription profiles can use normal model discovery again.
+- Azure credentials, deployment, endpoint, launchers, model, and the provider
+  menu remain available. `wire_api = "responses"` remains the correct provider
+  setting for both paths; it is not the removed standard-Responses override.
 
-The current Astra catalog selects `use_responses_lite = true`. Codex's Lite
-request path omits hosted Responses tools and relies on a separate search
-endpoint. Enabling `supports_standalone_web_search` on our Azure provider exposed
-the tool but its `/openai/v1/alpha/search` request returned 404. Setting
-`web_search = "live"` alone did not make search available.
+Apply and verify on each Mac after syncing this repo:
 
-Our existing Azure endpoint successfully accepts `tools: [{"type":"web_search"}]`
-inside a standard Responses request. The Azure backend uses Grounding with Bing
-Search; no new deployment, Foundry project, MCP, or service was provisioned.
-The original [Codex issue #4881](https://github.com/openai/codex/issues/4881)
-describes an older limitation and does not establish current Azure API support.
-See [Microsoft's current web-search guide](https://learn.microsoft.com/en-us/azure/foundry/openai/how-to/web-search)
-and [Codex's hosted-tool gating](https://github.com/openai/codex/blob/rust-v0.154.0/codex-rs/core/src/tools/spec_plan.rs).
-
-### Ownership and effective settings
-
-- Shared provider definition: `codex/config/global.config.toml`.
-- Provider-specific settings: `codex/config/azure-astra.config.toml` and
-  `codex/config/chatgpt.config.toml`; local selection is outside Git.
-- Runtime settings: `~/.codex/config.toml` and `~/.codex/azure-astra.config.toml`.
-- Subscription override: `codex/config/chatgpt.config.toml` explicitly loads
-  `models_cache.json` and sets `features.standalone_web_search = true`, preserving
-  normal Lite metadata and Codex search over the global Azure defaults.
-- Generated catalog: `~/.codex/model-catalogs/azure-astra.json`, resolved relative
-  to the runtime profile file by Codex.
-- Generator: `codex/scripts/sync-azure-model-catalog.py`, invoked by the normal
-  `codex/scripts/sync-config.sh --apply` workflow before installing profiles.
-- Source: Codex's machine-local `~/.codex/models_cache.json`. The generator copies
-  its model entries and changes only Astra's `use_responses_lite` to `false`.
-  It preserves context limits, model instructions, tool metadata, and all other
-  models. Neither catalog belongs in git; the normal cache is never modified.
-
-Both a locally selected Azure default and the explicit Azure profile supply:
-
-```toml
-model_catalog_json = "model-catalogs/azure-astra.json"
-web_search = "live"
-
-[features]
-standalone_web_search = false
-```
-
-`wire_api = "responses"` was already configured on the provider. The model-catalog
-flag is the additional setting that selects standard rather than Lite requests.
-`model_catalog_json` loads at process startup; start a new session when changing
-it. The desktop does not need to select a named CLI profile: it reads the global
-settings. Use `codex-openai` for subscription access; changing only the provider
-does not clear the inherited Azure catalog/search settings.
-
-### Switch paths or roll back
-
-| Entry point | Provider and search behavior |
-| --- | --- |
-| New Mac app task after restart, or ordinary `codex` | This Mac's selected provider and corresponding search configuration |
-| `codex-azure` | Explicit Azure Astra profile with the same search setup |
-| `codex-openai` | ChatGPT subscription, normal cached model metadata and Codex search |
-
-Existing tasks can retain their original provider. Opening a new task after a
-full app restart is the reliable activation check; this change does not rewrite
-existing tasks. No new service, deployment, launcher, or MCP was added.
-
-For a one-session comparison with the original Azure Lite behavior:
-
-```sh
-codex -c 'model_catalog_json="models_cache.json"' -c 'features.standalone_web_search=true'
-```
-
-To undo the hosted-search workaround persistently, set
-`model_catalog_json = "models_cache.json"` and
-`features.standalone_web_search = true` in canonical `azure-astra.config.toml`,
-then run `codex/scripts/sync-config.sh --apply`. The local provider layer derives
-the Azure desktop defaults from that profile.
-Restart the app. This restores the normal protocol using the cached catalog;
-the generated Azure catalog becomes unused. Do not merely delete the canonical
-global key: this renderer preserves unlisted runtime keys. This rollback still
-uses a catalog snapshot, whose refresh procedure follows.
-
-### Refresh and diagnose
-
-Explicit `model_catalog_json` bypasses Codex's normal remote catalog refresh.
-Machine-wide subscription mode removes that override so ordinary Codex CLI and
-desktop sessions discover account models normally. The explicit `codex-openai` /
-`--profile chatgpt` launcher still selects the normal-cache snapshot to override
-a global Azure catalog; that explicit profile does not refresh metadata itself.
-After relevant Codex/model changes while using Azure, refresh the source with
-the desktop-bundled engine in a subscription invocation that skips the override:
-
-```sh
-/Applications/ChatGPT.app/Contents/Resources/codex exec \
-  --ignore-user-config --ephemeral --sandbox read-only --model gpt-6-astra -c 'model_provider="openai"' \
-  -c 'forced_login_method="chatgpt"' -c 'features.hooks=false' 'Reply OK.'
+```bash
 codex/scripts/sync-config.sh --apply
 codex/scripts/check-codex-control-plane.sh
+codex-provider status --plain
 ```
 
-`--ignore-user-config` still uses the existing authentication. Do not add the
-`chatgpt` profile to this refresh command: it would load the snapshot again.
-On a new machine, populate the source this way before applying the workaround.
-Restart the app or start a new CLI process after the refresh.
+Reopen Codex and start a new task to load the restored defaults. Do not terminate
+an active desktop task from inside the agent. A running task can retain the old
+configuration until its runtime restarts.
 
-On 2026-09-17, a source cache written by CLI 0.147.0 omitted Astra while the
-current desktop engine returned Astra and successfully used it on the same
-ChatGPT subscription. The provider switch now clears the custom catalog key for
-machine-wide subscription mode, rather than freezing that old snapshot. This is
-a local catalog issue, not evidence that the account lost Astra access.
+September 18 rollback verification passed the shared bootstrap, Codex structural
+validation, fast checks, and all 292 control-plane regression tests. The installed
+bundled Astra metadata reported `use_responses_lite = true`; all three rendered
+configs omitted the catalog/search overrides and the retired catalog was absent.
+A fresh ephemeral CLI using the saved Azure provider/model/protocol returned
+`AZURE_LITE_RESTORED_OK`. Hooks, apps, MCPs, and search were disabled for that
+single-response smoke; the running desktop app was not restarted.
 
-The generator writes atomically and refuses invalid catalogs instead of
-replacing the last valid output. The normal check validates the saved catalog
-structurally; it does not require equality with the mutable source cache.
-An older terminal CLI can refresh the shared source cache without Astra. In that
-specific case, sync retains an existing validated Azure catalog and reports it.
-A missing or invalid Azure catalog still fails; refresh with the desktop-bundled
-engine before applying on a new machine. Duplicate/malformed source entries
-remain errors. No model metadata is invented or copied back into the normal cache.
+### Search limitation and historical evidence
 
-If search fails, check the installed version and effective provider. Neither a
-completed native `web_search` event nor a plausible URL proves usable retrieval.
-Compare these three layers before changing Azure resources:
+The rollback removes the workaround that enabled Azure-hosted search in Codex.
+The September 16 tests found that the Lite path's separate
+`/openai/v1/alpha/search` endpoint returned 404 on this Azure resource. Keeping
+`web_search = "live"` does not establish that Azure native search is available;
+do not reintroduce protocol overrides just to expose that tool.
 
-1. Send a direct Azure Responses request with `tools: [{"type":"web_search"}]`
-   and `include: ["web_search_call.action.sources", "web_search_call.results"]`.
-   For this reasoning deployment, require nonempty result titles, URLs and
-   snippets, plus `url_citation` annotations on the answer. A completed action
-   without readable results is not a passing connectivity check.
-2. Run a fresh ephemeral Codex process with the saved settings, hooks and
-   unrelated integrations disabled. Ask it to return an actual result title,
-   URL and short source quotation, or explicitly report `SEARCH_EMPTY`.
-3. Repeat in the affected task. Check search and page opening separately; success
-   in one does not establish the other. Preserve empty responses in the evidence
-   rather than silently counting only successful retries.
+The [archived enablement record](../projects/archive/azure-astra-web-search/tasks.md)
+preserves the old configuration and tests. Standard Responses did retrieve usable
+search sources, but intermittent empty results remained unexplained and no
+controlled Lite/standard token-cost or long-session comparison was completed.
+Those records describe the retired experiment, not current configuration.
 
-Reopen the [enablement project record](../projects/archive/azure-astra-web-search/tasks.md)
-if new implementation is required. Do not restart the user's app or change
-provider/protocol settings merely because one request returned empty output.
-The original Azure remote catalog can return `missing field models`; Azure's
-catalog response shape differs from Codex's. Populate the source through OpenAI
-as above; selecting a local catalog avoids that Azure refresh request.
-
-### Trade-offs and evidence
-
-- This changes the request protocol, not the model. The generated catalog keeps
-  the current 272,000-token window and 95% effective budget (258,400 tokens).
-  It does not enable the model's maximum advertised context length.
-- Both direct Azure Astra probes returned `reasoning.context = "all_turns"`,
-  with and without an explicit context value. The older Codex source comment
-  assuming standard Responses defaults to `current_turn` was not true for this
-  deployment. See [Azure reasoning behavior](https://learn.microsoft.com/en-us/azure/foundry/openai/how-to/reasoning).
-- Native search and shell execution passed with the saved Azure profile in
-  CLI 0.154.0; desktop engine 0.154.0-alpha.6.2 also supports the workaround.
-  The saved-profile smoke reported cached input tokens. The desktop-default
-  follow-up verifies the saved global settings without a profile or protocol
-  override; its separate verification record is linked below.
-- A fresh ephemeral two-turn desktop app-server check on 2026-09-16 also passed
-  native file editing, shell assertions, hosted search, and recall of a random
-  conversation-only marker on the follow-up. The parent independently reran the
-  arithmetic checks. Caching and the 258,400-token effective window remained
-  present. Hooks and unrelated integrations were disabled for this small probe;
-  it is not a long-session or full-feature parity benchmark.
-- Switching protocols does not duplicate every model request. Search actions
-  have additional tool charges and returned content uses tokens. Credit
-  coverage and comparative long-session cost were not verified.
-- Microsoft currently treats `external_web_access` as `false`; the Codex
-  `"live"` setting does not promise unrestricted live fetching on Azure.
-- The snapshot requires refresh after relevant model/Codex changes. Long coding
-  sessions, compaction, resume behavior, latency, and quality parity remain
-  unbenchmarked. These are reasons to retain the original path for comparison.
-
-The [project verification record](../projects/archive/azure-astra-web-search/resources/verification.json)
-contains the initial CLI-only smoke outcomes and configuration-isolation evidence.
-The [desktop follow-up record](../projects/archive/azure-astra-web-search/resources/desktop-verification.json)
-covers the subsequently authorized global default and explicit subscription override.
-
-### September 16 retrieval recheck
-
-The [retrieval verification](../projects/archive/azure-astra-web-search/resources/retrieval-verification.json)
-records a later investigation of empty tool responses. The saved Azure settings
-and credentials were already present; no runtime configuration or Azure resource
-was changed. A direct Astra search returned 11 source results with snippets and
-three citation annotations. A fresh desktop-bundled Codex process returned a
-source quotation through native search. The affected task initially returned
-empty search responses, then returned readable results for both a single query
-and the original batched query on retry. Native page opening still returned no
-readable content; direct HTTPS fetching worked. The cause of the empty responses
-was not established, and these successful checks do not prove lasting recovery.
-
-The earlier archived smoke tests recorded search events and expected URLs only.
-They established dispatch, but their saved evidence was insufficient to establish
-that the agent received usable source content. Use the stronger checks above.
+Azure model-list refresh has also previously returned `missing field models`.
+The original Lite inference still completed in the recorded smoke check. If this
+recurs, inspect the installed desktop engine and its default model metadata;
+do not restore the removed catalog snapshot as an automatic workaround.
 
 ## Protocol and validation
 

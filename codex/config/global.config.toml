@@ -2,7 +2,7 @@
 # Keep this focused on stable settings only.
 
 # Provider selection is machine-local; sync-config.sh applies the selected
-# provider's catalog/search settings from the shared profile definitions.
+# provider's authentication settings from the shared profile definitions.
 
 cli_auth_credentials_store = "file"
 mcp_oauth_credentials_store = "file"

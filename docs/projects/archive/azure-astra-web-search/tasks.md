@@ -1,5 +1,10 @@
 # Azure Astra web search
 
+> Retired on September 18, 2026 at the user's request. The standard Responses
+> override, generated catalog, and forced search settings were removed. This
+> archive preserves the experiment; current behavior is documented in
+> `docs/references/codex-azure-astra.md`.
+
 ## Goal
 
 Enable Azure-hosted web search in the existing `azure-astra` Codex profile and,

@@ -56,13 +56,13 @@ without a provider default starts on subscription. Invalid preferences fail with
 an actionable error rather than silently changing the provider. An explicit
 provider selection repairs the preference.
 
-The renderer merges provider, authentication method, and standalone-search
-settings from the selected shared profile. Azure also selects its custom model
-catalog and deployment model. Subscription removes the custom catalog override
-so Codex can refresh its account model list normally, and preserves the client's
-existing model choice. Do not pin ordinary subscription sessions to
-`models_cache.json`: an older CLI can overwrite that cache with a list missing
-Astra, and loading it as a custom catalog prevents normal refresh.
+The renderer merges the selected profile's provider and authentication method.
+Azure also selects its deployment model; subscription preserves the client's
+existing model choice. Both use Codex's default model metadata and search
+behavior. The September 18 rollback removed the custom Azure catalog and the
+subscription snapshot workaround. The renderer clears old `model_catalog_json`
+and `features.standalone_web_search` overrides during both sync and switching.
+Do not pin either provider to a generated catalog or `models_cache.json`.
 The menu does not copy the Azure CLI profile's reasoning effort into the desktop
 default. Explicit `codex-azure` / `codex-openai` terminal launchers retain their
 per-process behavior regardless of the menu selection.
@@ -71,8 +71,9 @@ The switch, shared config apply, and trusted-project config apply use the same
 local lock. Provider writes are atomic and preserve unrelated config. Preference
 is written before config so a later sync can repair an interrupted write; normal
 write failures restore the previous preference. Existing credential distribution
-and Azure catalog generation remain intact. The switch checks readiness before
-changing files and never rewrites login credentials or conversation history.
+remains intact. The switch checks Azure provider/credential readiness or the
+subscription login before changing files; neither path requires a model catalog.
+It never rewrites login credentials or conversation history.
 
 This affects local execution on the selected Mac. Opening a remote task on the
 Mac mini does not make the MacBook's menu control the mini's runtime.

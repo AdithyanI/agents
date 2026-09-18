@@ -70,21 +70,24 @@ class CodexProviderTests(TempDirTestCase):
             for key in ["plugins", "projects", "model_reasoning_effort", "model_providers"]:
                 self.assertEqual(after[key], before[key])
             self.assertTrue(after["features"]["hooks"])
+            self.assertNotIn("model_catalog_json", after)
+            self.assertNotIn("standalone_web_search", after["features"])
         self.assertNotIn("forced_login_method", after)
         for name, original in protected.items():
             self.assertEqual((self.config.parent / name).read_bytes(), original)
 
-    def test_subscription_restores_live_discovery_without_a_cached_catalog(self):
+    def test_both_providers_use_default_metadata_without_catalog_dependencies(self):
         # An older CLI can replace the normal cache with a list missing newer
         # models. Subscription mode must neither require nor pin that snapshot.
         (self.config.parent / "models_cache.json").unlink()
+        (self.config.parent / "model-catalogs/azure-astra.json").unlink()
         result = self.cli("subscription", "--apply")
         self.assertEqual(result.returncode, 0, result.stdout)
         self.assertNotIn("model_catalog_json", tomllib.loads(self.config.read_text()))
         self.assertTrue(json.loads(result.stdout)["data"]["config_in_sync"])
         self.assertEqual(self.cli("azure", "--apply").returncode, 0)
-        self.assertEqual(tomllib.loads(self.config.read_text())["model_catalog_json"],
-                         "model-catalogs/azure-astra.json")
+        self.assertNotIn("model_catalog_json", tomllib.loads(self.config.read_text()))
+        self.assertNotIn("standalone_web_search", tomllib.loads(self.config.read_text())["features"])
 
     def test_subscription_detects_and_repairs_a_stale_catalog_override(self):
         self.assertEqual(self.cli("subscription", "--apply").returncode, 0)
@@ -139,18 +142,36 @@ class CodexProviderTests(TempDirTestCase):
         self.assertEqual(self.cli("subscription", "--apply").returncode, 0)
         for home, choice in [(self.home, "subscription"), (other, "azure")]:
             config = home / ".codex/config.toml"
+            source_cache = (config.parent / "models_cache.json").read_bytes()
+            # Old rendered profiles must lose their overrides along with global config.
+            write_text(config.parent / "azure-astra.config.toml",
+                       'model_catalog_json = "model-catalogs/azure-astra.json"\n'
+                       '[features]\nstandalone_web_search = false\n')
+            write_text(config.parent / "chatgpt.config.toml",
+                       'model_catalog_json = "models_cache.json"\n'
+                       '[features]\nstandalone_web_search = true\n')
+            sync_args = [str(REPO_ROOT / "codex/scripts/sync-config.sh"),
+                "--global-config", str(config), "--global-hooks", str(home / ".codex/hooks.json"),
+                "--canonical-dir", str(root / "codex/config"), "--mcp-registry", str(root / "mcp/config/presets.json"),
+                "--plugin-registry", str(root / "plugins/registry.json"), "--hooks-registry", str(root / "hooks/registry.json")]
+            before = config.read_bytes()
+            run_command(sync_args, env={"HOME": str(home)})
+            self.assertEqual(config.read_bytes(), before, "dry-run must not change provider config")
+            self.assertTrue((config.parent / "model-catalogs/azure-astra.json").exists())
             for _ in range(2):
-                run_command([str(REPO_ROOT / "codex/scripts/sync-config.sh"), "--apply",
-                    "--global-config", str(config), "--global-hooks", str(home / ".codex/hooks.json"),
-                    "--canonical-dir", str(root / "codex/config"), "--mcp-registry", str(root / "mcp/config/presets.json"),
-                    "--plugin-registry", str(root / "plugins/registry.json"), "--hooks-registry", str(root / "hooks/registry.json")],
-                    env={"HOME": str(home)})
+                run_command([*sync_args, "--apply"], env={"HOME": str(home)})
                 data = json.loads(self.cli("status", home=home).stdout)["data"]
                 self.assertEqual(data["selected"], choice)
                 self.assertTrue(data["persisted"])
                 self.assertTrue(data["config_in_sync"])
-                if choice == "subscription":
-                    self.assertNotIn("model_catalog_json", tomllib.loads(config.read_text()))
+                self.assertNotIn("model_catalog_json", tomllib.loads(config.read_text()))
+                self.assertNotIn("standalone_web_search", tomllib.loads(config.read_text()).get("features", {}))
+                self.assertFalse((config.parent / "model-catalogs/azure-astra.json").exists())
+                self.assertEqual((config.parent / "models_cache.json").read_bytes(), source_cache)
+                for name in provider.PROFILES.values():
+                    profile = tomllib.loads((config.parent / name).read_text())
+                    self.assertNotIn("model_catalog_json", profile)
+                    self.assertNotIn("standalone_web_search", profile.get("features", {}))
                 run_command([sys.executable, str(REPO_ROOT / "codex/scripts/provider_selection.py"), "check",
                              str(root / "codex/config"), str(config)], env={"HOME": str(home)})
         self.assertEqual(json.loads(self.cli("status").stdout)["data"]["selected"], "subscription")
