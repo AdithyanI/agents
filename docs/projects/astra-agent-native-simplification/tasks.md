@@ -62,7 +62,10 @@ The original concern was accumulated instructions, overlapping skills, scattered
 | done | Analyze current shared guidance and prepare refreshed global/playbook proposals with preserved agent-native contracts | parent | [Analysis and proposals](resources/shared-guidance-analysis.md) |
 | done | Independently review current contracts and the refreshed proposals; no remaining consequential losses found | explorer | [Contract preservation](resources/shared-guidance-analysis.md) |
 | done | Narrow the execution plan to justified subtraction and independently check it for unnecessary ceremony | parent + explorer | Decisions and execution approach below |
-| todo | Implement the bounded shared-guidance batch, including companion references, and run required validation | parent | [Implementation scope](resources/shared-guidance-analysis.md) |
+| in progress | Simplify shared guidance, companion references, skill routing and distribution; integrate results | parent | [Implementation scope](resources/shared-guidance-analysis.md) |
+| in progress | Recheck and clean eight product/media repos; preserve domain contracts and validate affected surfaces | product_media_audit | win, aipodcasting, modal_functions, local-transcription, adithyan-ai-videos, aip-cognitive-revolution, futureoflife-podcast, thoughtforms-life |
+| in progress | Recheck and clean nine Dobby/operations repos; preserve private-workspace and service boundaries | dobby_operations_audit | adi, angie, dobby-engine, dobby-gateway, dobby-ios, documents, home-automation, platform-ops, scripts |
+| in progress | Recheck and clean ten apps/content repos; retain public content and deliberate parked state | apps_content_rollout | .github, adi-design, aipodcasting-website, blog-personal, focus, frontier-lab-intelligence, litellm, meeting-capture, stadia-macos-controller, trenopoulospraxis |
 
 ## Execution Approach
 
