@@ -110,6 +110,8 @@ All repo lifecycle hooks are Python. Do not add shell compatibility shims.
   is not proof of absence and retains failure handling. Before interpreting
   status, verify that Git identifies the selected worktree itself; an invalid
   nested marker must not redirect finalization into its enclosing repository.
+  Compare filesystem identity so case aliases on macOS identify the same
+  checkout; unreadable identity remains a blocking inspection failure.
 - Missing task identity or failed activity discovery (except the unavailable-owner
   case below) stops finalization before
   any Git mutation. Pending transactions remain available for a complete retry;

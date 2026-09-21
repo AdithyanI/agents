@@ -1230,7 +1230,11 @@ def finalize_codex_repositories(
         failures: list[str] = []
         for item in list(repositories.values()):
             resolved_root = repo_root(item.root)
-            if resolved_root is None or Path(resolved_root).resolve() != Path(item.root).resolve():
+            try:
+                selected_worktree = resolved_root is not None and Path(resolved_root).samefile(item.root)
+            except OSError:
+                selected_worktree = False
+            if not selected_worktree:
                 failures.append(
                     f"Repository {item.root}: could not inspect working-tree changes "
                     "because Git does not identify it as the selected worktree."

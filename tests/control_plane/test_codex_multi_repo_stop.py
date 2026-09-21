@@ -381,6 +381,29 @@ class CodexMultiRepoStopTests(TempDirTestCase):
         self.assertEqual(output["decision"], "block")
         self.assertEqual(run_command(["git", "-C", str(remote), "rev-parse", "HEAD"]).stdout, before)
 
+    def test_case_alias_of_selected_worktree_is_accepted(self) -> None:
+        repo, _ = self.make_published_repo("lowercase")
+        alias = repo.with_name("LOWERCASE")
+        if not alias.exists():
+            self.skipTest("requires a case-insensitive filesystem")
+        self.assertTrue(repo.samefile(alias))
+        item = stop.RepoFinalization(root=str(alias))
+        with patch.dict(os.environ, {"HOME": str(self.temp_path / "home")}):
+            output = stop.finalize_codex_repositories(str(repo), {}, "thread", {item.root: item})
+            self.assertEqual(stop.load_codex_transaction("thread"), {})
+        self.assertIsNone(output)
+
+    def test_unreadable_worktree_identity_blocks_and_preserves_transaction(self) -> None:
+        repo, _ = self.make_published_repo("identity-error")
+        item = stop.RepoFinalization(root=str(repo))
+        with patch.dict(os.environ, {"HOME": str(self.temp_path / "home")}), patch.object(
+            stop.Path, "samefile", side_effect=PermissionError("unreadable identity")
+        ):
+            output = stop.finalize_codex_repositories(str(repo), {}, "thread", {item.root: item})
+            self.assertIn(item.root, stop.load_codex_transaction("thread"))
+        self.assertEqual(output["decision"], "block")
+        self.assertIn("selected worktree", output["reason"])
+
     def test_valid_worktree_status_error_is_not_discarded_as_a_shell_candidate(self) -> None:
         first, remote = self.make_published_repo("first")
         candidate, _ = self.make_published_repo("candidate")
