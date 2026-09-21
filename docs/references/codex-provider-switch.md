@@ -27,13 +27,16 @@ compiler, installs `~/Applications/Codex Provider.app`, and starts its per-user
 to `scripts/codex-provider.py`. No Xcode project or downloaded UI dependencies
 are needed. The installer never restarts Codex itself.
 
-It also links `~/bin/codex` to the installed desktop engine and installs the
-existing `codex-azure` / `codex-openai` launchers from the scripts repo. Managed
-login/interactive shells already put `~/bin` first. This avoids the MacBook's
-older Homebrew CLI, which rejects Astra. Open a new terminal tab (or run `rehash`
-in zsh) if an existing shell cached the old executable. These ordinary terminal
-links remain when uninstalling the menu, so subscription sessions keep using a
-compatible engine. Explicit `/opt/homebrew/bin/codex` calls still select Homebrew.
+It also links `~/bin/codex` and its adjacent `codex-code-mode-host` companion to
+the installed desktop engine, and installs the existing `codex-azure` /
+`codex-openai` launchers from the scripts repo. Codex resolves the companion
+relative to the invoked command path, so the two desktop links must travel
+together. Managed login/interactive shells already put `~/bin` first. This
+avoids the MacBook's older Homebrew CLI, which rejects Astra. Open a new terminal
+tab (or run `rehash` in zsh) if an existing shell cached the old executable.
+These ordinary terminal links remain when uninstalling the menu, so subscription
+sessions keep using a compatible engine. Explicit `/opt/homebrew/bin/codex`
+calls still select Homebrew.
 
 Source updates travel through the normal Git workflow. Run the installer again
 on each Mac when the native app changes. It records the local Python executable

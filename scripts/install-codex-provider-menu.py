@@ -21,6 +21,18 @@ EXECUTABLE = "CodexProvider"
 IDENTIFIER = "io.adithyan.codex-provider"
 
 
+def codex_command_targets(home: Path) -> dict[Path, Path]:
+    desktop_resources = Path("/Applications/ChatGPT.app/Contents/Resources")
+    return {
+        home / "bin/codex": desktop_resources / "codex",
+        # Codex resolves this companion relative to argv[0], so a terminal
+        # symlink for `codex` must bring the host along with it.
+        home / "bin/codex-code-mode-host": desktop_resources / "codex-code-mode-host",
+        home / "bin/codex-azure": home / "GitHub/scripts/bin/codex-azure",
+        home / "bin/codex-openai": home / "GitHub/scripts/bin/codex-openai",
+    }
+
+
 def run(arguments: list[str], *, timeout: int = 120, check: bool = True) -> subprocess.CompletedProcess[str]:
     return subprocess.run(arguments, capture_output=True, text=True, timeout=timeout, check=check)
 
@@ -88,11 +100,7 @@ def main() -> int:
     launcher = home / "bin/codex-provider"
     # Keep interactive terminals on the same engine as the installed desktop.
     # An older Homebrew CLI can reject Astra and rewrite its model cache.
-    codex_commands = {
-        home / "bin/codex": Path("/Applications/ChatGPT.app/Contents/Resources/codex"),
-        home / "bin/codex-azure": home / "GitHub/scripts/bin/codex-azure",
-        home / "bin/codex-openai": home / "GitHub/scripts/bin/codex-openai",
-    }
+    codex_commands = codex_command_targets(home)
     domain = f"gui/{os.getuid()}"
     if app.exists() and not app_owned(app):
         parser.error(f"refusing to replace an unrelated application: {app}")
@@ -138,7 +146,7 @@ def main() -> int:
         print(f"Would install {app}, load {plist}, and start the menu on this Mac.")
         print(f"Helper: {python} {helper}")
         print(f"Would link {launcher} to {helper}.")
-        print("Would link ~/bin/codex to the desktop engine and install both explicit provider launchers.")
+        print("Would link ~/bin/codex and its code-mode host to the desktop engine and install both explicit provider launchers.")
         print("Provider selection is unchanged. Codex itself will not be restarted.")
         return 0
 
@@ -223,7 +231,7 @@ def main() -> int:
     for command, target in codex_commands.items():
         if not command.is_symlink():
             command.symlink_to(target)
-    print("Terminal codex uses the installed desktop engine. Existing terminal sessions are unchanged.")
+    print("Terminal codex and its code-mode host use the installed desktop engine. Existing terminal sessions are unchanged.")
     return 0
 
 

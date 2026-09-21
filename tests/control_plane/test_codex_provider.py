@@ -17,6 +17,12 @@ spec = importlib.util.spec_from_file_location("provider_selection", REPO_ROOT / 
 provider = importlib.util.module_from_spec(spec)
 spec.loader.exec_module(provider)
 
+installer_spec = importlib.util.spec_from_file_location(
+    "install_codex_provider_menu", REPO_ROOT / "scripts/install-codex-provider-menu.py"
+)
+installer = importlib.util.module_from_spec(installer_spec)
+installer_spec.loader.exec_module(installer)
+
 
 class CodexProviderTests(TempDirTestCase):
     def setUp(self):
@@ -41,6 +47,15 @@ class CodexProviderTests(TempDirTestCase):
     def cli(self, *args, home=None):
         return run_command([sys.executable, str(REPO_ROOT / "scripts/codex-provider.py"), *args],
                            env={"HOME": str(home or self.home)}, check=False)
+
+    def test_desktop_cli_links_include_adjacent_code_mode_host(self):
+        targets = installer.codex_command_targets(self.home)
+        resources = Path("/Applications/ChatGPT.app/Contents/Resources")
+        self.assertEqual(targets[self.home / "bin/codex"], resources / "codex")
+        self.assertEqual(
+            targets[self.home / "bin/codex-code-mode-host"],
+            resources / "codex-code-mode-host",
+        )
 
     def test_contract_dry_run_errors_and_plain(self):
         before = self.config.read_bytes()
