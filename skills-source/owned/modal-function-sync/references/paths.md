@@ -5,7 +5,7 @@ These paths are relative to `~/GitHub/win`.
 | Responsibility | Entry point |
 | --- | --- |
 | Orientation and runtime contract | `AGENTS.md`, `docs/references/modal-runtime.md` |
-| Active consolidation and cutover evidence | `docs/projects/modal-consolidation/tasks.md` |
+| Completed consolidation and cutover evidence | `docs/projects/archive/modal-consolidation/tasks.md` |
 | Functions and shared runtime helpers | `modal_runtime/functions/`, `modal_runtime/common/` |
 | Exposed caller contracts | `modal_runtime/registry.py` |
 | Modal deployment registration | `modal_runtime/deploy.py` |
