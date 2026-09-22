@@ -12,11 +12,13 @@ consumer, and make ownership, expiry, replacement, and deletion explicit. This
 skill is the cross-repo routing contract; implementation details remain in each
 owning repository's docs.
 
-The shared S3 provider is native Versity, bucket `assets`, with public base
-`https://storage.aipodcast.ing/assets`. Hosting moves from the Mac mini to ASUS
-under the separate `scripts/docs/projects/asus-local-storage-and-backups/tasks.md`
-project; read its current evidence and `scripts/docs/references/asus-storage-services.md`
-before assuming which machine serves production. Existing R2 originals are
+The shared S3 provider is native Versity on ASUS, bucket `assets`, with public
+base `https://storage.aipodcast.ing/assets`. The September 22, 2026 cutover
+preserved public URLs and application credentials; historical cache objects were
+intentionally omitted, while fresh cache writes remain supported. Read
+`scripts/docs/references/asus-storage-services.md` for current service ownership
+and recovery, and `scripts/docs/projects/asus-local-storage-and-backups/tasks.md`
+for the migration evidence. Existing R2 originals are
 retained only for deliberate recovery, not a runtime fallback. Prefixes express
 ownership and retention intent; verify the active cleanup implementation instead
 of assuming the former R2 lifecycle rules still run on native storage.
