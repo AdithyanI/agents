@@ -10,8 +10,8 @@ the invariant; verify time-sensitive retention settings in the owning system.
 | --- | --- | --- |
 | Same-function FFmpeg segments and transforms | Container-local | No serialized consumer exists |
 | Cross-container Modal processing and bounded retry | Modal internal artifact | Typed, validated handoff without a public S3 intermediate |
-| Existing URL-based ingestion | S3 `cache/` plus original provenance | Current Source consumers require HTTP URLs; this is an implementation constraint, not a rule to upload every input |
-| Proposed ingestion for Modal-only consumers | Modal internal artifact plus Source/cache linkage | Keep provenance in WIN and bytes near compute; migrate required Source URL consumers together |
+| Explicit HTTP ingestion consumers | S3 `cache/` plus original provenance | Some consumers require HTTP URLs; this does not justify uploading every input |
+| Ingestion for Modal-only consumers | Modal internal artifact plus Source/cache linkage | Keep provenance in WIN and bytes near compute; preserve the actual caller's supported transport |
 | Independent media jobs returning browser-readable output | S3 `cache/` | Public transport is required; the result is reproducible |
 | Ghost feature images | Ghost media library | Ghost is the durable publisher; S3 is only temporary input when needed |
 | YouTube video/thumbnail publication | Direct YouTube upload | YouTube owns the published bytes |
@@ -27,9 +27,9 @@ the invariant; verify time-sensitive retention settings in the owning system.
 | Repo | Read for |
 | --- | --- |
 | `win` | `docs/architecture/media-source-identity-and-storage.md`, `docs/references/media-processing-reference.md`, `publishing-workflows-reference.md`, `ingest-orchestration-reference.md`, and `content-creation-reference.md` |
-| `modal_functions` | `docs/references/media-transfer-policy.md`, `media-artifact-transport.md`, `modal-cache-policy.md`, and `cache-volume-consistency.md` |
+| WIN's `modal_runtime/` | `docs/references/modal/media-transfer-policy.md`, `media-artifact-transport.md`, `modal-cache-policy.md`, and `cache-volume-consistency.md`; deployment integration is in `docs/references/modal-runtime.md` |
 | `aipodcasting` | `docs/references/aip-backend-integration.md` and the consuming feature's contract |
-| `scripts` | `docs/references/media-upload.md` for the machine-local shared uploader |
+| `scripts` | `docs/references/media-upload.md` for the machine-local shared uploader; `docs/references/asus-storage-services.md` and the active `docs/projects/asus-local-storage-and-backups/tasks.md` for storage hosting and cutover evidence |
 | `adithyan-ai-videos` | `docs/setup/cloud-render-modal.md` and `docs/references/media-storage.md` |
 
 Always apply the active repo's `AGENTS.md` before these paths. If a referenced

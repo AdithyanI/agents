@@ -1,6 +1,6 @@
 ---
 name: media-storage-lifecycle
-description: Use when adding, changing, reviewing, or cleaning media and object storage across WIN, modal_functions, aipodcasting, Remotion, local transcription, agent media tooling, or shared upload scripts. Covers S3 cache/share/permanent choices, Modal local/internal artifacts and persistent caches, browser uploads, provider-owned handoffs, object ownership and keys, expiry and reacquisition, replacement/deletion cleanup, orphan prevention, lifecycle rules, and storage audits.
+description: Use when adding, changing, reviewing, or cleaning media and object storage across WIN and its Modal runtime, aipodcasting, Remotion, local transcription, agent media tooling, or shared upload scripts. Covers S3 cache/share/permanent choices, Modal local/internal artifacts and persistent caches, browser uploads, provider-owned handoffs, object ownership and keys, expiry and reacquisition, replacement/deletion cleanup, orphan prevention, lifecycle rules, and storage audits.
 ---
 
 # Media Storage Lifecycle
@@ -12,8 +12,11 @@ consumer, and make ownership, expiry, replacement, and deletion explicit. This
 skill is the cross-repo routing contract; implementation details remain in each
 owning repository's docs.
 
-The current shared S3 provider is native Versity on the Mac mini, bucket `assets`,
-with public base `https://storage.aipodcast.ing/assets`. Existing R2 originals are
+The shared S3 provider is native Versity, bucket `assets`, with public base
+`https://storage.aipodcast.ing/assets`. Hosting moves from the Mac mini to ASUS
+under the separate `scripts/docs/projects/asus-local-storage-and-backups/tasks.md`
+project; read its current evidence and `scripts/docs/references/asus-storage-services.md`
+before assuming which machine serves production. Existing R2 originals are
 retained only for deliberate recovery, not a runtime fallback. Prefixes express
 ownership and retention intent; verify the active cleanup implementation instead
 of assuming the former R2 lifecycle rules still run on native storage.
@@ -58,8 +61,9 @@ references without reading the bytes. They do not alone justify publication.
 Keep Source identity/provenance separate from temporary location; link through
 the existing artifact cache rather than storing Modal URIs in HTTP URL fields.
 Background uploads still transfer the same bytes: select retained outputs
-explicitly. Native S3 on the Mac is still an outbound destination for Modal.
-Read Modal's `docs/references/media-transfer-policy.md` for dated billing facts
+explicitly. Native S3 is still an outbound destination for Modal regardless of
+whether the Mac or ASUS hosts it.
+Read WIN's `docs/references/modal/media-transfer-policy.md` for dated billing facts
 and WIN's `docs/architecture/media-source-identity-and-storage.md` for Source
 identity and acquisition contracts. Use the owning repo docs and current
 deployment evidence to determine rollout status.

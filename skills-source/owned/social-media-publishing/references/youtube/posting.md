@@ -2,7 +2,7 @@
 
 Use this when Adi wants to upload a video to YouTube from local agent tooling.
 
-The skill-owned interface is `scripts/youtube/cli.py`. The actual YouTube upload engine lives in `modal_functions` as `upload_youtube_video`; the skill stays a thin, stable, agent-facing client.
+The skill-owned interface is `scripts/youtube/cli.py`. The actual YouTube upload engine lives in WIN's `modal_runtime/` as `upload_youtube_video`; the skill stays a thin, stable, agent-facing client.
 
 ## Why Modal-backed
 
@@ -11,7 +11,7 @@ YouTube uploads are the channel where the hard part is the upload transport: res
 Current split:
 
 - `social-media-publishing/scripts/youtube/cli.py`: JSON contract, validation, local-file staging, route reporting.
-- `modal_functions/src/functions/integrations/youtube/upload`: YouTube Data API upload execution.
+- `win/modal_runtime/functions/integrations/youtube/upload`: YouTube Data API upload execution.
 - `win`: product/client episode publishing workflows. Do not import WIN from this skill.
 
 ## Status
@@ -20,7 +20,7 @@ Current split:
 python3 ~/GitHub/agents/skills-source/owned/social-media-publishing/scripts/youtube/cli.py status
 ```
 
-`status` checks local config paths and whether the current Python can import the Modal SDK. If the default Python cannot import Modal, upload commands re-run themselves with `/Users/dobby/GitHub/modal_functions/venv/bin/python` when available.
+`status` checks local config paths and whether the current Python can import the Modal SDK. If the default Python cannot import Modal, upload commands re-run themselves with `~/GitHub/win/venv/bin/python` when available.
 
 ## Upload from a public direct video URL
 
@@ -68,7 +68,7 @@ Optional non-secret config file. The YouTube credential id is hardcoded to `ADIT
 Supported keys:
 
 ```bash
-SOCIAL_YOUTUBE_MODAL_PYTHON=/Users/dobby/GitHub/modal_functions/venv/bin/python
+SOCIAL_YOUTUBE_MODAL_PYTHON=~/GitHub/win/venv/bin/python
 SOCIAL_YOUTUBE_MODAL_APP=aip-processor
 SOCIAL_YOUTUBE_MODAL_FUNCTION=upload_youtube_video
 SOCIAL_YOUTUBE_MODAL_VOLUME=cache
@@ -82,8 +82,10 @@ Baked-in personal defaults:
 - made for kids: `false`
 - embeddable: `true`
 
-Do not store OAuth secrets here. YouTube secrets remain in Modal secret `youtube-oauth`, sourced
-from the local canonical store through the managed Modal sync flow.
+Do not store OAuth secrets here. WIN owns OAuth grants in MongoDB. The Modal
+uploader obtains short-lived access tokens through WIN using its managed
+`win-youtube-service` secret. Keep remote app/function identities unchanged;
+see WIN's `docs/architecture/youtube-channel-publishing-flow.md`.
 
 ## Output contract
 

@@ -72,8 +72,11 @@ bootstrap/check flow. Do not run `modal skills install` or `modal skills update`
 against managed runtime links. This source import uses online official docs;
 it does not include the documentation bundle added by Modal's CLI installer.
 Check the owning project's installed SDK before using newly documented APIs.
-WIN-specific client and release contracts remain in `modal-function-sync` and
-the Modal repo's `modal-function-intake` skill.
+WIN-specific client and release contracts remain in `modal-function-sync`,
+which now routes to WIN's consolidated `modal_runtime/` and same-repo tooling.
+The legacy checkout remains enrolled during the deployment transition for
+recovery; remove its active distribution only after the migration records the
+publisher cutover. The official upstream skill remains unmodified.
 
 ## Field Quick Reference
 

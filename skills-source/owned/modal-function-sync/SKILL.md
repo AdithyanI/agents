@@ -1,87 +1,65 @@
 ---
 name: modal-function-sync
-description: Implement or update Modal functions in modal_functions and ensure they are exposed/synced into win via the generated client. Use when a user says "Implement this in modal," wants a new Modal function/pipeline, or needs the two repos wired together.
+description: Implement or update WIN's Modal functions, registry, generated client, and release integration. Use for new Modal functions or pipelines, caller contract changes, or maintenance of the consolidated WIN/Modal runtime.
 ---
 
-# Modal Function Sync
+# WIN Modal Integration
 
-## Overview
-Use this skill to add or modify Modal functions in `modal_functions`, register them, and locally sync the generated client into `win`.
-Use the official `$modal` skill for platform APIs and patterns; this skill owns
-the WIN integration and repository delivery contracts.
+WIN owns both the backend and the Modal runtime. Use the official `$modal` skill
+for platform APIs and patterns; this skill owns repository integration and
+delivery. Keep current processing behavior, model choices, remote names and
+storage contracts unless the task explicitly changes them.
 
-## Auto-generation rules
-- `modal_functions` is the source of truth; never implement Modal entrypoints directly in `win`.
-- `services/modal/client_generated.py` is generated from the `modal_functions` registry; do not edit it by hand.
-- Sync is local-first from the sibling checkout with `scripts/local/sync_win_modal_client.sh`.
-- Check drift without mutating `win` with `scripts/local/check_win_modal_client_drift.sh`.
-- The Modal repo's `scripts/deploy_with_secret_sync.sh` owns release validation,
-  secret delivery, and deployment. GitHub Actions is not the release path.
-- Generate locally to `tmp/client_generated.py` for fast validation without dirtying `win`.
-- Generate into `../win/services/modal/client_generated.py` through the local sync wrapper before testing `win` wrappers/call sites.
-- Stable Modal runtime secrets should default to the local canonical store -> manifest -> Modal
-  sync flow, not one-off manual Modal secret updates.
+## Start Here
 
-## Workflow
+Read WIN's `AGENTS.md`, `docs/references/modal-runtime.md`, the affected function
+and its tests. Source is under `win/modal_runtime/`; the sibling
+`modal_functions` checkout retains pre-consolidation history and recovery code.
+Do new implementation in WIN. During migration, consult
+`win/docs/projects/modal-consolidation/tasks.md` for the deployment cutover state;
+source consolidation alone does not prove that production has switched.
 
-### 1) Gather context
-- Ask for the new function or pipeline intent, inputs/outputs, storage/caching expectations, and where win will call it.
-- Confirm whether the change is new functionality or a behavior update.
+## Implement and Sync
 
-### 2) Read local guidance
-- Open `AGENTS.md` in both repos (see `references/paths.md`) and follow nested rules.
+- Keep one canonical implementation under `modal_runtime/functions/` or the
+  existing runtime domain. Shared runtime helpers live in `modal_runtime/common/`.
+- Add deployed symbols to `modal_runtime/deploy.py` and exposed caller contracts
+  to `modal_runtime/registry.py`. Preserve the `aip-processor` app and existing
+  function, class, Volume and Secret identities across source moves.
+- Keep imports safe during local deployment and inside containers. Model/GPU
+  dependencies belong in their image or function lifecycle, not backend imports.
+- Generate `services/modal/client_generated.py` with
+  `scripts/modal/sync-client.sh`; never edit generated output directly.
+  `scripts/modal/check-client.sh` checks drift without changing it.
+- Backend I/O, caching, retries and ergonomic wrappers remain in
+  `services/modal/client.py`. Workflow decisions remain in `core/`.
+- A source move does not authorize changing workflow placement or concurrency.
+  For intended execution changes, explicitly model parallel inputs, retry
+  ownership, persisted outcomes and cancellation instead of adding an implicit
+  scheduler.
 
-### 3) Implement in modal_functions (source of truth)
-- Add or modify code under `src/functions/...`.
-- Update `src/registry.py` to expose the function.
-- Update `src/deploy.py` so Modal actually ships the symbol.
-- Update shared helpers in `src/common/` if needed.
-- Run `python tools/validate_registry.py` when changing the registry.
-- Keep the Modal app name consistent with `src/common/containers.py`.
+## Credentials
 
-### 4) Handle secrets and config deliberately
-- Use `references/modal-secrets.md` as the checklist for secret ownership and manifest updates.
-- If the change adds or modifies `modal.Secret.from_name(...)`, decide whether the secret is:
-  - a stable runtime secret that should be managed from the local canonical store, or
-  - an intentional exception owned by a separate system.
-- Default rule: if it is a stable runtime secret, add it to `scripts/local/secrets/modal_secrets_manifest.json`.
-- Ensure the backing local canonical secret exists before relying on the manifest entry.
-- If you are adopting an older Modal-only secret, write it once through
-  `~/GitHub/scripts/bin/local-secrets set`; do not print the value or add another canonical owner.
-- Update `docs/rules/environment-variables.md` when the secret shape or expected env keys change.
-- Do not leave a new code-level `modal.Secret.from_name(...)` reference unmanaged unless the exception is explicitly documented.
+Use `$secret-management` and [references/modal-secrets.md](references/modal-secrets.md)
+when credential delivery changes. Stable runtime secrets belong in the
+canonical machine-local store and WIN's
+`scripts/modal/secrets/modal_secrets_manifest.json`. Modal Secrets are generated
+runtime copies. Preserve existing names and avoid unmanaged manual updates.
 
-### 5) Client sync (local generated output)
-- Run the local sync wrapper from `modal_functions`:
-  ```bash
-  scripts/local/sync_win_modal_client.sh
-  ```
-- The wrapper validates the registry, generates `../win/services/modal/client_generated.py`, and formats it with WIN's Ruff config.
-- Do not hand-edit `services/modal/client_generated.py`.
-- Use `python tools/generate_modal_client.py --output tmp/client_generated.py` for local validation without touching `win`.
-- Use `scripts/local/check_win_modal_client_drift.sh` when you need a check-only stale-client guardrail.
-- Include generated client changes in the `win` worktree when the registry output changed.
+## Validation and Delivery
 
-### 6) Win integration
-- Use `ModalClientGenerated` from `services/modal/client_generated.py`.
-- Add wrapper/helper methods in `services/modal/client.py` if needed for ergonomics.
-- Update tests in `tests/services/modal/test_client.py` and any call sites.
+Use `scripts/local/bootstrap_python.sh` to create WIN's shared `venv`; use
+`venv/bin/python` for both backend and Modal tooling.
+Run registry validation, client drift checks and affected tests. The existing
+root `scripts/check-fast.sh` and `scripts/check-full.sh` own integrated gates;
+keep cloud/GPU work proportional to the requested behavior change.
 
-### 7) Deploy + verify
-- For an authorized release, follow `modal_functions/docs/references/local-deployment.md`
-  and run `scripts/deploy_with_secret_sync.sh` from its clean `main` checkout.
-- The release command runs checks and tests, refreshes managed secrets, and deploys.
-  Normal Git publication alone does not prove Modal activation.
-- Verify critical flows or run targeted tests in `win`.
+For an authorized release, use WIN's `scripts/modal/deploy.py` release contract
+and the shared `scripts` delivery coordinator. It validates an exact revision,
+synchronizes managed secrets, deploys and records target-specific evidence.
+Do not infer activation from a Git push alone or bypass the coordinator with
+bare `python -m modal_runtime.deploy`. Do not run both legacy and consolidated
+publishers for the same app. Respect another task's storage maintenance lock.
 
-## Common pitfalls
-- A code change does not itself require a production deploy; preserve the current
-  task's authorization and verify activation when a release is requested.
-- Missing registry entries means the client will not include the function.
-- Adding `modal.Secret.from_name(...)` in code without updating the manifest reintroduces secret drift.
-- Adding a manifest entry without a real local backing secret will make deploy-time secret sync fail.
-- Direct edits to generated client output will be overwritten by the local sync wrapper.
-
-## References
-- See `references/paths.md` for key files and repo entry points.
-- See `references/modal-secrets.md` for the secret-management checklist.
+See [references/paths.md](references/paths.md) for the small set of integration
+entrypoints; the owning source and runtime reference remain authoritative.

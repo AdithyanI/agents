@@ -14,7 +14,7 @@ from typing import Any
 
 SCHEMA_VERSION = "1.0"
 DEFAULT_ENV_PATH = Path.home() / ".secrets/youtube/env"
-DEFAULT_MODAL_PYTHON = Path("/Users/dobby/GitHub/modal_functions/venv/bin/python")
+DEFAULT_MODAL_PYTHON = Path.home() / "GitHub/win/venv/bin/python"
 DEFAULT_MODAL_APP = "aip-processor"
 DEFAULT_MODAL_FUNCTION = "upload_youtube_video"
 DEFAULT_MODAL_VOLUME = "cache"
@@ -209,7 +209,7 @@ def import_modal_module():
             code="E_MODAL_SDK_MISSING",
             exit_code=4,
             retryable=False,
-            hint="Run with the modal_functions venv Python or set SOCIAL_YOUTUBE_MODAL_PYTHON.",
+            hint="Run with WIN's venv Python or set SOCIAL_YOUTUBE_MODAL_PYTHON.",
             details={"exception_type": type(exc).__name__, "message": str(exc)},
         ) from exc
     return modal

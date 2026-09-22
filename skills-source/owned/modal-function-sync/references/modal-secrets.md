@@ -1,59 +1,37 @@
-# Modal Secrets Checklist
+# Modal Credential Delivery
 
-Use this when a Modal function change adds, removes, or changes
-`modal.Secret.from_name(...)`.
+Use `$secret-management` when adding or changing a runtime secret. The
+machine-local canonical store remains the authority; Modal Secrets and local
+credential files are generated deliveries. Consolidating source does not move
+canonical secret ownership or require renaming existing Modal resources.
 
-## Default Rule
+## Stable Runtime Secrets
 
-- Treat `~/Documents/DobbySecrets` as the local canonical source of truth.
-- Treat Modal secrets as deploy-time runtime copies.
-- If the secret is a stable runtime dependency, add it to
-  `scripts/local/secrets/modal_secrets_manifest.json`.
+1. Identify the existing local scope/key with `~/GitHub/scripts/bin/local-secrets`.
+   Do not print values or treat generated `.env` files as another source of truth.
+2. Add or update the payload mapping in WIN's
+   `scripts/modal/secrets/modal_secrets_manifest.json` and ensure its backing
+   canonical value exists before release.
+3. Update the owning runtime/config documentation when expected keys change.
+4. Validate the mapping and sync helper locally. During an authorized release,
+   WIN's `scripts/modal/deploy.py` performs managed sync after release checks
+   pass and before code deployment. Verify the structured result and deployed
+   target revision; a Git publication is not proof of secret or code activation.
 
-## Normal Path For A New Stable Secret
+For deliberate adoption of an older Modal-only secret, use the canonical
+`local-secrets set` flow once. Preserve separately owned, ephemeral or externally
+rotated secrets as explicit exceptions instead of overwriting their owner.
 
-1. Pick the canonical local scope and secret name.
-2. Ensure the value exists using `~/GitHub/scripts/bin/local-secrets`; never print it.
-3. Add the Modal secret payload mapping to
-   `scripts/local/secrets/modal_secrets_manifest.json`.
-4. Update `docs/rules/environment-variables.md` if the env shape or naming rule
-   changes.
-5. Push to `main` and watch `Deploy on Main`.
-6. Run the local Modal secret sync from the trusted Mac and confirm its structured summary passes.
+The sync helper is
+`win/scripts/modal/secrets/sync_local_to_modal_secrets.py`. Inspect its current
+CLI and the runtime reference before invoking it; syncing mutates Modal's
+runtime credentials. Do not make live changes for a documentation-only task.
 
-## When Backfill Is Needed
+## Recovery
 
-Use `~/GitHub/scripts/bin/local-secrets set` when all of these are true:
-
-- the secret already exists in Modal
-- it is not yet in the local canonical store
-- you want the local store to become the new source of truth
-
-That helper is for one-time adoption of an older Modal-only secret into the
-managed flow.
-
-## Allowed Exceptions
-
-It is acceptable to leave a secret outside the manifest only if there is a clear
-documented reason, such as:
-
-- it is rotated by a separate automation system
-- it is intentionally short-lived or ephemeral
-- it is owned by another platform and should not be mirrored from the local store
-
-If you keep it outside the manifest, document that explicitly in the relevant
-repo docs or tracker.
-
-## Failure Modes To Avoid
-
-- Adding `modal.Secret.from_name(...)` in code without adding the manifest entry
-  for a stable secret
-- Adding the manifest entry before the local canonical secret exists
-- Manually editing Modal secrets and assuming deploy will preserve that state
-  when the secret is already manifest-managed
-
-## Quick Verification
-
-- `python tools/validate_registry.py`
-- `python scripts/local/secrets/sync_local_to_modal_secrets.py`
-- Run the local deploy/sync path and verify the Modal destination
+- A missing canonical value or failed sync stops release before code deployment.
+- Do not publish secret values, generated credentials or signed URLs in logs,
+  test artifacts, project evidence or Git.
+- Keep old deployment recovery available during migration, but route ongoing
+  credential updates through the one active WIN manifest and publisher after
+  cutover. Never run competing secret publishers for the same Modal app.
