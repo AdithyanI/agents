@@ -1,8 +1,11 @@
 from __future__ import annotations
 
+import os
+import sys
 from unittest.mock import patch
 
 from hooks.scripts import git_payload_guard as guard
+from hooks.scripts import stop
 from tests.control_plane.support import TempDirTestCase, init_git_repo, run_command
 
 
@@ -120,3 +123,27 @@ class GitPayloadGuardTests(TempDirTestCase):
         (empty / "source.py").write_text("pass\n")
         guard.stage(str(empty), max_file=100, max_total=256)
         self.assertEqual(guard.index_sizes(str(empty)), {"source.py": 5})
+
+    def test_auto_publication_disables_maintenance_without_changing_config(self) -> None:
+        run_command(["git", "-C", self.root, "config", "gc.auto", "25"])
+        run_command(["git", "-C", self.root, "config", "maintenance.auto", "true"])
+        inherited = {**os.environ, "GIT_CONFIG_COUNT": "1",
+                     "GIT_CONFIG_KEY_0": "example.inherited", "GIT_CONFIG_VALUE_0": "kept"}
+        for key, value in (("gc.auto", "0"), ("maintenance.auto", "false"),
+                           ("example.inherited", "kept")):
+            result = stop.run(["git", "config", "--get", key], self.root, env=inherited)
+            self.assertEqual(result.returncode, 0, result.stderr)
+            self.assertEqual(result.stdout.strip(), value)
+        with patch.dict(os.environ, inherited):
+            self.assertEqual(guard.git(self.root, "config", "--get", "gc.auto").strip(), b"0")
+            self.assertEqual(guard.git(self.root, "config", "--get", "maintenance.auto").strip(),
+                             b"false")
+            self.assertEqual(guard.git(self.root, "config", "--get", "example.inherited").strip(),
+                             b"kept")
+        for key, value in (("gc.auto", "25"), ("maintenance.auto", "true")):
+            self.assertEqual(run_command(["git", "-C", self.root, "config", "--get", key])
+                             .stdout.strip(), value)
+        child = stop.run([sys.executable, "-c", "import os; print(os.environ['GIT_CONFIG_COUNT'])"],
+                         self.root, env=inherited)
+        self.assertEqual(child.stdout.strip(), "1")
+        self.assertEqual(inherited["GIT_CONFIG_COUNT"], "1")

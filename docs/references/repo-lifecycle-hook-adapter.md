@@ -150,6 +150,10 @@ All repo lifecycle hooks are Python. Do not add shell compatibility shims.
   needed. Explicit fast checks and staged-tree stability replace mutable
   commit-hook execution before rebase/push. A successful pull-rebase reruns the
   repo fast check and must leave a clean repository before the push is retried.
+  Stop Git children and the staging helper disable opportunistic GC/maintenance
+  through per-command Git configuration. Publication cannot start background
+  repacks; inherited settings and explicit maintenance outside automation remain
+  unchanged.
 - Before each automatic staging pass, `hooks/scripts/git_payload_guard.py` checks
   file metadata and staged blob sizes: at most 100 MiB per changed file and
   256 MiB of changed content in total. It stages only inspected paths, then checks

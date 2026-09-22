@@ -51,6 +51,7 @@ CODEX_CHECK_WORKERS = 4
 MAX_CODEX_ATTRIBUTED_PATHS = 2000
 MAX_CODEX_REPOSITORIES = 32
 MAX_CONSOLIDATION_PASSES = 3
+GIT_AUTOMATION_CONFIG = ["-c", "gc.auto=0", "-c", "maintenance.auto=false"]
 
 
 def guarded_stage_command(root: str) -> list[str]:
@@ -224,6 +225,10 @@ def run(
     env: dict[str, str] | None = None,
     timeout: int | None = None,
 ) -> subprocess.CompletedProcess[str]:
+    if cmd and Path(cmd[0]).name == "git":
+        # Publication must not launch background repacks on development disks.
+        # Per-command config preserves inherited settings and manual maintenance.
+        cmd = [cmd[0], *GIT_AUTOMATION_CONFIG, *cmd[1:]]
     return subprocess.run(
         cmd,
         cwd=cwd,
@@ -905,7 +910,7 @@ def repair_staged_blank_eof(root: str) -> None:
     can carry meaning in Markdown, strings, fixtures, and other file formats).
     """
     env = {**os.environ, "LC_ALL": "C"}
-    git = ["git", "--literal-pathspecs"]
+    git = ["git", *GIT_AUTOMATION_CONFIG, "--literal-pathspecs"]
 
     def inspect(args: list[str]) -> subprocess.CompletedProcess[bytes]:
         return subprocess.run(

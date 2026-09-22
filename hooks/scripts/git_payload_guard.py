@@ -23,7 +23,8 @@ class PayloadError(RuntimeError):
 
 def git(root: str, *args: str, data: bytes | None = None) -> bytes:
     result = subprocess.run(
-        ["git", "--literal-pathspecs", "-C", root, *args],
+        ["git", "-c", "gc.auto=0", "-c", "maintenance.auto=false",
+         "--literal-pathspecs", "-C", root, *args],
         input=data, stdout=subprocess.PIPE, stderr=subprocess.PIPE, timeout=120,
     )
     if result.returncode:
