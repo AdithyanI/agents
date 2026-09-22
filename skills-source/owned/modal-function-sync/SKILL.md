@@ -56,12 +56,14 @@ Use `scripts/local/bootstrap_python.sh` to create WIN's shared `venv`; use
 `venv/bin/python` for both backend and Modal tooling.
 Run registry validation, client drift checks and affected tests. The existing
 root `scripts/check-fast.sh` and `scripts/check-full.sh` own integrated gates;
-keep cloud/GPU work proportional to the requested behavior change.
+run these on the development Mac and keep full suites proportional to the change.
+ASUS deployment runs source/credential preflight and provider proof, never the
+test suite, linter or type checker.
 
 Develop on the MacBook or Mini and publish WIN. The existing ASUS queue deploys
 both targets directly. Its `~/GitHub/scripts/setup/asus/deploy-modal.py` wrapper
 uses the queue's immutable WIN checkout and runs `scripts/modal/deploy.py` in a
-Python 3.13 Docker container with the shared lock. It validates the exact revision
+small Python 3.13 submission container constrained by the shared lock. It validates the exact revision
 and generated credentials, synchronizes Modal Secrets, deploys and records
 target-specific evidence.
 Do not infer activation from a Git push alone or bypass the coordinator with
