@@ -64,6 +64,14 @@ def load_registry(path: Path) -> dict[str, Any]:
         raw_path = item.get("path")
         if not isinstance(raw_path, str) or not raw_path.strip():
             raise ValueError(f"{path}: repos[{idx}].path must be a non-empty string")
+    exclusions = data.get("auto_enrollment_exclusions", [])
+    if not isinstance(exclusions, list):
+        raise ValueError(f"{path}: auto_enrollment_exclusions must be an array")
+    for idx, raw_path in enumerate(exclusions):
+        if not isinstance(raw_path, str) or not raw_path.strip():
+            raise ValueError(f"{path}: auto_enrollment_exclusions[{idx}] must be a non-empty path")
+        if not (raw_path.startswith("~/") or Path(raw_path).is_absolute()):
+            raise ValueError(f"{path}: auto_enrollment_exclusions[{idx}] must be an absolute or ~/ path")
     return data
 
 
@@ -106,7 +114,7 @@ def parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser(
         description=(
             "Enroll every direct child Git repo under ~/GitHub into the shared "
-            "agent repo bootstrap registry."
+            "agent repo bootstrap registry, except exact auto_enrollment_exclusions."
         )
     )
     parser.add_argument("--apply", action="store_true", help="Write registry changes")
@@ -148,15 +156,22 @@ def main() -> int:
         return 1
 
     enrolled_roots = existing_repo_roots(repos, home)
+    excluded_roots = {
+        expand_path(raw_path, home).resolve()
+        for raw_path in data.get("auto_enrollment_exclusions", [])
+    }
     missing = [
         candidate
         for candidate in discovered
-        if candidate.repo_root not in enrolled_roots
+        if candidate.repo_root not in enrolled_roots and candidate.repo_root not in excluded_roots
     ]
 
     print(f"Discovered {len(discovered)} direct child Git repo(s) under {github_root}.")
+    for candidate in discovered:
+        if candidate.repo_root in excluded_roots:
+            print(f"SKIP auto-enrollment excluded {display_path(candidate.declared_path, home)}")
     if not missing:
-        print("OK: all discovered repos are already enrolled.")
+        print("OK: all eligible discovered repos are already enrolled.")
         return 0
 
     for candidate in missing:

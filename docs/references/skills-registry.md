@@ -66,7 +66,7 @@ flowchart LR
 ## Modal Platform Skill
 
 The official `modal` skill is an external import from Modal's Python SDK source,
-linked into `win`, `modal_functions`, `agents`, and `scripts`. Refresh it through
+linked into `win`, `agents`, and `scripts`. Refresh it through
 `scripts/refresh-external-skills.sh --apply --skill modal` and the normal shared
 bootstrap/check flow. Do not run `modal skills install` or `modal skills update`
 against managed runtime links. This source import uses online official docs;
@@ -74,9 +74,8 @@ it does not include the documentation bundle added by Modal's CLI installer.
 Check the owning project's installed SDK before using newly documented APIs.
 WIN-specific client and release contracts remain in `modal-function-sync`,
 which now routes to WIN's consolidated `modal_runtime/` and same-repo tooling.
-The legacy checkout remains enrolled during the deployment transition for
-recovery; remove its active distribution only after the migration records the
-publisher cutover. The official upstream skill remains unmodified.
+The legacy checkout is retained for history and recovery, outside active repo
+enrollment and skill distribution. The official upstream skill remains unmodified.
 
 ## Field Quick Reference
 

@@ -23,6 +23,12 @@ For one repository, use an exact path with shared bootstrap/check:
 
 Sparse machines are normal. Registry entries absent locally are skipped; existing non-Git folders at managed paths warn because they may be broken placeholders. Machine-enrollment checks use `~/GitHub/agents` by default; override with `AGENTS_MANAGED_REPO_CHECK_ROOT` for another canonical checkout.
 
+`codex/config/repo-bootstrap.json` declares exact `auto_enrollment_exclusions`
+for retained recovery checkouts. The Git sync enrollment step preserves these
+directories and their history without adding them back to `repos`; it does not
+remove an existing enrollment. `~/GitHub/modal_functions` is excluded because
+WIN owns its active implementation and release.
+
 ## Entry points and ownership
 
 | Command or source | Contract |

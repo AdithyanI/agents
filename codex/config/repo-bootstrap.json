@@ -1,5 +1,8 @@
 {
   "defaults": {},
+  "auto_enrollment_exclusions": [
+    "~/GitHub/modal_functions"
+  ],
   "repos": [
     {
       "path": "~/GitHub/.github"
@@ -77,9 +80,6 @@
     },
     {
       "path": "~/GitHub/meeting-capture"
-    },
-    {
-      "path": "~/GitHub/modal_functions"
     },
     {
       "path": "~/GitHub/platform-ops"

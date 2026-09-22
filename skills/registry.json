@@ -167,7 +167,6 @@
       "scope": "repo",
       "repos": [
         "aipodcasting",
-        "modal_functions",
         "win"
       ],
       "source_path": "skills-source/owned/modal-function-sync",
@@ -182,7 +181,6 @@
         "agents",
         "aipodcasting",
         "local-transcription",
-        "modal_functions",
         "scripts",
         "win"
       ],
@@ -414,7 +412,6 @@
       "scope": "repo",
       "repos": [
         "win",
-        "modal_functions",
         "agents",
         "scripts"
       ],
@@ -430,10 +427,6 @@
     {
       "repo": "blog-personal",
       "skill": "blog-posting"
-    },
-    {
-      "repo": "modal_functions",
-      "skill": "modal-function-intake"
     },
     {
       "repo": "win",

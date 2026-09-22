@@ -5,7 +5,6 @@
 $HOME/GitHub/win
 $HOME/GitHub/scripts
 $HOME/GitHub/aipodcasting
-$HOME/GitHub/modal_functions
 $HOME/GitHub/adithyan-ai-videos
 $HOME/GitHub/blog-personal
 /GitHub/dobby-gateway
