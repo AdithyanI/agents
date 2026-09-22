@@ -1,4 +1,4 @@
-# Azure Astra in Codex
+# Azure GPT-6 models in Codex
 
 ## Configuration and ownership
 
@@ -14,6 +14,8 @@ Shared sync preserves this local choice; existing tasks retain their provider.
 - Endpoint: `https://aipodcasting-openai.openai.azure.com/openai/v1`.
 - Existing deployment: `gpt-6-astra`, model version `2026-09-03`,
   `GlobalStandard`. This setup does not create or change Azure deployments.
+- The Azure picker contains only `gpt-6-astra`, `gpt-6-sol`, and `gpt-6-luna`.
+  All three deployments answered a Responses API smoke request on September 22.
 - Provider definition: `codex/config/global.config.toml`.
 - Optional profile: `codex/config/azure-astra.config.toml`, rendered to
   `~/.codex/azure-astra.config.toml`.
@@ -21,6 +23,37 @@ Shared sync preserves this local choice; existing tasks retain their provider.
 Azure model requests bill the Azure resource's subscription. Sponsorship credit
 eligibility and remaining balance must be checked in Azure billing; successful
 inference alone does not prove that credits covered a request.
+
+### Azure model picker
+
+The installed desktop engine and CLI 0.156.0 use their older bundled model list
+for Azure, even when native OpenAI discovery returns newer models. Restarting
+alone does not discover Azure deployments.
+
+Shared bootstrap generates `~/.codex/model-catalogs/azure-gpt6.json` from complete
+entries in the native `models_cache.json`, preserving upstream prompts,
+capabilities, reasoning levels, and protocol selection. The generated catalog
+contains exactly the three GPT-6 models and stays outside Git. A later incomplete
+or missing native cache does not replace a complete generated catalog. On initial
+setup, bootstrap can refresh native OpenAI metadata if no catalog is configured;
+this uses the saved ChatGPT login and makes no inference request. Missing complete
+metadata fails before changing provider configuration.
+
+For recovery, select Subscription, run `codex debug models` to refresh metadata,
+rerun shared bootstrap, then select Azure. The provider menu itself stays offline.
+
+Selecting Azure installs the catalog override; selecting Subscription removes it
+and restores native discovery. The explicit `azure-astra` profile also selects the
+catalog. Codex profiles cannot clear an inherited catalog: while the global default
+is Azure, `codex-openai` changes the provider but inherits the three-model picker.
+Select Subscription with the provider menu for the complete native subscription
+model list. Reopen the desktop app after catalog changes; do not terminate it from
+an active task.
+
+Verified on September 22, 2026 with desktop engine `0.155.0-alpha.9.2`:
+`model/list` returned exactly these three models, and each completed an ephemeral
+Azure turn with `CODEX_AZURE_OK`. The probes disabled hooks, MCP servers, apps,
+and web search; they did not change existing tasks or subscription authentication.
 
 ### Estimating today's usage when billing is unavailable
 
@@ -198,7 +231,8 @@ Use the Responses API (`wire_api = "responses"`) and the Azure deployment name
 as `model`. The `/openai/v1` endpoint does not require an `api-version` query
 parameter. Don't mix this route with the older dated-preview endpoint example.
 
-Both provider profiles use Codex's default model metadata and protocol selection.
+The Azure catalog preserves native model metadata and protocol selection.
+Subscription mode uses native discovery without a catalog override.
 Native web-search availability depends on provider support; setting
 `web_search = "live"` alone does not establish that the Azure endpoint supports it.
 

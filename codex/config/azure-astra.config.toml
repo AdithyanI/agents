@@ -1,6 +1,7 @@
-# Explicit Azure Astra overlay using Codex's default model metadata and protocol.
+# Azure GPT-6 picker, with Astra as the starting model.
 # Use with: codex --profile azure-astra
 
 model = "gpt-6-astra"
 model_provider = "azure"
 model_reasoning_effort = "medium"
+model_catalog_json = "model-catalogs/azure-gpt6.json"

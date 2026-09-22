@@ -1466,6 +1466,11 @@ else
 fi
 
 if (( SYNC_GLOBAL == 1 )); then
+  catalog_args=()
+  if (( APPLY == 1 )); then
+    catalog_args+=(--apply)
+  fi
+  python3 "${SCRIPT_DIR}/provider_selection.py" catalog "$CANONICAL_DIR" "$GLOBAL_CONFIG" "${catalog_args[@]}"
   sync_global
   sync_profile_configs
   cleanup_retired_azure_catalog

@@ -14,7 +14,9 @@ import time
 import tomllib
 
 PROFILES = {"azure": "azure-astra.config.toml", "subscription": "chatgpt.config.toml"}
-# Keep the retired catalog/search keys owned so sync removes previous overrides.
+AZURE_MODELS = ("gpt-6-astra", "gpt-6-sol", "gpt-6-luna")
+AZURE_CATALOG = "model-catalogs/azure-gpt6.json"
+# Subscription removes the Azure catalog; the retired search override stays owned.
 OWNED = ("model_provider", "model_catalog_json", "forced_login_method", "features.standalone_web_search")
 
 
@@ -43,7 +45,7 @@ def supported(canonical: Path) -> bool:
     return all((canonical / name).is_file() for name in PROFILES.values())
 
 
-def values(canonical: Path, choice: str) -> dict:
+def values(canonical: Path, choice: str, config: Path | None = None) -> dict:
     profile = load(canonical / PROFILES[choice])
     if profile.get("model_provider") != ("azure" if choice == "azure" else "openai"):
         raise ValueError(f"Invalid or missing {PROFILES[choice]}")
@@ -53,6 +55,8 @@ def values(canonical: Path, choice: str) -> dict:
         result["model"] = profile.get("model")
         if not result["model"]:
             raise ValueError("Azure profile is missing its deployment model.")
+        if config is not None and load(config).get("model") in AZURE_MODELS:
+            result["model"] = load(config)["model"]
     return result
 
 
@@ -113,6 +117,67 @@ def atomic_write(path: Path, text: str) -> None:
             temporary.unlink(missing_ok=True)
 
 
+def azure_catalog(data: dict) -> dict:
+    """Select complete upstream entries, including their prompts and protocol metadata."""
+    models = data.get("models") if isinstance(data, dict) else None
+    if not isinstance(models, list) or not all(isinstance(model, dict) for model in models):
+        raise ValueError("Model catalog must contain a models array.")
+    selected_models = [model for model in models if model.get("slug") in AZURE_MODELS]
+    by_slug = {model["slug"]: model for model in selected_models}
+    if len(selected_models) != len(AZURE_MODELS) or set(by_slug) != set(AZURE_MODELS):
+        raise ValueError("Model catalog must contain Astra, Sol, and Luna exactly once.")
+    return {"models": [by_slug[slug] for slug in AZURE_MODELS]}
+
+
+def read_catalog(path: Path) -> dict | None:
+    try:
+        return azure_catalog(json.loads(path.read_text()))
+    except (OSError, ValueError):
+        return None
+
+
+def catalog_ready(config: Path) -> bool:
+    path = config.parent / AZURE_CATALOG
+    try:
+        data = json.loads(path.read_text())
+        return data == azure_catalog(data)
+    except (OSError, ValueError):
+        return False
+
+
+def prepare_catalog(canonical: Path, config: Path, *, apply: bool = False, refresh: bool = False) -> dict | None:
+    """Materialize an Azure-only runtime snapshot without pinning the shared cache."""
+    if load(canonical / PROFILES["azure"]).get("model_catalog_json") != AZURE_CATALOG:
+        return None
+    target = config.parent / AZURE_CATALOG
+    data = read_catalog(config.parent / "models_cache.json") or read_catalog(target)
+    if data is None and refresh and not load(config).get("model_catalog_json"):
+        # Initial setup on another Mac may still have a pre-launch cache. Native
+        # OpenAI discovery refreshes metadata only; it makes no inference request.
+        binary = Path("/Applications/ChatGPT.app/Contents/Resources/codex")
+        if binary.is_file():
+            try:
+                result = subprocess.run(
+                    [str(binary), "-c", 'model_provider="openai"', "debug", "models"],
+                    cwd=config.parent, stdin=subprocess.DEVNULL, capture_output=True,
+                    text=True, timeout=30, check=False,
+                )
+                if result.returncode == 0:
+                    data = read_catalog(config.parent / "models_cache.json") or azure_catalog(json.loads(result.stdout))
+            except (OSError, ValueError, subprocess.TimeoutExpired):
+                pass
+    if data is None:
+        raise ValueError(
+            "Azure GPT-6 model metadata is missing. Select subscription, run "
+            "`codex debug models` to refresh native discovery, then rerun shared bootstrap. "
+            "Existing config and model catalogs were left unchanged."
+        )
+    rendered = json.dumps(data, indent=2, ensure_ascii=False) + "\n"
+    if apply and (not target.is_file() or target.read_text() != rendered):
+        atomic_write(target, rendered)
+    return data
+
+
 @contextlib.contextmanager
 def config_lock(config: Path, timeout: float = 60):
     config.parent.mkdir(parents=True, exist_ok=True)
@@ -134,16 +199,19 @@ def config_lock(config: Path, timeout: float = 60):
 
 def status(config: Path, canonical: Path) -> dict:
     choice = selected(config)
-    expected = values(canonical, choice)
+    expected = values(canonical, choice, config)
     data = load(config)
+    in_sync = all(get(data, k) == v for k, v in expected.items())
+    if expected.get("model_catalog_json") == AZURE_CATALOG:
+        in_sync = in_sync and catalog_ready(config)
     return {"selected": choice, "effective_provider": data.get("model_provider", "openai"),
-            "persisted": state_path().is_file(), "config_in_sync": all(get(data, k) == v for k, v in expected.items()),
+            "persisted": state_path().is_file(), "config_in_sync": in_sync,
             "applied": False, "restart_required": True, "scope": "this_machine",
             "state_file": str(state_path()), "config_file": str(config)}
 
 
 def preflight(config: Path, canonical: Path, choice: str) -> None:
-    values(canonical, choice)
+    values(canonical, choice, config)
     if choice == "azure":
         provider = load(config).get("model_providers", {}).get("azure", {})
         if not provider.get("base_url") or not provider.get("env_key"):
@@ -152,6 +220,7 @@ def preflight(config: Path, canonical: Path, choice: str) -> None:
         key = provider["env_key"]
         if not env.is_file() or not re.search(rf"(?m)^(?:export\s+)?{re.escape(key)}\s*=\s*\S+", env.read_text()):
             raise PermissionError("Azure credentials are not ready; run the shared bootstrap.")
+        prepare_catalog(canonical, config)
     else:
         # File-based ChatGPT auth is this control plane's existing contract.
         auth = config.parent / "auth.json"
@@ -168,8 +237,10 @@ def switch(config: Path, canonical: Path, choice: str, apply: bool, timeout: flo
         return result
     with config_lock(config, timeout):
         preflight(config, canonical, choice)
+        if choice == "azure":
+            prepare_catalog(canonical, config, apply=True)
         before = config.read_text()
-        after = overlay(before, values(canonical, choice))
+        after = overlay(before, values(canonical, choice, config))
         preference = state_path()
         old_preference = preference.read_text() if preference.is_file() else None
         # Preference first: a subsequent sync repairs a crash between the two writes.
@@ -200,9 +271,12 @@ def main() -> int:
     if not supported(canonical):
         return 0
     choice = selected(config)
-    if action == "render":
+    if action == "catalog":
+        apply = "--apply" in sys.argv[4:]
+        prepare_catalog(canonical, config, apply=apply, refresh=apply)
+    elif action == "render":
         target = Path(sys.argv[4])
-        settings = values(canonical, choice)
+        settings = values(canonical, choice, config)
         # Subscription model choice remains client-owned when shared sync runs.
         if choice == "subscription" and "model" in load(config):
             settings["model"] = load(config)["model"]

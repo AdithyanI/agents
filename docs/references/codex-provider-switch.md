@@ -60,9 +60,13 @@ an actionable error rather than silently changing the provider. An explicit
 provider selection repairs the preference.
 
 The renderer merges the selected profile's provider and authentication method.
-Azure also selects its deployment model; subscription preserves the client's
-existing model choice. Both use Codex's default model metadata and search
-behavior and retain normal model discovery.
+Azure retains the selected GPT-6 model (falling back to Astra for other model names)
+and uses a generated catalog containing only GPT-6 Astra, Sol, and Luna.
+Subscription preserves the client's existing model
+choice and removes the catalog override to restore native discovery. The catalog
+retains upstream model metadata and protocol choices; see
+[Azure model picker](codex-azure-astra.md#azure-model-picker) for generation,
+recovery, and the explicit subscription profile's inheritance limitation.
 The menu does not copy the Azure CLI profile's reasoning effort into the desktop
 default. Explicit `codex-azure` / `codex-openai` terminal launchers retain their
 per-process behavior regardless of the menu selection.
@@ -72,7 +76,9 @@ local lock. Provider writes are atomic and preserve unrelated config. Preference
 is written before config so a later sync can repair an interrupted write; normal
 write failures restore the previous preference. Existing credential distribution
 remains intact. The switch checks Azure provider/credential readiness or the
-subscription login before changing files; neither path requires a model catalog.
+subscription login before changing files. Azure also requires complete metadata
+for its three models and materializes the filtered catalog before selecting it.
+Subscription selection does not require a cache or catalog.
 It never rewrites login credentials or conversation history.
 
 This affects local execution on the selected Mac. Opening a remote task on the
