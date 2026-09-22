@@ -1,8 +1,12 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
+hook_root="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
+
 repo_root="$(git rev-parse --show-toplevel 2>/dev/null || pwd)"
 cd "$repo_root"
+
+python3 "$hook_root/scripts/git_payload_guard.py" check-index --repo "$repo_root"
 
 if [[ -f "scripts/check-fast.sh" ]]; then
   exec bash "scripts/check-fast.sh"

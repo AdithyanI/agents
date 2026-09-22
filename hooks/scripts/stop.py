@@ -52,6 +52,11 @@ MAX_CODEX_ATTRIBUTED_PATHS = 2000
 MAX_CODEX_REPOSITORIES = 32
 MAX_CONSOLIDATION_PASSES = 3
 
+
+def guarded_stage_command(root: str) -> list[str]:
+    return [sys.executable, str(Path(__file__).with_name("git_payload_guard.py")),
+            "stage", "--repo", root]
+
 NON_ACTIONABLE_PUSH_PATTERNS = {
     "permission denied": "permission denied",
     "authentication failed": "authentication failed",
@@ -1301,7 +1306,7 @@ def finalize_codex_repositories(
                 else:
                     repositories.pop(item.root, None)
                 continue
-            add_cmd = ["git", "add", "-A"]
+            add_cmd = guarded_stage_command(item.root)
             add = run(add_cmd, item.root, timeout=GIT_ADD_TIMEOUT_SEC)
             if add.returncode != 0:
                 failures.append(
@@ -1398,7 +1403,7 @@ def finalize_codex_repositories(
                     continue
                 item.paths.update(staged | unstaged)
                 if unstaged:
-                    add_cmd = ["git", "add", "-A"]
+                    add_cmd = guarded_stage_command(item.root)
                     add = run(add_cmd, item.root, timeout=GIT_ADD_TIMEOUT_SEC)
                     if add.returncode != 0:
                         restage_failures.append(

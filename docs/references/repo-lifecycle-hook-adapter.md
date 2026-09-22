@@ -150,6 +150,13 @@ All repo lifecycle hooks are Python. Do not add shell compatibility shims.
   needed. Explicit fast checks and staged-tree stability replace mutable
   commit-hook execution before rebase/push. A successful pull-rebase reruns the
   repo fast check and must leave a clean repository before the push is retried.
+- Before each automatic staging pass, `hooks/scripts/git_payload_guard.py` checks
+  file metadata and staged blob sizes: at most 100 MiB per changed file and
+  256 MiB of changed content in total. It stages only inspected paths, then checks
+  the resulting index again. Ignored artifacts and untouched historical blobs
+  do not count; rejection preserves the working files and index. Generated media
+  belongs in managed media storage, with its paths ignored before generation.
+  The shared pre-commit hook also checks staged blob sizes for ordinary commits.
 - Before Codex preflight, the shared hook repairs extra blank lines at EOF when
   `git diff --cached --check` reports them. It honors Git whitespace configuration
   and attributes, preserves line endings and file mode, and skips binary files,
