@@ -21,6 +21,9 @@ These paths are relative to `~/GitHub/win`.
 
 The canonical secret store and machine/queue delivery tooling remain owned by
 `~/GitHub/scripts`; use its `bin/local-secrets` interface and deployment
-references. The `modal_functions` checkout is retained for history and recovery,
+references. `setup/asus/deploy-modal.py` runs directly on ASUS from the queue's
+immutable WIN checkout, using Python 3.13 Docker and WIN's shared lock. Selected
+credentials are generated onto ASUS during provisioning/rotation; releases do
+not call the Mac. The `modal_functions` checkout is retained for history and recovery,
 not as a second implementation location. Do not delete it or deploy from it
 without accounting for the active cutover and recovery contract.

@@ -4,6 +4,9 @@ Use `$secret-management` when adding or changing a runtime secret. The
 machine-local canonical store remains the authority; Modal Secrets and local
 credential files are generated deliveries. Consolidating source does not move
 canonical secret ownership or require renaming existing Modal resources.
+Scoped deployment credentials and manifest-selected values are generated onto
+ASUS during provisioning or rotation. The existing ASUS queue deploys Modal
+directly from those private files; it does not call the Mac at release time.
 
 ## Stable Runtime Secrets
 
@@ -12,11 +15,15 @@ canonical secret ownership or require renaming existing Modal resources.
 2. Add or update the payload mapping in WIN's
    `scripts/modal/secrets/modal_secrets_manifest.json` and ensure its backing
    canonical value exists before release.
-3. Update the owning runtime/config documentation when expected keys change.
+3. Update the owning runtime/config documentation when expected keys change and
+   refresh the scoped ASUS delivery using shared `scripts` provisioning tooling.
+   The complete manifest must resolve from that generated delivery before release.
 4. Validate the mapping and sync helper locally. During an authorized release,
-   WIN's `scripts/modal/deploy.py` performs managed sync after release checks
-   pass and before code deployment. Verify the structured result and deployed
-   target revision; a Git publication is not proof of secret or code activation.
+   the ASUS queue runs WIN's `scripts/modal/deploy.py` in Docker using Python 3.13
+   and the shared lock. It consumes the generated credentials and synchronizes
+   Modal Secrets after release checks pass and before code deployment. Verify
+   the structured result and deployed target revision; a Git publication is not
+   proof of secret or code activation.
 
 For deliberate adoption of an older Modal-only secret, use the canonical
 `local-secrets set` flow once. Preserve separately owned, ephemeral or externally
@@ -29,7 +36,9 @@ runtime credentials. Do not make live changes for a documentation-only task.
 
 ## Recovery
 
-- A missing canonical value or failed sync stops release before code deployment.
+- A missing canonical value stops provisioning; a missing generated value or
+  failed sync stops release before code deployment. Fix the canonical source
+  and refresh its delivery instead of hand-editing ASUS files.
 - Do not publish secret values, generated credentials or signed URLs in logs,
   test artifacts, project evidence or Git.
 - Keep old deployment recovery available during migration, but route ongoing

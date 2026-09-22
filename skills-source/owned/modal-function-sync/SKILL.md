@@ -45,6 +45,9 @@ when credential delivery changes. Stable runtime secrets belong in the
 canonical machine-local store and WIN's
 `scripts/modal/secrets/modal_secrets_manifest.json`. Modal Secrets are generated
 runtime copies. Preserve existing names and avoid unmanaged manual updates.
+Provisioning and rotation generate only the selected runtime values and Modal
+deployment credentials onto ASUS. Release uses that delivery directly; canonical
+ownership stays on the Mini and no Mac call occurs during a Modal release.
 
 ## Validation and Delivery
 
@@ -54,9 +57,12 @@ Run registry validation, client drift checks and affected tests. The existing
 root `scripts/check-fast.sh` and `scripts/check-full.sh` own integrated gates;
 keep cloud/GPU work proportional to the requested behavior change.
 
-For an authorized release, use WIN's `scripts/modal/deploy.py` release contract
-and the shared `scripts` delivery coordinator. It validates an exact revision,
-synchronizes managed secrets, deploys and records target-specific evidence.
+Develop on the MacBook or Mini and publish WIN. The existing ASUS queue deploys
+both targets directly. Its `~/GitHub/scripts/setup/asus/deploy-modal.py` wrapper
+uses the queue's immutable WIN checkout and runs `scripts/modal/deploy.py` in a
+Python 3.13 Docker container with the shared lock. It validates the exact revision
+and generated credentials, synchronizes Modal Secrets, deploys and records
+target-specific evidence.
 Do not infer activation from a Git push alone or bypass the coordinator with
 bare `python -m modal_runtime.deploy`. Do not run both legacy and consolidated
 publishers for the same app. Respect another task's storage maintenance lock.

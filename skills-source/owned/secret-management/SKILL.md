@@ -72,8 +72,10 @@ the Mac Mini. Keep the local store canonical.
 
 - Keep GitHub Actions secrets limited to intentional cloud-runner delivery or CI-only credentials.
 - Prefer local deployment automation when the workload already runs on the Mac Mini.
-- For Modal or another external runtime, sync selected values from the local store using an
-  explicit manifest and a local operator/deployment step.
+- For Modal or another external runtime, use an explicit manifest. Provision scoped
+  generated credentials onto its release host from the canonical store, refresh them
+  on rotation, and let that host deliver the selected provider values. WIN's ASUS
+  Modal publisher consumes this delivery without a release-time Mac call.
 - Do not make a cloud-vault login a bootstrap dependency for new local workflows.
 
 ## Naming Rules
