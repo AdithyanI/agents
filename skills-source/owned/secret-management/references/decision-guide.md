@@ -2,6 +2,27 @@
 
 Use this when adding or moving a secret in this environment.
 
+## Stable Values And Runtime State
+
+The selected v2 policy uses the same logical
+`~/Documents/DobbySecrets/scopes/shared` folder on the Mac Mini, MacBook and ASUS.
+All three peers can write enrolled stable values through `bin/local-secrets`;
+Syncthing uses send/receive on each. The scripts repo's
+`docs/references/shared-api-credentials.md` owns activation and readiness evidence.
+The earlier Mini-only writer and MacBook mirror are historical v1 behavior.
+
+The policy's reviewed application source set selects stable values for all three
+peers. Existing operator/tool mappings retain their Mac-only output scope. Do not
+infer that an entire repo `.env`, every store file or every native credential is
+replicated. Refresh tokens, mutable provider sessions and Google user ADC stay
+with their existing runtime owners. Native service-account files use an explicit
+renderer and only share source values when the policy enrolls them.
+
+Generate consumer files from the local peer after readiness passes. Concurrent
+edit conflicts stop materialization; preserve the existing output until the
+specific conflict is resolved. Deployment validates already-generated local
+files and does not require a Mini credential fetch.
+
 ## Decision Tree
 
 ### 1. Is the secret for a running deployed app?
@@ -12,13 +33,14 @@ Use the `runtime` lane.
 - Wire the app through its current runtime contract:
   - Mac Mini services: repo mapping -> generated `.env` -> repo-owned deploy or restart.
   - ASUS services: mapped generated runtime files -> owning ASUS deployment contract.
-  - WIN Modal: canonical store -> scoped ASUS delivery at provisioning/rotation ->
+  - WIN Modal: ASUS peer's shared store -> scoped delivery at provisioning/rotation ->
     ASUS queue synchronizes provider secrets and deploys directly.
 - If local development also needs it, map the same secret family into the repo-local `.env` bootstrap.
 
 The old AIPodcasting and WIN cloud Web Apps are retired. Their production API,
-worker and frontend consume generated runtime environments on ASUS. Canonical
-secret ownership remains on the Mini; follow the owning runtime's materializer.
+worker and frontend consume generated runtime environments on ASUS. Stable values
+belong to the logical shared store; follow the owning runtime's materializer and
+preserve its mutable authentication state.
 
 Typical examples:
 - `aipodcasting--mongodb-uri`
@@ -69,8 +91,8 @@ Use `local canonical source, explicit provider delivery`.
 
 - Keep the canonical value in the local store.
 - Maintain an explicit allow-list/manifest for the provider payload.
-- Generate scoped credentials onto the owning release host during provisioning
-  or rotation, then sync provider values from that host. Keep generated delivery
+- Generate scoped credentials on the owning release host from its ready local
+  peer store during provisioning or rotation, then sync provider values from that host. Keep generated delivery
   separate from canonical ownership.
 - Validate the destination without logging the value.
 
@@ -80,15 +102,16 @@ Typical examples:
 
 ## File Targets In This Environment
 
-### Canonical Local Store
+### Shared Stable Store
 
 Canonical docs:
 - `$HOME/GitHub/scripts/docs/architecture/secret-source-of-truth-flow.md`
 - `$HOME/GitHub/scripts/docs/references/local-secret-store.md`
+- `$HOME/GitHub/scripts/docs/references/shared-api-credentials.md`
 - `$HOME/GitHub/scripts/bin/local-secrets`
 - `$HOME/Documents/DobbySecrets/scopes/<scope>/<secret-name>` (untracked values)
 
-Typical Mac Mini app files:
+Typical app files:
 - `scripts/local/secrets/secret_env_map.env.example`
 - `scripts/local/secrets/bootstrap_local_env.sh`
 - repo-owned local production deploy/status command and runtime reference

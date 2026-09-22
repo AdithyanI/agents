@@ -1,11 +1,12 @@
 # Modal Credential Delivery
 
 Use `$secret-management` when adding or changing a runtime secret. The
-machine-local canonical store remains the authority; Modal Secrets and local
-credential files are generated deliveries. Consolidating source does not move
-canonical secret ownership or require renaming existing Modal resources.
+logical shared DobbySecrets store owns enrolled stable values across the Mac Mini,
+MacBook and ASUS peers. Modal Secrets and local credential files are generated
+deliveries. Follow shared-policy activation/readiness evidence before assuming a
+peer can supply the complete payload. Existing Modal resources keep their names.
 Scoped deployment credentials and manifest-selected values are generated onto
-ASUS during provisioning or rotation. The existing ASUS queue deploys Modal
+ASUS from its ready local peer store during provisioning or rotation. The existing ASUS queue deploys Modal
 directly from those private files; it does not call the Mac at release time.
 
 ## Stable Runtime Secrets

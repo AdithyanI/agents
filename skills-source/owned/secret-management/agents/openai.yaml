@@ -1,4 +1,4 @@
 interface:
   display_name: "Secret Management"
-  short_description: "Manage secrets the right way."
-  default_prompt: "Use $secret-management to decide where this secret belongs, how it should be named, and what files, workflows, or docs must be updated."
+  short_description: "Manage shared credentials and runtime auth ownership."
+  default_prompt: "Use $secret-management to distinguish shared stable credentials from runtime authentication state, update the owning mapping and generated delivery, and verify peer readiness without exposing values."

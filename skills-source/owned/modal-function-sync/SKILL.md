@@ -42,12 +42,13 @@ source consolidation alone does not prove that production has switched.
 
 Use `$secret-management` and [references/modal-secrets.md](references/modal-secrets.md)
 when credential delivery changes. Stable runtime secrets belong in the
-canonical machine-local store and WIN's
+logical shared `DobbySecrets` store and WIN's
 `scripts/modal/secrets/modal_secrets_manifest.json`. Modal Secrets are generated
 runtime copies. Preserve existing names and avoid unmanaged manual updates.
 Provisioning and rotation generate only the selected runtime values and Modal
-deployment credentials onto ASUS. Release uses that delivery directly; canonical
-ownership stays on the Mini and no Mac call occurs during a Modal release.
+deployment credentials from the ready ASUS peer's store. Stable source values
+follow the three-peer writable policy; release uses generated delivery directly
+and no Mac call occurs during a Modal release. Runtime OAuth/session state is separate.
 
 ## Validation and Delivery
 
