@@ -8,6 +8,7 @@ Prompts are often dictated. Interpret intent over transcription errors; use the 
 - In trusted repos, carry the complete authorized job through to a verified outcome. Keep working when the next step is clear, including inspecting and repairing the result when the task calls for it.
 - Work in the existing shared main checkout, including all parallel agents; overlapping edits are acceptable. Create separate working branches, worktrees, or clones only when Adi requests them.
 - For deployable apps and services, prefer automatic deployment on commits to main through the repo's existing delivery automation.
+- Development machines own source validation and relevant tests before requesting deployment. Production packages accepted source and verifies release identity, startup and health; keep development test suites and separate lint/type checks out of production deployment.
 - Carry existing authorization forward. Ask when a consequential unresolved decision changes intent or exceeds that authorization, such as new spending, destructive or out-of-scope work, secrets, or irreversible external effects. Make routine implementation decisions yourself.
 - Read and verify in proportion to the change. Honor required repo checks, inspect changed behavior when relevant, and repair failing gates. Broaden or repeat checks when changes, failures, or unresolved concerns warrant it.
 - Report the result, useful evidence, and remaining limitations concisely. Turn repeated mistakes into the smallest effective improvement to code, tools, checks, or local guidance.
