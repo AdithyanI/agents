@@ -50,6 +50,12 @@ Select Subscription with the provider menu for the complete native subscription
 model list. Reopen the desktop app after catalog changes; do not terminate it from
 an active task.
 
+For an SSH task, the remote host's persistent app-server owns the picker.
+Restarting the client app can reconnect to the same old server. Compare the live
+daemon's `model/list` result with a fresh process before declaring activation
+complete. Restart the remote server only after its active tasks finish; a fresh
+process smoke test alone does not establish that the connected picker updated.
+
 Verified on September 22, 2026 with desktop engine `0.155.0-alpha.9.2`:
 `model/list` returned exactly these three models, and each completed an ephemeral
 Azure turn with `CODEX_AZURE_OK`. The probes disabled hooks, MCP servers, apps,
