@@ -1,0 +1,4 @@
+interface:
+  display_name: "Modal"
+  short_description: "Use official Modal guidance for cloud Python workloads."
+  default_prompt: "Use $modal to implement or investigate this workload using the installed SDK and current official documentation."

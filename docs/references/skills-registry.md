@@ -63,6 +63,18 @@ flowchart LR
     B --> C[Run sync and check]
 ```
 
+## Modal Platform Skill
+
+The official `modal` skill is an external import from Modal's Python SDK source,
+linked into `win`, `modal_functions`, `agents`, and `scripts`. Refresh it through
+`scripts/refresh-external-skills.sh --apply --skill modal` and the normal shared
+bootstrap/check flow. Do not run `modal skills install` or `modal skills update`
+against managed runtime links. This source import uses online official docs;
+it does not include the documentation bundle added by Modal's CLI installer.
+Check the owning project's installed SDK before using newly documented APIs.
+WIN-specific client and release contracts remain in `modal-function-sync` and
+the Modal repo's `modal-function-intake` skill.
+
 ## Field Quick Reference
 
 - `skill`: skill folder name.

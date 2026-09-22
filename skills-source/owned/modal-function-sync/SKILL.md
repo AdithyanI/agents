@@ -7,13 +7,16 @@ description: Implement or update Modal functions in modal_functions and ensure t
 
 ## Overview
 Use this skill to add or modify Modal functions in `modal_functions`, register them, and locally sync the generated client into `win`.
+Use the official `$modal` skill for platform APIs and patterns; this skill owns
+the WIN integration and repository delivery contracts.
 
 ## Auto-generation rules
 - `modal_functions` is the source of truth; never implement Modal entrypoints directly in `win`.
 - `services/modal/client_generated.py` is generated from the `modal_functions` registry; do not edit it by hand.
 - Sync is local-first from the sibling checkout with `scripts/local/sync_win_modal_client.sh`.
 - Check drift without mutating `win` with `scripts/local/check_win_modal_client_drift.sh`.
-- CI validates and deploys Modal functions; it does not commit generated client files into `win`.
+- The Modal repo's `scripts/deploy_with_secret_sync.sh` owns release validation,
+  secret delivery, and deployment. GitHub Actions is not the release path.
 - Generate locally to `tmp/client_generated.py` for fast validation without dirtying `win`.
 - Generate into `../win/services/modal/client_generated.py` through the local sync wrapper before testing `win` wrappers/call sites.
 - Stable Modal runtime secrets should default to the local canonical store -> manifest -> Modal
@@ -65,12 +68,15 @@ Use this skill to add or modify Modal functions in `modal_functions`, register t
 - Update tests in `tests/services/modal/test_client.py` and any call sites.
 
 ### 7) Deploy + verify
-- Push to `main`, watch CI: lint/tests/deploy.
-- In the deploy job, confirm the secret-refresh step passes when the change touches managed Modal secrets.
+- For an authorized release, follow `modal_functions/docs/references/local-deployment.md`
+  and run `scripts/deploy_with_secret_sync.sh` from its clean `main` checkout.
+- The release command runs checks and tests, refreshes managed secrets, and deploys.
+  Normal Git publication alone does not prove Modal activation.
 - Verify critical flows or run targeted tests in `win`.
 
 ## Common pitfalls
-- Docs-only changes won't trigger Modal deploy (workflow ignores `docs/**` and `*.md`).
+- A code change does not itself require a production deploy; preserve the current
+  task's authorization and verify activation when a release is requested.
 - Missing registry entries means the client will not include the function.
 - Adding `modal.Secret.from_name(...)` in code without updating the manifest reintroduces secret drift.
 - Adding a manifest entry without a real local backing secret will make deploy-time secret sync fail.

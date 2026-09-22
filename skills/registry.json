@@ -407,6 +407,19 @@
       "repos": [],
       "source_path": "skills-source/external/chart-visualization",
       "upstream_ref": "local-import"
+    },
+    {
+      "skill": "modal",
+      "origin": "external",
+      "scope": "repo",
+      "repos": [
+        "win",
+        "modal_functions",
+        "agents",
+        "scripts"
+      ],
+      "source_path": "skills-source/external/modal",
+      "upstream_ref": "modal-labs/modal-client:py/modal/skills/modal@main"
     }
   ],
   "unmanaged_repo_local_skills": [
