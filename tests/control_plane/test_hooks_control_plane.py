@@ -460,6 +460,13 @@ class HooksControlPlaneTests(TempDirTestCase):
             bundled_marketplace / "plugins/computer-use/.codex-plugin/plugin.json",
             {"name": "computer-use", "version": "1.0.0"},
         )
+        write_json(
+            bundled_marketplace / ".agents/plugins/marketplace.json",
+            {
+                "name": "openai-bundled",
+                "plugins": [{"name": "computer-use", "source": {"source": "local", "path": "./plugins/computer-use"}}],
+            },
+        )
         write_text(
             home / ".codex/config.toml",
             'model = "gpt-5.6-sol"\n'
@@ -536,11 +543,11 @@ class HooksControlPlaneTests(TempDirTestCase):
             'python3 "$HOME/GitHub/agents/hooks/scripts/stop.py" --runtime codex',
         )
 
-    def test_codex_sync_config_uses_native_bundled_marketplace_and_caches_enabled_plugins(self) -> None:
+    def test_codex_sync_config_uses_managed_bundled_marketplace_and_caches_enabled_plugins(self) -> None:
         root = make_control_plane_root(self.temp_path)
         home = self.temp_path / "home"
         bundled_marketplace = self.temp_path / "ChatGPT.app/Contents/Resources/plugins/openai-bundled"
-        stale_marketplace_mirror = home / ".codex/.tmp/bundled-marketplaces/openai-bundled"
+        managed_marketplace = home / ".codex/.tmp/bundled-marketplaces/openai-bundled"
         write_json(root / "mcp/config/presets.json", default_mcp_registry())
         write_json(
             root / "plugins/registry.json",
@@ -577,6 +584,7 @@ class HooksControlPlaneTests(TempDirTestCase):
                 "plugins": [
                     {"name": "chrome", "source": {"source": "local", "path": "./plugins/chrome"}},
                     {"name": "browser", "source": {"source": "local", "path": "./plugins/browser"}},
+                    {"name": "visualize", "source": {"source": "local", "path": "./plugins/visualize"}},
                 ],
             },
         )
@@ -589,13 +597,20 @@ class HooksControlPlaneTests(TempDirTestCase):
             {"name": "browser", "version": "0.1.0-alpha2"},
         )
         write_json(
+            bundled_marketplace / "plugins/visualize/.codex-plugin/plugin.json",
+            {"name": "visualize", "version": "0.1.0"},
+        )
+        write_json(
             home / ".codex/plugins/cache/openai-bundled/browser-use/0.1.0-alpha2/.codex-plugin/plugin.json",
             {"name": "browser-use", "version": "0.1.0-alpha2"},
         )
-        write_text(stale_marketplace_mirror / "plugins/chrome/stale.txt", "stale\n")
+        write_json(
+            home / ".codex/plugins/cache/openai-bundled/visualize/0.1.0/.codex-plugin/plugin.json",
+            {"name": "visualize", "version": "0.1.0"},
+        )
+        write_text(managed_marketplace / "plugins/chrome/stale.txt", "stale\n")
 
-        run_command(
-            [
+        command = [
                 str(REPO_ROOT / "codex/scripts/sync-config.sh"),
                 "--apply",
                 "--global-only",
@@ -611,23 +626,37 @@ class HooksControlPlaneTests(TempDirTestCase):
                 str(root / "plugins/registry.json"),
                 "--hooks-registry",
                 str(root / "hooks/registry.json"),
-            ],
-            env={
-                "HOME": str(home),
-                "CODEX_BUNDLED_MARKETPLACE": str(bundled_marketplace),
-            },
-        )
+        ]
+        env = {"HOME": str(home), "CODEX_BUNDLED_MARKETPLACE": str(bundled_marketplace)}
+        run_command(command, env=env)
 
         rendered_config = (home / ".codex/config.toml").read_text(encoding="utf-8")
         self.assertIn("[marketplaces.openai-bundled]", rendered_config)
-        self.assertIn(f'source = "{bundled_marketplace}"', rendered_config)
+        self.assertIn(f'source = "{managed_marketplace}"', rendered_config)
         self.assertIn('[plugins."chrome@openai-bundled"]', rendered_config)
         self.assertIn('[plugins."browser@openai-bundled"]', rendered_config)
+        self.assertEqual(
+            (managed_marketplace / ".agents/plugins/marketplace.json").read_bytes(),
+            (bundled_marketplace / ".agents/plugins/marketplace.json").read_bytes(),
+        )
+        self.assertTrue((managed_marketplace / "plugins").is_symlink())
+        self.assertEqual((managed_marketplace / "plugins").resolve(), (bundled_marketplace / "plugins").resolve())
         self.assertTrue(
             (home / ".codex/plugins/cache/openai-bundled/chrome/0.1.7/.codex-plugin/plugin.json").is_file()
         )
         self.assertFalse((home / ".codex/plugins/cache/openai-bundled/browser-use").exists())
-        self.assertFalse(stale_marketplace_mirror.exists())
+        self.assertTrue((home / ".codex/plugins/cache/openai-bundled/visualize").exists())
+
+        app_manifest = {"name": "openai-bundled", "plugins": [{"name": "chrome", "source": {"source": "local", "path": "./plugins/chrome"}}]}
+        write_json(managed_marketplace / ".agents/plugins/marketplace.json", app_manifest)
+        (managed_marketplace / "plugins").unlink()
+        write_text(managed_marketplace / "plugins/chrome/app-owned.txt", "app-owned\n")
+        run_command(command, env=env)
+        self.assertEqual(
+            json.loads((managed_marketplace / ".agents/plugins/marketplace.json").read_text()),
+            app_manifest,
+        )
+        self.assertTrue((managed_marketplace / "plugins/chrome/app-owned.txt").is_file())
 
     def test_stop_hook_has_tracking_upstream_false_for_new_local_branch(self) -> None:
         module = self.load_stop_module()

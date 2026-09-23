@@ -21,6 +21,7 @@ except ModuleNotFoundError:  # pragma: no cover
 SCHEMA_VERSION = "1.0"
 COMMAND = "audit-agent-runtime-drift"
 APP_MANAGED_PLUGIN_IDS = {
+    "codex-app-tools@openai-bundled",
     "documents@openai-primary-runtime",
     "pdf@openai-primary-runtime",
     "plugin-management@openai-curated-remote",

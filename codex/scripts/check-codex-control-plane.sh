@@ -387,10 +387,26 @@ def validate_global_plugin_runtime(
     if not bundled_marketplace.is_dir():
         return
 
+    managed_marketplace = Path.home() / ".codex/.tmp/bundled-marketplaces/openai-bundled"
+    configured_marketplace = (config_data.get("marketplaces", {}) or {}).get("openai-bundled", {})
+    if not isinstance(configured_marketplace, dict) or configured_marketplace.get("source") != str(managed_marketplace):
+        fail(
+            f"openai-bundled marketplace must use Codex's reserved managed root at {managed_marketplace}. "
+            "Re-run codex/scripts/sync-config.sh --apply"
+        )
+    managed_manifest = managed_marketplace / ".agents/plugins/marketplace.json"
+    if not managed_manifest.is_file():
+        fail(f"managed bundled marketplace manifest is missing at {managed_manifest}")
+    managed_names = {entry["name"] for entry in json.loads(managed_manifest.read_text(encoding="utf-8"))["plugins"]}
+    if not (managed_marketplace / "plugins").is_dir():
+        fail(f"managed bundled marketplace plugin source is missing at {managed_marketplace / 'plugins'}")
+
     cache_root = Path.home() / ".codex/plugins/cache/openai-bundled"
     for plugin in managed_plugins:
         if not (plugin.enabled and plugin.marketplace == "openai-bundled" and plugin.scope in {"global", "repo"}):
             continue
+        if plugin.plugin not in managed_names:
+            fail(f"enabled bundled plugin `{plugin.plugin_id}` is absent from Codex's managed marketplace")
         source = bundled_marketplace / "plugins" / plugin.plugin / ".codex-plugin/plugin.json"
         if not source.is_file():
             fail(
@@ -403,14 +419,11 @@ def validate_global_plugin_runtime(
                 f"enabled bundled plugin `{plugin.plugin_id}` is missing from {cache_root}. "
                 "Re-run codex/scripts/sync-config.sh --apply"
             )
-    expected_cached = {
-        plugin.plugin
-        for plugin in managed_plugins
-        if plugin.enabled and plugin.marketplace == "openai-bundled" and plugin.scope in {"global", "repo"}
-    }
+    source_manifest = bundled_marketplace / ".agents/plugins/marketplace.json"
+    bundled_names = {entry["name"] for entry in json.loads(source_manifest.read_text(encoding="utf-8"))["plugins"]}
     if cache_root.is_dir():
         for cached_plugin in cache_root.iterdir():
-            if cached_plugin.name not in expected_cached:
+            if cached_plugin.name not in bundled_names:
                 fail(
                     f"stale bundled plugin cache `{cached_plugin.name}` exists in {cache_root}. "
                     "Re-run codex/scripts/sync-config.sh --apply"

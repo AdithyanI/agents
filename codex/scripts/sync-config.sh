@@ -296,7 +296,7 @@ PY
 }
 
 extract_openai_bundled_marketplace_entries() {
-  local marketplace_path="${CODEX_BUNDLED_MARKETPLACE:-/Applications/ChatGPT.app/Contents/Resources/plugins/openai-bundled}"
+  local marketplace_path="${HOME}/.codex/.tmp/bundled-marketplaces/openai-bundled"
   printf 'marketplaces.openai-bundled\x1Fsource_type\x1F"local"\n'
   printf 'marketplaces.openai-bundled\x1Fsource\x1F%s\n' "$(quote_toml_string "$marketplace_path")"
 }
@@ -1347,7 +1347,7 @@ bundle_marketplace = Path(
     )
 ).expanduser()
 runtime_cache = home / ".codex/plugins/cache/openai-bundled"
-stale_runtime_marketplace = home / ".codex/.tmp/bundled-marketplaces/openai-bundled"
+managed_marketplace = home / ".codex/.tmp/bundled-marketplaces/openai-bundled"
 registry_data = json.loads(plugin_registry.read_text(encoding="utf-8"))
 plugins, _, _ = validate_plugin_registry(
     registry_data,
@@ -1359,9 +1359,6 @@ enabled_plugin_names = [
     for plugin in plugins
     if plugin.enabled and plugin.marketplace == "openai-bundled" and plugin.scope in {"global", "repo"}
 ]
-enabled_plugin_name_set = set(enabled_plugin_names)
-
-
 def tree_matches(source: Path, target: Path) -> bool:
     if source.is_symlink():
         return target.is_symlink() and os.readlink(source) == os.readlink(target)
@@ -1429,16 +1426,33 @@ def copy_plugin_tree(source: Path, target: Path) -> None:
         raise RuntimeError(f"plugin copy incomplete: {source} -> {target}")
 
 
-if stale_runtime_marketplace.exists():
-    remove_path(stale_runtime_marketplace)
-    print(f"Removed stale bundled marketplace mirror: {stale_runtime_marketplace}")
-
 if not bundle_marketplace.is_dir():
     print(f"Warning: bundled plugin marketplace is missing: {bundle_marketplace}", file=sys.stderr)
+else:
+    source_manifest = bundle_marketplace / ".agents/plugins/marketplace.json"
+    if not source_manifest.is_file():
+        raise RuntimeError(f"bundled marketplace manifest is missing: {source_manifest}")
+    bundled_plugin_names = {
+        entry["name"] for entry in json.loads(source_manifest.read_text(encoding="utf-8"))["plugins"]
+    }
+    target_manifest = managed_marketplace / ".agents/plugins/marketplace.json"
+    source_plugins = bundle_marketplace / "plugins"
+    target_plugins = managed_marketplace / "plugins"
+    if not target_manifest.is_file():
+        target_manifest.parent.mkdir(parents=True, exist_ok=True)
+        shutil.copyfile(source_manifest, target_manifest)
+        if target_plugins.exists() or target_plugins.is_symlink():
+            remove_path(target_plugins)
+        target_plugins.symlink_to(source_plugins, target_is_directory=True)
+    elif not target_plugins.exists():
+        if target_plugins.is_symlink():
+            target_plugins.unlink()
+        target_plugins.symlink_to(source_plugins, target_is_directory=True)
+    print(f"Ensured managed bundled marketplace: {managed_marketplace}")
 
-if runtime_cache.is_dir():
+if bundle_marketplace.is_dir() and runtime_cache.is_dir():
     for cached_plugin in runtime_cache.iterdir():
-        if cached_plugin.name not in enabled_plugin_name_set:
+        if cached_plugin.name not in bundled_plugin_names:
             remove_path(cached_plugin)
             print(f"Removed stale bundled plugin cache: {cached_plugin}")
 
