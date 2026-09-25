@@ -157,6 +157,7 @@ class AgentRuntimeDriftAuditTests(TempDirTestCase):
         self._write_required_plugins(home)
         self._write_plugin(home, "openai-curated-remote", "plugin-management")
         self._write_plugin(home, "openai-curated-remote", "sites", version="0.1.62")
+        self._write_plugin(home, "openai-bundled", "unified-computer-use")
 
         result = run_command(
             [

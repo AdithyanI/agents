@@ -215,7 +215,7 @@ for root_name, root_config in roots.items():
 PY
 }
 
-extract_global_mcp_entries() {
+validate_mcp_registry() {
   local registry_file="$1"
   python3 - "$registry_file" <<'PY'
 from __future__ import annotations
@@ -224,46 +224,25 @@ import json
 import sys
 from pathlib import Path
 
-
-def toml_value(value):
-    if isinstance(value, bool):
-        return "true" if value else "false"
-    if isinstance(value, int):
-        return str(value)
-    if isinstance(value, str):
-        escaped = value.replace("\\", "\\\\").replace('"', '\\"')
-        return f'"{escaped}"'
-    if isinstance(value, list):
-        return "[" + ", ".join(toml_value(item) for item in value) + "]"
-    if isinstance(value, dict):
-        items = []
-        for key in sorted(value):
-            if not isinstance(key, str):
-                raise TypeError(f"Unsupported TOML key type: {key!r}")
-            escaped_key = key.replace("\\", "\\\\").replace('"', '\\"')
-            items.append(f'"{escaped_key}" = {toml_value(value[key])}')
-        return "{ " + ", ".join(items) + " }"
-    raise TypeError(f"Unsupported TOML value: {value!r}")
-
-
 registry_path = Path(sys.argv[1]).expanduser().resolve()
 data = json.loads(registry_path.read_text(encoding="utf-8"))
 if not isinstance(data, dict):
     raise SystemExit(f"{registry_path}: MCP registry root must be an object")
 
-presets = data.get("presets", {})
+presets = data.get("presets")
 if not isinstance(presets, dict):
     raise SystemExit(f"{registry_path}: presets must be an object")
-if data.get("version") != 2:
-    raise SystemExit(f"{registry_path}: version must be 2")
+if data.get("version") != 3:
+    raise SystemExit(f"{registry_path}: version must be 3")
 for name, preset in presets.items():
     if not isinstance(preset, dict):
         raise SystemExit(f"{registry_path}: preset `{name}` must be an object")
     transport = preset.get("transport")
     if transport not in {"http", "stdio"}:
         raise SystemExit(f"{registry_path}: preset `{name}` has invalid transport `{transport}`")
-    if not isinstance(preset.get("targets"), list):
-        raise SystemExit(f"{registry_path}: preset `{name}` targets must be an array")
+    repos = preset.get("repos")
+    if repos != "all" and not isinstance(repos, list):
+        raise SystemExit(f"{registry_path}: preset `{name}` repos must be `all` or an array")
 PY
 }
 
@@ -529,8 +508,7 @@ PY
 render_global_config() {
   local target_file="$1"
   local template_file="$2"
-  local mcp_registry_file="$3"
-  local plugin_registry_file="$4"
+  local plugin_registry_file="$3"
   local section key value
 
   while IFS=$'\x1f' read -r section key value; do
@@ -541,11 +519,6 @@ render_global_config() {
       upsert_section_key "$target_file" "$section" "$key" "$value"
     fi
   done < <(extract_toml_entries "$template_file")
-
-  while IFS=$'\x1f' read -r section key value; do
-    [[ -n "$key" ]] || continue
-    upsert_section_key "$target_file" "$section" "$key" "$value"
-  done < <(extract_global_mcp_entries "$mcp_registry_file")
 
   while IFS=$'\x1f' read -r section key value; do
     [[ -n "$key" ]] || continue
@@ -1200,11 +1173,12 @@ sync_global() {
   require_readable_file "$MCP_REGISTRY"
   require_readable_file "$PLUGIN_REGISTRY"
   require_readable_file "$HOOKS_REGISTRY"
+  validate_mcp_registry "$MCP_REGISTRY"
   ensure_parent_dir "$original"
   ensure_parent_dir "$hooks_original"
   prepare_work_file "$original" "$rendered"
   sanitize_machine_specific_entries "$rendered"
-  render_global_config "$rendered" "$CANONICAL_GLOBAL_TEMPLATE" "$MCP_REGISTRY" "$PLUGIN_REGISTRY"
+  render_global_config "$rendered" "$CANONICAL_GLOBAL_TEMPLATE" "$PLUGIN_REGISTRY"
   python3 "${SCRIPT_DIR}/provider_selection.py" render "$CANONICAL_DIR" "$original" "$rendered"
   ensure_system_skills_disabled "$rendered" "$BUNDLED_SKILLS_POLICY"
   render_codex_hooks "$HOOKS_REGISTRY" "$hooks_rendered"
@@ -1438,15 +1412,12 @@ else:
     target_manifest = managed_marketplace / ".agents/plugins/marketplace.json"
     source_plugins = bundle_marketplace / "plugins"
     target_plugins = managed_marketplace / "plugins"
-    if not target_manifest.is_file():
-        target_manifest.parent.mkdir(parents=True, exist_ok=True)
+    target_manifest.parent.mkdir(parents=True, exist_ok=True)
+    if not target_manifest.is_file() or target_manifest.read_bytes() != source_manifest.read_bytes():
         shutil.copyfile(source_manifest, target_manifest)
+    if not target_plugins.is_symlink() or target_plugins.resolve() != source_plugins.resolve():
         if target_plugins.exists() or target_plugins.is_symlink():
             remove_path(target_plugins)
-        target_plugins.symlink_to(source_plugins, target_is_directory=True)
-    elif not target_plugins.exists():
-        if target_plugins.is_symlink():
-            target_plugins.unlink()
         target_plugins.symlink_to(source_plugins, target_is_directory=True)
     print(f"Ensured managed bundled marketplace: {managed_marketplace}")
 

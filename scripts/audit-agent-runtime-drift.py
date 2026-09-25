@@ -29,6 +29,7 @@ APP_MANAGED_PLUGIN_IDS = {
     "spreadsheets@openai-primary-runtime",
     "sites@openai-curated-remote",
     "template-creator@openai-primary-runtime",
+    "unified-computer-use@openai-bundled",
 }
 REVIEW_MARKETPLACE_PREFIXES = ("openai-",)
 

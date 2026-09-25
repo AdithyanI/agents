@@ -647,16 +647,23 @@ class HooksControlPlaneTests(TempDirTestCase):
         self.assertFalse((home / ".codex/plugins/cache/openai-bundled/browser-use").exists())
         self.assertTrue((home / ".codex/plugins/cache/openai-bundled/visualize").exists())
 
-        app_manifest = {"name": "openai-bundled", "plugins": [{"name": "chrome", "source": {"source": "local", "path": "./plugins/chrome"}}]}
-        write_json(managed_marketplace / ".agents/plugins/marketplace.json", app_manifest)
+        stale_manifest = {"name": "openai-bundled", "plugins": [{"name": "chrome", "source": {"source": "local", "path": "./plugins/chrome"}}]}
+        write_json(managed_marketplace / ".agents/plugins/marketplace.json", stale_manifest)
         (managed_marketplace / "plugins").unlink()
-        write_text(managed_marketplace / "plugins/chrome/app-owned.txt", "app-owned\n")
+        write_text(managed_marketplace / "plugins/chrome/stale.txt", "stale\n")
         run_command(command, env=env)
         self.assertEqual(
-            json.loads((managed_marketplace / ".agents/plugins/marketplace.json").read_text()),
-            app_manifest,
+            (managed_marketplace / ".agents/plugins/marketplace.json").read_bytes(),
+            (bundled_marketplace / ".agents/plugins/marketplace.json").read_bytes(),
         )
-        self.assertTrue((managed_marketplace / "plugins/chrome/app-owned.txt").is_file())
+        self.assertTrue((managed_marketplace / "plugins").is_symlink())
+        self.assertEqual((managed_marketplace / "plugins").resolve(), (bundled_marketplace / "plugins").resolve())
+        self.assertFalse((managed_marketplace / "plugins/chrome/stale.txt").exists())
+
+        write_json(root / "mcp/config/presets.json", {"version": 2, "presets": {}})
+        invalid = run_command(command, env=env, check=False)
+        self.assertNotEqual(invalid.returncode, 0)
+        self.assertIn("version must be 3", invalid.stderr)
 
     def test_stop_hook_has_tracking_upstream_false_for_new_local_branch(self) -> None:
         module = self.load_stop_module()
