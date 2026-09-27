@@ -884,6 +884,7 @@ class HooksControlPlaneTests(TempDirTestCase):
             env={
                 "PATH": f"{fake_bin}:{os.environ.get('PATH', '')}",
                 "FAKE_CODEX_CALLS": str(calls_path),
+                "AGENTS_CODEX_BIN": str(fake_bin / "codex"),
             },
         )
 

@@ -3,7 +3,9 @@ from __future__ import annotations
 
 import argparse
 import json
+import os
 import queue
+import shutil
 import subprocess
 import sys
 import threading
@@ -23,6 +25,25 @@ class FeedbackTurnError(Exception):
     pass
 
 
+def resolve_codex_executable() -> str:
+    """Keep desktop history reads on the desktop's bundled protocol version."""
+    override = os.environ.get("AGENTS_CODEX_BIN", "").strip()
+    if override:
+        executable = shutil.which(override)
+        if not executable:
+            raise FeedbackTurnError(f"AGENTS_CODEX_BIN is not executable: {override}")
+        return executable
+    if sys.platform == "darwin":
+        for root in (Path("/Applications"), Path.home() / "Applications"):
+            for app in ("ChatGPT.app", "Codex.app"):
+                resources = root / app / "Contents" / "Resources"
+                for relative in ("codex-cli/bin/codex", "codex"):
+                    candidate = resources / relative
+                    if candidate.is_file() and os.access(candidate, os.X_OK):
+                        return str(candidate)
+    return shutil.which("codex") or "codex"
+
+
 class AppServerClient:
     def __init__(self, timeout_seconds: float) -> None:
         self.timeout_seconds = timeout_seconds
@@ -39,9 +60,10 @@ class AppServerClient:
         self.close()
 
     def start(self) -> None:
+        executable = resolve_codex_executable()
         try:
             self.proc = subprocess.Popen(
-                ["codex", "app-server"],
+                [executable, "app-server"],
                 stdin=subprocess.PIPE,
                 stdout=subprocess.PIPE,
                 stderr=subprocess.PIPE,
@@ -49,7 +71,7 @@ class AppServerClient:
                 bufsize=1,
             )
         except OSError as exc:
-            raise FeedbackTurnError(f"failed to start codex app-server: {exc}") from exc
+            raise FeedbackTurnError(f"failed to start {executable} app-server: {exc}") from exc
 
         assert self.proc.stdout is not None
         assert self.proc.stderr is not None

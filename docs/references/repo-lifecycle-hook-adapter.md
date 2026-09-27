@@ -118,6 +118,16 @@ All repo lifecycle hooks are Python. Do not add shell compatibility shims.
   the hook returns actionable incomplete-finalization feedback instead of
   publishing only the primary repo. A repeated continuation emits a warning
   rather than starting an unbounded retry loop.
+- The Stop App Server client prefers the macOS desktop application's bundled
+  Codex executable over a separately installed CLI on PATH. Desktop updates can
+  add stored history variants that an older CLI cannot deserialize. The resolver
+  checks current `codex-cli/bin/codex` and older `Resources/codex` layouts under
+  `/Applications` and `~/Applications`; machines without a bundle use PATH.
+  `AGENTS_CODEX_BIN` explicitly selects an executable for a custom installation
+  or hermetic test. An invalid override fails rather than silently falling back.
+  This changes the reader version, not the discovery requirements: malformed or
+  incomplete history still blocks publication, and stored task records are never
+  rewritten to make an old reader accept them.
 - If the owning `thread/read` specifically returns `thread not loaded` for the
   stopping conversation, finalize only the Git repository containing the Stop
   payload's `cwd` (the starting repository). Use the same repository locks,
