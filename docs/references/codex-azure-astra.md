@@ -223,6 +223,14 @@ policy, upgrade policy, and no configured service tier. No Codex settings were
 changed. Do not enable a Codex Fast preference as a workaround for this
 deployment's unsupported service tier.
 
+On 2026-09-27, the `gpt-6-sol` deployment (model version `2026-09-22`,
+`GlobalStandard`, Sweden Central) was set to `Priority` through the Azure
+management API's `properties.serviceTier` field. A fresh deployment read showed
+`Succeeded` and `Running`, with the other deployments' service tiers unchanged.
+An immediate Responses request without `service_tier` returned `default`, but a
+subsequent request returned `priority` after the setting propagated. An explicit
+`service_tier = "priority"` request also returned `priority`.
+
 For a supported model, Azure can select priority at the deployment level or
 through the Responses API's `service_tier = "priority"`. These are different
 field names and casing: the current [ARM deployment schema](https://learn.microsoft.com/en-us/azure/templates/microsoft.cognitiveservices/accounts/deployments)
