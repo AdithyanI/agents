@@ -231,6 +231,13 @@ An immediate Responses request without `service_tier` returned `default`, but a
 subsequent request returned `priority` after the setting propagated. An explicit
 `service_tier = "priority"` request also returned `priority`.
 
+Also on 2026-09-27, `gpt-5.6-sol` and `gpt-5.6-terra` (both version
+`2026-07-09`) were set to `Priority`. Fresh deployment reads showed
+`Succeeded`, and Responses requests without a tier override returned
+`service_tier = "priority"` for both. The `gpt-5.6-luna`, `gpt-6-astra`, and
+`gpt-6-luna` deployments remain at their default service tier; these model
+versions are absent from Microsoft's supported-model list.
+
 For a supported model, Azure can select priority at the deployment level or
 through the Responses API's `service_tier = "priority"`. These are different
 field names and casing: the current [ARM deployment schema](https://learn.microsoft.com/en-us/azure/templates/microsoft.cognitiveservices/accounts/deployments)
