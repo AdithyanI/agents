@@ -193,7 +193,8 @@
       "scope": "repo",
       "repos": [
         "agents",
-        "frontier-lab-intelligence"
+        "frontier-lab-intelligence",
+        "win"
       ],
       "source_path": "skills-source/external/openai-docs",
       "upstream_ref": "openai/skills:skills/.curated/openai-docs@main"
