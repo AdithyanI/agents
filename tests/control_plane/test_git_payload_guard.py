@@ -141,7 +141,7 @@ class GitPayloadGuardTests(TempDirTestCase):
             self.assertEqual(guard.git(self.root, "config", "--get", "example.inherited").strip(),
                              b"kept")
         for key, value in (("gc.auto", "25"), ("maintenance.auto", "true")):
-            self.assertEqual(run_command(["git", "-C", self.root, "config", "--get", key])
+            self.assertEqual(run_command(["git", "-C", self.root, "config", "--local", "--get", key])
                              .stdout.strip(), value)
         child = stop.run([sys.executable, "-c", "import os; print(os.environ['GIT_CONFIG_COUNT'])"],
                          self.root, env=inherited)
