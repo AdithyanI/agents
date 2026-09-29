@@ -462,6 +462,10 @@
     },
     {
       "repo": "win",
+      "skill": "guest-headshot-discovery"
+    },
+    {
+      "repo": "win",
       "skill": "log-investigation"
     },
     {
