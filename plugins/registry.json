@@ -107,6 +107,14 @@
       "scope": "dormant",
       "repos": [],
       "category": "Productivity"
+    },
+    {
+      "plugin": "work-pets",
+      "marketplace": "openai-curated-remote",
+      "enabled": false,
+      "scope": "global",
+      "repos": [],
+      "category": "Productivity"
     }
   ],
   "unmanaged_repo_local_plugins": []
