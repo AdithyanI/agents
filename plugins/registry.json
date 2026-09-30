@@ -29,6 +29,14 @@
       "category": "Productivity"
     },
     {
+      "plugin": "code-review",
+      "marketplace": "openai-bundled",
+      "enabled": false,
+      "scope": "global",
+      "repos": [],
+      "category": "Developer Tools"
+    },
+    {
       "plugin": "visualize",
       "marketplace": "openai-bundled",
       "enabled": false,
