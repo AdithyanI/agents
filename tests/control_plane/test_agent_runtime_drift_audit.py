@@ -155,6 +155,7 @@ class AgentRuntimeDriftAuditTests(TempDirTestCase):
         home = self.temp_path / "home"
         self._write_live_codex_config(home)
         self._write_required_plugins(home)
+        self._write_plugin(home, "openai-curated-remote", "pages", version="0.1.18")
         self._write_plugin(home, "openai-curated-remote", "plugin-management")
         self._write_plugin(home, "openai-curated-remote", "sites", version="0.1.62")
         self._write_plugin(home, "openai-bundled", "unified-computer-use")
