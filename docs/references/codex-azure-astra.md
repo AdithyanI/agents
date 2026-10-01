@@ -31,6 +31,12 @@ Shared sync preserves this local choice; existing tasks retain their provider.
   the managed Codex provider endpoint or credentials; the India resource has its
   own keys. Do not replace the existing Sweden credential while its other models
   are still used. Data Zone confines processing to APAC, not exclusively India.
+- The India resource also has `gpt-6-luna`, version `2026-09-22`, using
+  `GlobalStandard`, `Default` tier, and capacity `5000` (5,000,000 tokens/minute
+  and 5,000 requests/minute). Luna only offered Global Standard on this resource;
+  its processing is not confined to India or APAC. The existing Sweden Luna
+  deployment retains capacity `10000`. These base-model Standard deployments
+  bill token consumption, with no idle PTU reservation or fine-tuning hosting fee.
 - Provider definition: `codex/config/global.config.toml`.
 - Optional profile: `codex/config/azure-astra.config.toml`, rendered to
   `~/.codex/azure-astra.config.toml`.
