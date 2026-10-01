@@ -18,29 +18,11 @@ Shared sync preserves this local choice; existing tasks retain their provider.
   All three deployments answered a Responses API smoke request on September 22.
 - Additional deployment: `gpt-6.1-sol`, version `2026-09-29`, created on
   October 1, 2026 with `GlobalStandard` and `Default` processing. Capacity
-  `10000` allocates 10,000,000 tokens/minute and 10,000 requests/minute.
-  Its initial capacity `15000` was reduced to make room for the India Global
-  deployment. A Responses API smoke request completed successfully.
+  `15000` uses the full available quota: 15,000,000 tokens/minute and 15,000
+  requests/minute. A Responses API smoke request completed successfully.
   This deployment has not been added to the managed Azure picker.
-- India comparison resource: `aipodcasting-openai-india`, same resource group,
-  region `southindia`, endpoint
-  `https://aipodcasting-openai-india.openai.azure.com/openai/v1`.
-  Its `gpt-6.1-sol` deployment uses version `2026-09-29`, `GlobalStandard`,
-  `Default` tier, and capacity `5000`: 5,000,000 tokens/minute and 5,000
-  requests/minute. On October 1, 2026 it was changed in place from APAC
-  `DataZoneStandard` to Global to honor the user's lowest-price preference.
-  The total Global Sol quota is `15000`, split between Sweden and India.
-  The Sweden deployment remains available. Creating this resource does not switch
-  the managed Codex provider endpoint or credentials; the India resource has its
-  own keys. Do not replace the existing Sweden credential while its other models
-  are still used. Both models on the India resource now allow global processing;
-  earlier India Sol latency measurements used APAC Data Zone processing.
-- The India resource also has `gpt-6-luna`, version `2026-09-22`, using
-  `GlobalStandard`, `Default` tier, and capacity `5000` (5,000,000 tokens/minute
-  and 5,000 requests/minute). Luna only offered Global Standard on this resource;
-  its processing is not confined to India or APAC. The existing Sweden Luna
-  deployment retains capacity `10000`. These base-model Standard deployments
-  bill token consumption, with no idle PTU reservation or fine-tuning hosting fee.
+- The temporary India Sol/Luna deployments were removed on October 1, 2026;
+  Sweden Sol quota was restored to `15000`. Codex was never switched to India.
 - Provider definition: `codex/config/global.config.toml`.
 - Optional profile: `codex/config/azure-astra.config.toml`, rendered to
   `~/.codex/azure-astra.config.toml`.
