@@ -78,7 +78,7 @@
     },
     {
       "plugin": "gmail",
-      "marketplace": "openai-curated",
+      "marketplace": "openai-curated-remote",
       "enabled": false,
       "scope": "global",
       "repos": [],
@@ -86,7 +86,15 @@
     },
     {
       "plugin": "google-calendar",
-      "marketplace": "openai-curated",
+      "marketplace": "openai-curated-remote",
+      "enabled": false,
+      "scope": "global",
+      "repos": [],
+      "category": "Productivity"
+    },
+    {
+      "plugin": "google-contacts",
+      "marketplace": "openai-curated-remote",
       "enabled": false,
       "scope": "global",
       "repos": [],
@@ -118,6 +126,14 @@
     },
     {
       "plugin": "work-pets",
+      "marketplace": "openai-curated-remote",
+      "enabled": false,
+      "scope": "global",
+      "repos": [],
+      "category": "Productivity"
+    },
+    {
+      "plugin": "slack",
       "marketplace": "openai-curated-remote",
       "enabled": false,
       "scope": "global",
