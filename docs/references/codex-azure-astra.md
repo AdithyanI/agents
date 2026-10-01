@@ -16,6 +16,11 @@ Shared sync preserves this local choice; existing tasks retain their provider.
   `GlobalStandard`. This setup does not create or change Azure deployments.
 - The Azure picker contains only `gpt-6-astra`, `gpt-6-sol`, and `gpt-6-luna`.
   All three deployments answered a Responses API smoke request on September 22.
+- Additional deployment: `gpt-6.1-sol`, version `2026-09-29`, created on
+  October 1, 2026 with `GlobalStandard` and `Default` processing. Capacity
+  `15000` uses the full currently available model quota: 15,000,000 tokens/minute
+  and 15,000 requests/minute. A Responses API smoke request completed successfully.
+  This deployment has not been added to the managed Azure picker.
 - Provider definition: `codex/config/global.config.toml`.
 - Optional profile: `codex/config/azure-astra.config.toml`, rendered to
   `~/.codex/azure-astra.config.toml`.
@@ -208,6 +213,15 @@ than relying on the model name. The menu controls configuration; it does not
 add Azure/subscription entries to Codex's own model dropdown.
 
 ## Priority processing
+
+Verified on October 1, 2026: `gpt-6.1-sol` version `2026-09-29` does not support
+Priority. A management API creation attempt with `properties.serviceTier =
+"Priority"` returned `InvalidResourceProperties`, explicitly rejecting that
+model/version. The deployment was then created with `Default`. A Responses
+request explicitly asking for `priority` completed with actual `service_tier =
+"default"`; request acceptance does not establish Priority support. For smoke
+requests, use reasoning effort `low`: this Azure model rejected `none` and listed
+`low`, `medium`, `high`, `xhigh`, and `max` as supported values.
 
 Verified against Azure on 2026-09-16: this deployment's `gpt-6-astra` model
 version `2026-09-03` does not support Priority Processing. An authorized
