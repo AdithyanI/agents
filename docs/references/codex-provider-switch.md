@@ -28,7 +28,8 @@ to `scripts/codex-provider.py`. No Xcode project or downloaded UI dependencies
 are needed. The installer never restarts Codex itself.
 
 It also links `~/bin/codex` and its adjacent `codex-code-mode-host` companion to
-the installed desktop engine, and installs the existing `codex-azure` /
+the installed desktop engine, updating links from the older desktop bundle layout,
+and installs the existing `codex-azure` /
 `codex-openai` launchers from the scripts repo. Codex resolves the companion
 relative to the invoked command path, so the two desktop links must travel
 together. Managed login/interactive shells already put `~/bin` first. This
@@ -61,7 +62,7 @@ provider selection repairs the preference.
 
 The renderer merges the selected profile's provider and authentication method.
 Azure retains the selected GPT-6 model (falling back to Astra for other model names)
-and uses a generated catalog containing only GPT-6 Astra, Sol, and Luna.
+and uses a generated catalog containing Astra, 6.1 Sol, 6 Sol, and Luna.
 Subscription preserves the client's existing model
 choice and removes the catalog override to restore native discovery. The catalog
 retains upstream model metadata and protocol choices; see
@@ -77,7 +78,7 @@ is written before config so a later sync can repair an interrupted write; normal
 write failures restore the previous preference. Existing credential distribution
 remains intact. The switch checks Azure provider/credential readiness or the
 subscription login before changing files. Azure also requires complete metadata
-for its three models and materializes the filtered catalog before selecting it.
+for its four models and materializes the filtered catalog before selecting it.
 Subscription selection does not require a cache or catalog.
 It never rewrites login credentials or conversation history.
 

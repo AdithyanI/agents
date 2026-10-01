@@ -14,13 +14,15 @@ Shared sync preserves this local choice; existing tasks retain their provider.
 - Endpoint: `https://aipodcasting-openai.openai.azure.com/openai/v1`.
 - Existing deployment: `gpt-6-astra`, model version `2026-09-03`,
   `GlobalStandard`. This setup does not create or change Azure deployments.
-- The Azure picker contains only `gpt-6-astra`, `gpt-6-sol`, and `gpt-6-luna`.
-  All three deployments answered a Responses API smoke request on September 22.
-- Additional deployment: `gpt-6.1-sol`, version `2026-09-29`, created on
+- The Azure picker contains `gpt-6-astra`, `gpt-6.1-sol`, `gpt-6-sol`, and
+  `gpt-6-luna`. The original three deployments answered a Responses API smoke
+  request on September 22.
+- The `gpt-6.1-sol` deployment, version `2026-09-29`, was created on
   October 1, 2026 with `GlobalStandard` and `Default` processing. Capacity
   `15000` uses the full available quota: 15,000,000 tokens/minute and 15,000
   requests/minute. A Responses API smoke request completed successfully.
-  This deployment has not been added to the managed Azure picker.
+  An isolated Codex 0.159.2 turn with reasoning effort `low` also completed
+  through Azure on October 1.
 - The temporary India Sol/Luna deployments were removed on October 1, 2026;
   Sweden Sol quota was restored to `15000`. Codex was never switched to India.
 - Provider definition: `codex/config/global.config.toml`.
@@ -33,14 +35,13 @@ inference alone does not prove that credits covered a request.
 
 ### Azure model picker
 
-The installed desktop engine and CLI 0.156.0 use their older bundled model list
-for Azure, even when native OpenAI discovery returns newer models. Restarting
-alone does not discover Azure deployments.
+The desktop engine uses the managed Azure catalog override for its model picker.
+Restarting alone does not add Azure deployments to that catalog.
 
 Shared bootstrap generates `~/.codex/model-catalogs/azure-gpt6.json` from complete
 entries in the native `models_cache.json`, preserving upstream prompts,
 capabilities, reasoning levels, and protocol selection. The generated catalog
-contains exactly the three GPT-6 models and stays outside Git. A later incomplete
+contains exactly the four configured GPT-6 models and stays outside Git. A later incomplete
 or missing native cache does not replace a complete generated catalog. On initial
 setup, bootstrap can refresh native OpenAI metadata if no catalog is configured;
 this uses the saved ChatGPT login and makes no inference request. Missing complete
@@ -52,7 +53,7 @@ rerun shared bootstrap, then select Azure. The provider menu itself stays offlin
 Selecting Azure installs the catalog override; selecting Subscription removes it
 and restores native discovery. The explicit `azure-astra` profile also selects the
 catalog. Codex profiles cannot clear an inherited catalog: while the global default
-is Azure, `codex-openai` changes the provider but inherits the three-model picker.
+is Azure, `codex-openai` changes the provider but inherits the Azure picker.
 Select Subscription with the provider menu for the complete native subscription
 model list. Reopen the desktop app after catalog changes; do not terminate it from
 an active task.

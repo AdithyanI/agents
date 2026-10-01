@@ -14,7 +14,7 @@ import time
 import tomllib
 
 PROFILES = {"azure": "azure-astra.config.toml", "subscription": "chatgpt.config.toml"}
-AZURE_MODELS = ("gpt-6-astra", "gpt-6-sol", "gpt-6-luna")
+AZURE_MODELS = ("gpt-6-astra", "gpt-6.1-sol", "gpt-6-sol", "gpt-6-luna")
 AZURE_CATALOG = "model-catalogs/azure-gpt6.json"
 # Subscription removes the Azure catalog; the retired search override stays owned.
 OWNED = ("model_provider", "model_catalog_json", "forced_login_method", "features.standalone_web_search")
@@ -125,7 +125,7 @@ def azure_catalog(data: dict) -> dict:
     selected_models = [model for model in models if model.get("slug") in AZURE_MODELS]
     by_slug = {model["slug"]: model for model in selected_models}
     if len(selected_models) != len(AZURE_MODELS) or set(by_slug) != set(AZURE_MODELS):
-        raise ValueError("Model catalog must contain Astra, Sol, and Luna exactly once.")
+        raise ValueError("Model catalog must contain Astra, 6.1 Sol, 6 Sol, and Luna exactly once.")
     return {"models": [by_slug[slug] for slug in AZURE_MODELS]}
 
 
@@ -154,8 +154,11 @@ def prepare_catalog(canonical: Path, config: Path, *, apply: bool = False, refre
     if data is None and refresh and not load(config).get("model_catalog_json"):
         # Initial setup on another Mac may still have a pre-launch cache. Native
         # OpenAI discovery refreshes metadata only; it makes no inference request.
-        binary = Path("/Applications/ChatGPT.app/Contents/Resources/codex")
-        if binary.is_file():
+        resources = Path("/Applications/ChatGPT.app/Contents/Resources")
+        binary = next((path for path in (
+            resources / "codex-cli/bin/codex", resources / "codex",
+        ) if path.is_file()), None)
+        if binary is not None:
             try:
                 result = subprocess.run(
                     [str(binary), "-c", 'model_provider="openai"', "debug", "models"],

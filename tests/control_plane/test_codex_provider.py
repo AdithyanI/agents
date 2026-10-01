@@ -59,7 +59,7 @@ class CodexProviderTests(TempDirTestCase):
             "tool_mode": "code_mode_only", "use_responses_lite": True,
             "model_messages": {"instructions_template": f"Official instructions for {slug}"},
             "future_metadata": {"retain_exactly": [priority, slug]},
-        } for priority, slug in enumerate(("gpt-6-astra", "gpt-6-sol", "gpt-6-luna"))]
+        } for priority, slug in enumerate(("gpt-6-astra", "gpt-6.1-sol", "gpt-6-sol", "gpt-6-luna"))]
 
     def catalog_path(self, config=None):
         return (config or self.config).parent / provider.AZURE_CATALOG
@@ -69,13 +69,26 @@ class CodexProviderTests(TempDirTestCase):
                            env={"HOME": str(home or self.home)}, check=False)
 
     def test_desktop_cli_links_include_adjacent_code_mode_host(self):
-        targets = installer.codex_command_targets(self.home)
-        resources = Path("/Applications/ChatGPT.app/Contents/Resources")
+        resources = self.temp_path / "resources"
+        for name in ("codex", "codex-code-mode-host"):
+            write_text(resources / name, "legacy")
+        targets = installer.codex_command_targets(self.home, resources)
         self.assertEqual(targets[self.home / "bin/codex"], resources / "codex")
+
+        current = resources / "codex-cli/bin"
+        for name in ("codex", "codex-code-mode-host"):
+            write_text(current / name, "current")
+        targets = installer.codex_command_targets(self.home, resources)
+        self.assertEqual(targets[self.home / "bin/codex"], current / "codex")
         self.assertEqual(
             targets[self.home / "bin/codex-code-mode-host"],
-            resources / "codex-code-mode-host",
+            current / "codex-code-mode-host",
         )
+        old_link = self.home / "bin/codex"
+        old_link.parent.mkdir(parents=True)
+        old_link.symlink_to(resources / "codex")
+        self.assertTrue(installer.codex_link_owned(old_link, targets[old_link], resources))
+        self.assertFalse(installer.link_owned(old_link, targets[old_link]))
 
     def test_contract_dry_run_errors_and_plain(self):
         before = self.config.read_bytes()
@@ -128,7 +141,7 @@ class CodexProviderTests(TempDirTestCase):
 
     def test_azure_selection_preserves_supported_client_models(self):
         self.assertEqual(self.cli("azure", "--apply").returncode, 0)
-        for model in ("gpt-6-sol", "gpt-6-luna"):
+        for model in ("gpt-6.1-sol", "gpt-6-sol", "gpt-6-luna"):
             with self.subTest(model=model):
                 self.config.write_text(provider.overlay(self.config.read_text(), {"model": model}))
                 self.assertTrue(json.loads(self.cli("status").stdout)["data"]["config_in_sync"])

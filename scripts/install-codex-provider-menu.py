@@ -19,15 +19,21 @@ import time
 APP_NAME = "Codex Provider.app"
 EXECUTABLE = "CodexProvider"
 IDENTIFIER = "io.adithyan.codex-provider"
+DESKTOP_RESOURCES = Path("/Applications/ChatGPT.app/Contents/Resources")
 
 
-def codex_command_targets(home: Path) -> dict[Path, Path]:
-    desktop_resources = Path("/Applications/ChatGPT.app/Contents/Resources")
+def codex_command_targets(home: Path, resources: Path = DESKTOP_RESOURCES) -> dict[Path, Path]:
+    # Current desktop builds place the CLI and its companion in codex-cli/bin.
+    # Keep the older layout usable on machines that have not updated yet.
+    layouts = (resources / "codex-cli/bin", resources)
+    desktop_bin = next((directory for directory in layouts if all(
+        (directory / name).is_file() for name in ("codex", "codex-code-mode-host")
+    )), layouts[0])
     return {
-        home / "bin/codex": desktop_resources / "codex",
+        home / "bin/codex": desktop_bin / "codex",
         # Codex resolves this companion relative to argv[0], so a terminal
         # symlink for `codex` must bring the host along with it.
-        home / "bin/codex-code-mode-host": desktop_resources / "codex-code-mode-host",
+        home / "bin/codex-code-mode-host": desktop_bin / "codex-code-mode-host",
         home / "bin/codex-azure": home / "GitHub/scripts/bin/codex-azure",
         home / "bin/codex-openai": home / "GitHub/scripts/bin/codex-openai",
     }
@@ -62,6 +68,12 @@ def plist_owned(path: Path, app: Path) -> bool:
 
 def link_owned(path: Path, helper: Path) -> bool:
     return path.is_symlink() and path.resolve() == helper.resolve()
+
+
+def codex_link_owned(path: Path, target: Path, resources: Path = DESKTOP_RESOURCES) -> bool:
+    if link_owned(path, target):
+        return True
+    return path.name in {"codex", "codex-code-mode-host"} and link_owned(path, resources / path.name)
 
 
 def stop_owned_app(app: Path, domain: str) -> None:
@@ -137,7 +149,7 @@ def main() -> int:
     for command, target in codex_commands.items():
         if not target.is_file() or not os.access(target, os.X_OK):
             parser.error(f"required Codex command is unavailable: {target}")
-        if (command.exists() or command.is_symlink()) and not link_owned(command, target):
+        if (command.exists() or command.is_symlink()) and not codex_link_owned(command, target):
             parser.error(f"unrelated terminal command exists at {command}; move it before installing")
     swift = run(["/usr/bin/xcrun", "--find", "swiftc"]).stdout.strip()
     sdk = run(["/usr/bin/xcrun", "--sdk", "macosx", "--show-sdk-path"]).stdout.strip()
@@ -229,6 +241,8 @@ def main() -> int:
     print(f"Terminal command: {launcher}")
     print(f"Current provider: {menu_state['selected']} (this Mac only)")
     for command, target in codex_commands.items():
+        if command.is_symlink() and not link_owned(command, target):
+            command.unlink()
         if not command.is_symlink():
             command.symlink_to(target)
     print("Terminal codex and its code-mode host use the installed desktop engine. Existing terminal sessions are unchanged.")
