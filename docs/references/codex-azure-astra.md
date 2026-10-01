@@ -21,6 +21,16 @@ Shared sync preserves this local choice; existing tasks retain their provider.
   `15000` uses the full currently available model quota: 15,000,000 tokens/minute
   and 15,000 requests/minute. A Responses API smoke request completed successfully.
   This deployment has not been added to the managed Azure picker.
+- India comparison resource: `aipodcasting-openai-india`, same resource group,
+  region `southindia`, endpoint
+  `https://aipodcasting-openai-india.openai.azure.com/openai/v1`.
+  Its `gpt-6.1-sol` deployment uses version `2026-09-29`, `DataZoneStandard`
+  (APAC processing), `Default` tier, and capacity `5000`: 5,000,000 tokens/minute
+  and 5,000 requests/minute, the full available APAC quota on October 1, 2026.
+  The Sweden deployment remains available. Creating this resource does not switch
+  the managed Codex provider endpoint or credentials; the India resource has its
+  own keys. Do not replace the existing Sweden credential while its other models
+  are still used. Data Zone confines processing to APAC, not exclusively India.
 - Provider definition: `codex/config/global.config.toml`.
 - Optional profile: `codex/config/azure-astra.config.toml`, rendered to
   `~/.codex/azure-astra.config.toml`.
