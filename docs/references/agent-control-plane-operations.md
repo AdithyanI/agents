@@ -62,9 +62,19 @@ current Apple-provided skill bundles for inspection before a canonical import.
 
 ## Local previews and remote access
 
-`dev-servers/registry.json` owns short-lived local previews. Public Cloudflare/LaunchAgent services such as `adithyan.io` remain owned by `~/GitHub/scripts`.
+`dev-servers/registry.json` owns short-lived local previews and native Run actions.
+Public Cloudflare/LaunchAgent services such as `adithyan.io` remain owned by
+`~/GitHub/scripts`. A repository defines one `servers` entry for a fixed-port
+preview or one `actions` entry with `name`, `runtimeExecutable`, and
+`runtimeArgs` for a native build/run command. Native commands run directly,
+without a server port or listener reuse check. Snipwit's Run action invokes its
+own `scripts/build-and-run.sh`; `{repo_root}` follows the active checkout.
 
-Each listed repo gets one fixed-port preview in `.codex/environments/environment.toml`. The renderer rejects `autoPort: true`. Generated commands call `scripts/run-agent-preview-server.py`, which reuses an existing listener on `127.0.0.1:<port>` instead of spawning another server. `{repo_root}` resolves to the selected checkout, including an explicitly selected worktree.
+Each listed repo gets one Run action in `.codex/environments/environment.toml`.
+For preview servers, the renderer rejects `autoPort: true` and wraps commands
+with `scripts/run-agent-preview-server.py`, which reuses an existing listener on
+`127.0.0.1:<port>` instead of spawning another server. `{repo_root}` resolves to
+the selected checkout, including an explicitly selected worktree.
 
 Codex remote connections use `features.remote_connections` in the global config and managed OpenSSH aliases in `~/.ssh/config`. The scripts repo owns the SSH address, user, key, and Tailscale setup.
 

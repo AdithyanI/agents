@@ -113,6 +113,49 @@ class CodexPreviewSyncTests(TempDirTestCase):
         self.assertEqual(1, stale.returncode)
         self.assertEqual("stale config\n", self.target(repo).read_text(encoding="utf-8"))
 
+    def test_native_action_executes_selected_checkout_with_literal_arguments(self) -> None:
+        main = init_git_repo(self.github_root / "native app", with_initial_commit=True)
+        worktree = self.temp_path / "worktrees/native app"
+        run_command(["git", "-C", str(main), "worktree", "add", "-q", "-b", "native", str(worktree)])
+        script = write_text(worktree / "scripts/build-and-run.py", "import sys\nprint(repr(sys.argv[1:]))\n")
+        literal = "a quote's value with $HOME and `literal`\nand newline"
+        self.write_registry({"repo": "native app", "actions": [{
+            "name": "Run Native",
+            "runtimeExecutable": sys.executable,
+            "runtimeArgs": ["{repo_root}/scripts/build-and-run.py", literal],
+        }]})
+
+        self.run_sync("--apply", "--repo", str(worktree))
+
+        self.assertFalse(self.target(main).exists())
+        environment = tomllib.loads(self.target(worktree).read_text(encoding="utf-8"))
+        self.assertEqual("Run Native", environment["actions"][0]["name"])
+        command = environment["actions"][0]["command"]
+        self.assertNotIn("--port", command)
+        self.assertNotIn("run-agent-preview-server", command)
+        result = run_command(shlex.split(command), cwd=main)
+        self.assertEqual(repr([literal]), result.stdout.strip())
+        self.assertIn(str(script), command)
+        self.run_sync("--check", "--repo", str(worktree))
+
+    def test_native_action_validation_precedes_writes(self) -> None:
+        repo = init_git_repo(self.github_root / "repo-a")
+        action = {"name": "Run", "runtimeExecutable": "/bin/bash", "runtimeArgs": ["{repo_root}/run.sh"]}
+        for entry, message in [
+            ({"actions": []}, "exactly one"),
+            ({"actions": [action, action]}, "exactly one"),
+            ({"actions": [action], "servers": []}, "cannot combine"),
+            ({"actions": [{**action, "port": 3000}]}, "cannot define server"),
+            ({"actions": [{**action, "runtimeArgs": ["{host}"]}]}, "cannot use server placeholders"),
+            ({"actions": [{**action, "runtimeArgs": [7]}]}, "array of strings"),
+        ]:
+            with self.subTest(entry=entry):
+                self.write_registry({"repo": "repo-a", **entry})
+                result = self.run_sync("--apply", check=False)
+                self.assertEqual(2, result.returncode)
+                self.assertIn(message, result.stderr)
+                self.assertFalse(self.target(repo).exists())
+
     def test_preview_environment_is_opt_in_per_repo(self) -> None:
         repo = init_git_repo(self.github_root / "repo-a")
         other = init_git_repo(self.github_root / "repo-b")

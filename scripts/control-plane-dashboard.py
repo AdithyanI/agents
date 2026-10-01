@@ -762,6 +762,8 @@ def build_control_plane_data(root: Path) -> dict[str, Any]:
             continue
         servers = entry.get("servers", [])
         servers = servers if isinstance(servers, list) else []
+        actions = entry.get("actions", [])
+        actions = actions if isinstance(actions, list) else []
         server_names = []
         for server in servers:
             if not isinstance(server, dict):
@@ -773,19 +775,21 @@ def build_control_plane_data(root: Path) -> dict[str, Any]:
             elif name:
                 server_names.append(name)
         ports = [s.get("port") for s in servers if isinstance(s, dict) and "port" in s]
+        action_names = [str(a.get("name", "")).strip() for a in actions if isinstance(a, dict)]
         dev_servers.append(
             base_item(
                 kind="dev_server",
                 name=repo_name(repo),
-                title=f"{repo_name(repo)} agent preview",
+                title=f"{repo_name(repo)} native Run action" if actions else f"{repo_name(repo)} agent preview",
                 scope="repo",
-                status="active" if servers else "empty",
+                status="active" if servers or actions else "empty",
                 source=REGISTRY_SOURCES["dev_servers"],
                 repos=[repo],
                 details={
                     "servers": [n for n in server_names if n],
                     "server_count": len(servers),
                     "ports": ports,
+                    "actions": [n for n in action_names if n],
                 },
             )
         )

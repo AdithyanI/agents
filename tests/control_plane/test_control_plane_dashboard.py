@@ -146,6 +146,26 @@ class ControlPlaneDashboardDataTests(TempDirTestCase):
             'approval_policy = "never"\n[features]\nshell_tool = true\n',
         )
 
+    def test_native_run_action_remains_active_without_server_ports(self) -> None:
+        self.write_minimal_control_plane()
+        write_json(self.temp_path / "dev-servers/registry.json", {
+            "managed_dev_servers": [{"repo": "adi", "actions": [{
+                "name": "Run Native",
+                "runtimeExecutable": "/bin/bash",
+                "runtimeArgs": ["{repo_root}/run.sh"],
+            }]}],
+        })
+        result = run_command([
+            sys.executable, str(REPO_ROOT / "scripts/control-plane-dashboard.py"),
+            "data", "--root", str(self.temp_path), "--no-input",
+        ])
+        action = json.loads(result.stdout)["data"]["groups"]["dev_servers"][0]
+        self.assertEqual("active", action["status"])
+        self.assertEqual("adi native Run action", action["title"])
+        self.assertEqual(["Run Native"], action["details"]["actions"])
+        self.assertEqual([], action["details"]["ports"])
+        self.assertEqual(0, action["details"]["server_count"])
+
     def test_data_command_emits_agent_contract_and_normalized_groups(self) -> None:
         self.write_minimal_control_plane()
 

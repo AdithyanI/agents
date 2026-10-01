@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Render Codex preview actions from the shared development-server registry."""
+"""Render Codex preview servers and native Run actions from the shared registry."""
 from __future__ import annotations
 
 import argparse
@@ -49,6 +49,31 @@ def load_dev_servers(registry_file: Path) -> list[dict[str, Any]]:
         if repo in seen_repos:
             raise ValueError(f"duplicate dev-server repo entries: {repo}")
         seen_repos.add(repo)
+        if "actions" in item:
+            if "servers" in item:
+                raise ValueError(f"managed_dev_servers[{idx}] cannot combine actions and servers")
+            actions_raw = item["actions"]
+            label = f"managed_dev_servers[{idx}].actions"
+            if not isinstance(actions_raw, list) or len(actions_raw) != 1:
+                raise ValueError(f"{label} must define exactly one native Run action")
+            action = actions_raw[0]
+            if not isinstance(action, dict):
+                raise ValueError(f"{label}[0] must be an object")
+            name = ensure_str(action.get("name"), "name", label, 0)
+            runtime = ensure_str(action.get("runtimeExecutable"), "runtimeExecutable", label, 0)
+            args_raw = action.get("runtimeArgs", [])
+            if not isinstance(args_raw, list) or not all(isinstance(arg, str) for arg in args_raw):
+                raise ValueError(f"{label}[0] runtimeArgs must be an array of strings")
+            if any(field in action for field in ("host", "port", "autoPort")):
+                raise ValueError(f"{label}[0] native Run actions cannot define server host or port fields")
+            if any(token in value for value in [runtime, *args_raw] for token in ("{host}", "{port}")):
+                raise ValueError(f"{label}[0] native Run actions cannot use server placeholders")
+            entries.append({"repo": repo, "actions": [{
+                "name": name,
+                "runtimeExecutable": runtime,
+                "runtimeArgs": args_raw,
+            }]})
+            continue
         servers_raw = item.get("servers", [])
         if not isinstance(servers_raw, list) or not servers_raw:
             raise ValueError(f"managed_dev_servers[{idx}] needs a non-empty servers array")
@@ -219,7 +244,20 @@ def codex_environment_text(
     repo_root: Path,
 ) -> str:
     actions: list[str] = []
-    for server in entry["servers"]:
+    for action in entry.get("actions", []):
+        parts = [
+            expand_dev_server_runtime_value(action["runtimeExecutable"], github_root, repo_root),
+            *[expand_dev_server_runtime_value(arg, github_root, repo_root) for arg in action["runtimeArgs"]],
+        ]
+        shell_command = " ".join(shell_quote_command_part(part) for part in parts)
+        command = " ".join(shlex.quote(part) for part in ["/bin/bash", "-lc", shell_command])
+        actions.append("\n".join([
+            "[[actions]]",
+            f"name = {toml_string(action['name'])}",
+            'icon = "run"',
+            f"command = {toml_string(command)}",
+        ]))
+    for server in entry.get("servers", []):
         command = " ".join(
             shlex.quote(part)
             for part in preview_command_parts(server, preview_runner, github_root, repo_root)

@@ -1,10 +1,22 @@
 {
   "version": 1,
-  "description": "Canonical Codex preview server definitions. Only listed repos receive .codex/environments/environment.toml. Port and host are the source of truth; use {port}, {host}, and {repo_root} in runtimeArgs to follow the selected checkout. Public Cloudflare services remain in the scripts repo inventory.",
+  "description": "Canonical Codex preview servers and native Run actions. Only listed repos receive .codex/environments/environment.toml. Each repo defines one server or native action. For servers, port and host are the source of truth; use {port}, {host}, and {repo_root} in runtimeArgs to follow the selected checkout. Native actions use runtimeExecutable/runtimeArgs without server fields. Public Cloudflare services remain in the scripts repo inventory.",
   "paths": {
     "github_root": "~/GitHub"
   },
   "managed_dev_servers": [
+    {
+      "repo": "snipwit",
+      "actions": [
+        {
+          "name": "Run Snipwit",
+          "runtimeExecutable": "/bin/bash",
+          "runtimeArgs": [
+            "{repo_root}/scripts/build-and-run.sh"
+          ]
+        }
+      ]
+    },
     {
       "repo": "blog-personal",
       "servers": [
