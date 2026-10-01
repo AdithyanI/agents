@@ -1,5 +1,0 @@
-{
-  "endpoint": "https://aipodcasting-openai.openai.azure.com/openai/v1",
-  "search_model": "gpt-6-luna",
-  "research_model": "gpt-6.1-sol"
-}

@@ -13,7 +13,6 @@ bash -n hooks/git/pre-commit scripts/sync-managed-git-hooks.sh scripts/check-age
 scripts/check-skills-registry.sh --staged-ok
 scripts/check-plugins-registry.sh --staged-ok
 python3 -m unittest tests.control_plane.test_project_archive tests.control_plane.test_skills_sync tests.control_plane.test_codex_native_env tests.control_plane.test_codex_provider tests.control_plane.test_managed_repo_enrollment
-python3 -m unittest tests.control_plane.test_azure_web_research tests.control_plane.test_mcp_control_plane
 python3 -m unittest \
   tests.control_plane.test_git_payload_guard \
   tests.control_plane.test_stop_whitespace \

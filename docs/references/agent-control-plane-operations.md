@@ -47,9 +47,6 @@ Only `skills/registry.json` is tracked in the top-level `skills/` folder. User-s
 
 MCP schema version 3 uses neutral definitions and a `repos` scope per server. `"all"` selects all managed repositories, an explicit array selects those paths, and `[]` leaves a definition unassigned. The only generated MCP surface is repo `.codex/config.toml`.
 
-[Azure web research](azure-web-research.md) provides Bing search and deeper
-research through the existing Azure resource in every managed repository.
-
 ## Local previews and remote access
 
 `dev-servers/registry.json` owns short-lived local previews. Public Cloudflare/LaunchAgent services such as `adithyan.io` remain owned by `~/GitHub/scripts`.

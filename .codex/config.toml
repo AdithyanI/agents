@@ -1,10 +1,5 @@
 # Managed by ~/GitHub/agents/codex/scripts/sync-repo-codex-configs.sh.
 # Edit ~/GitHub/agents/codex/config/repo-bootstrap.json and re-run the sync script.
 
-[mcp_servers.azure-web-research]
-args = ["-c", "exec python3 \"$HOME/GitHub/agents/mcp/azure_web_research.py\" serve"]
-command = "/bin/sh"
-tool_timeout_sec = 300
-
 [mcp_servers.openaiDeveloperDocs]
 url = "https://developers.openai.com/mcp"

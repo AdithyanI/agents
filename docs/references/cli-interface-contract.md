@@ -18,7 +18,6 @@ Current agent-facing clients:
 - `scripts/bootstrap-plugin.sh`
 - `scripts/control-plane-dashboard.py data`
 - `scripts/codex-provider.py status|azure|subscription`
-- `mcp/azure_web_research.py search|research` (also serves MCP over stdio)
 
 Recommended promotion priority:
 

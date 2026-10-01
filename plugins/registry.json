@@ -111,8 +111,8 @@
     {
       "plugin": "build-macos-apps",
       "marketplace": "openai-curated-remote",
-      "enabled": false,
-      "scope": "dormant",
+      "enabled": true,
+      "scope": "global",
       "repos": [],
       "category": "Developer Tools"
     },
