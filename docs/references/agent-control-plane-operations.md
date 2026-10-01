@@ -47,6 +47,19 @@ Only `skills/registry.json` is tracked in the top-level `skills/` folder. User-s
 
 MCP schema version 3 uses neutral definitions and a `repos` scope per server. `"all"` selects all managed repositories, an explicit array selects those paths, and `[]` leaves a definition unassigned. The only generated MCP surface is repo `.codex/config.toml`.
 
+The `xcode` preset scopes Apple's native `/usr/bin/xcrun mcpbridge` to Snipwit.
+It follows the developer directory selected by `xcode-select`, so upgrading Xcode
+does not require changing a pinned application path. Xcode must be running, with
+the project open and **Settings > Intelligence > Allow external agents to use
+Xcode tools** enabled by the user. Xcode also asks permission when a new external
+client first calls a tool. Approve the native Codex client rather than a disposable
+verification process. See Apple's [external agent setup](https://developer.apple.com/documentation/xcode/giving-external-agents-access-to-xcode).
+Verify `xcrun --find mcpbridge` and the MCP `initialize` / `tools/list` handshake
+after an Xcode update. Tool availability comes from that running Xcode instance;
+the registry installs no third-party bridge or credentials. Xcode's
+`xcrun mcpbridge run-agent skills export --output-dir <path>` can export its
+current Apple-provided skill bundles for inspection before a canonical import.
+
 ## Local previews and remote access
 
 `dev-servers/registry.json` owns short-lived local previews. Public Cloudflare/LaunchAgent services such as `adithyan.io` remain owned by `~/GitHub/scripts`.

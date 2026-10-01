@@ -350,7 +350,8 @@
       "origin": "external",
       "scope": "repo",
       "repos": [
-        "meeting-capture"
+        "meeting-capture",
+        "snipwit"
       ],
       "source_path": "skills-source/external/swiftui-specialist",
       "upstream_ref": "local-import"
@@ -360,7 +361,8 @@
       "origin": "owned",
       "scope": "repo",
       "repos": [
-        "meeting-capture"
+        "meeting-capture",
+        "snipwit"
       ],
       "source_path": "skills-source/owned/swiftui-whats-new-27",
       "upstream_ref": "-"
@@ -418,6 +420,16 @@
       ],
       "source_path": "skills-source/external/modal",
       "upstream_ref": "modal-labs/modal-client:py/modal/skills/modal@main"
+    },
+    {
+      "skill": "swift-concurrency",
+      "origin": "external",
+      "scope": "repo",
+      "repos": [
+        "snipwit"
+      ],
+      "source_path": "skills-source/external/swift-concurrency",
+      "upstream_ref": "AvdLee/Swift-Concurrency-Agent-Skill:skills/swift-concurrency@2.3.0"
     }
   ],
   "unmanaged_repo_local_skills": [
