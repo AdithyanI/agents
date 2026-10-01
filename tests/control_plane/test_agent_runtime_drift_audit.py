@@ -14,6 +14,27 @@ from tests.control_plane.support import (
 
 
 class AgentRuntimeDriftAuditTests(TempDirTestCase):
+    def setUp(self) -> None:
+        super().setUp()
+        self.agents_repo = make_control_plane_root(self.temp_path)
+        # These fixtures own their plugin policy; machine registry changes must
+        # not introduce new required packages into otherwise hermetic audits.
+        write_json(self.agents_repo / "plugins/registry.json", {
+            "version": 1,
+            "paths": {"github_root": "~/GitHub"},
+            "managed_plugins": [
+                {"plugin": name, "marketplace": "openai-bundled", "enabled": True,
+                 "scope": "global", "repos": [], "category": "Productivity"}
+                for name in ("browser", "chrome", "computer-use")
+            ],
+            "unmanaged_repo_local_plugins": [],
+        })
+
+    def _run_audit(self, args, **kwargs):  # noqa: ANN001
+        if "--agents-repo" not in args:
+            args = [*args, "--agents-repo", str(self.agents_repo)]
+        return run_command(args, **kwargs)
+
     def _write_live_codex_config(  # noqa: ANN001
         self,
         home,
@@ -61,7 +82,7 @@ class AgentRuntimeDriftAuditTests(TempDirTestCase):
         self._write_live_codex_config(home)
         self._write_required_plugins(home)
 
-        result = run_command(
+        result = self._run_audit(
             [
                 str(REPO_ROOT / "scripts/audit-agent-runtime-drift.py"),
                 "--json",
@@ -89,7 +110,7 @@ class AgentRuntimeDriftAuditTests(TempDirTestCase):
         )
         self._write_plugin(home, "openai-bundled", "computer-use")
 
-        result = run_command(
+        result = self._run_audit(
             [
                 str(REPO_ROOT / "scripts/audit-agent-runtime-drift.py"),
                 "--json",
@@ -112,7 +133,7 @@ class AgentRuntimeDriftAuditTests(TempDirTestCase):
         self._write_required_plugins(home)
         self._write_plugin(home, "openai-curated", "surprise-plugin")
 
-        result = run_command(
+        result = self._run_audit(
             [
                 str(REPO_ROOT / "scripts/audit-agent-runtime-drift.py"),
                 "--plain",
@@ -137,7 +158,7 @@ class AgentRuntimeDriftAuditTests(TempDirTestCase):
         self._write_plugin(home, "openai-primary-runtime", "spreadsheets")
         self._write_plugin(home, "openai-primary-runtime", "template-creator")
 
-        result = run_command(
+        result = self._run_audit(
             [
                 str(REPO_ROOT / "scripts/audit-agent-runtime-drift.py"),
                 "--json",
@@ -160,7 +181,7 @@ class AgentRuntimeDriftAuditTests(TempDirTestCase):
         self._write_plugin(home, "openai-curated-remote", "sites", version="0.1.62")
         self._write_plugin(home, "openai-bundled", "unified-computer-use")
 
-        result = run_command(
+        result = self._run_audit(
             [
                 str(REPO_ROOT / "scripts/audit-agent-runtime-drift.py"),
                 "--json",
@@ -179,7 +200,7 @@ class AgentRuntimeDriftAuditTests(TempDirTestCase):
         self._write_live_codex_config(home, include_computer_use=False)
         self._write_required_plugins(home)
 
-        result = run_command(
+        result = self._run_audit(
             [
                 str(REPO_ROOT / "scripts/audit-agent-runtime-drift.py"),
                 "--plain",
@@ -214,7 +235,7 @@ JSON
 """,
         )
 
-        result = run_command(
+        result = self._run_audit(
             [
                 str(REPO_ROOT / "scripts/audit-agent-runtime-drift.py"),
                 "--json",
