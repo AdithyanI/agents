@@ -6,7 +6,7 @@ from pathlib import Path
 from typing import Any
 
 
-_PRESET_KEYS = {"args", "command", "cwd", "env", "repos", "transport", "url"}
+_PRESET_KEYS = {"args", "command", "cwd", "env", "repos", "tool_timeout_sec", "transport", "url"}
 
 
 class McpRegistryError(ValueError):
@@ -34,6 +34,11 @@ def _validate_definition(name: str, raw: Any) -> tuple[dict[str, Any], Any]:
     unknown = sorted(set(raw) - _PRESET_KEYS)
     if unknown:
         raise McpRegistryError(f"{label} has unsupported keys: {', '.join(unknown)}")
+
+    if "tool_timeout_sec" in raw:
+        timeout = raw["tool_timeout_sec"]
+        if type(timeout) not in (int, float) or not 0 < timeout <= 3600:
+            raise McpRegistryError(f"{label}.tool_timeout_sec must be greater than zero and at most 3600")
 
     transport = raw.get("transport")
     if transport not in {"http", "stdio"}:

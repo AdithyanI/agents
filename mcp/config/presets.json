@@ -1,6 +1,16 @@
 {
   "version": 3,
   "presets": {
+    "azure-web-research": {
+      "transport": "stdio",
+      "command": "/bin/sh",
+      "args": [
+        "-c",
+        "exec python3 \"$HOME/GitHub/agents/mcp/azure_web_research.py\" serve"
+      ],
+      "tool_timeout_sec": 300,
+      "repos": "all"
+    },
     "openaiDeveloperDocs": {
       "transport": "http",
       "url": "https://developers.openai.com/mcp",

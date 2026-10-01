@@ -45,6 +45,13 @@ class McpControlPlaneTests(unittest.TestCase):
         catalog = load_mcp_catalog_data({"version": 3, "presets": {"tool": {**definition, "repos": "all"}}}, REPOS)
         self.assertEqual(catalog.presets_for("~/GitHub/agents"), [("tool", definition)])
 
+    def test_tool_timeout_is_validated_and_preserved(self) -> None:
+        catalog = self.catalog("all", tool_timeout_sec=300)
+        self.assertEqual(catalog.definitions["docs"]["tool_timeout_sec"], 300)
+        for value in (0, -1, 3601, True, "300", float("nan")):
+            with self.subTest(value=value), self.assertRaisesRegex(McpRegistryError, "tool_timeout_sec"):
+                self.catalog("all", tool_timeout_sec=value)
+
 
 if __name__ == "__main__":
     unittest.main()
