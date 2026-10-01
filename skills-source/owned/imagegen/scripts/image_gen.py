@@ -13,6 +13,8 @@ import json
 import os
 from pathlib import Path
 import re
+import shlex
+import stat
 import sys
 import time
 from typing import Any, Dict, Iterable, List, Optional, Tuple
@@ -22,6 +24,8 @@ from io import BytesIO
 DEFAULT_MODEL = "gpt-image-2"
 ALLOWED_MODELS = {
     "gpt-image-2",
+    "gpt-image-2.5-sunburst",
+    "gpt-image-2.5-flare",
     # gpt-image-1.5 is available via the litellm proxy. Lighter/older variant;
     # useful as a fallback when gpt-image-2 hits proxy timeouts on heavy edits.
     "gpt-image-1.5",
@@ -38,11 +42,12 @@ DEFAULT_CONCURRENCY = 5
 DEFAULT_DOWNSCALE_SUFFIX = "-web"
 
 ALLOWED_ASPECT_RATIOS = {"16:9", "none"}
-ALLOWED_QUALITIES = {"low", "medium", "high", "auto"}
+ALLOWED_QUALITIES = {"low", "medium", "high", "max", "auto"}
 ALLOWED_BACKGROUNDS = {"opaque", "auto", None}
 
 MAX_IMAGE_BYTES = 50 * 1024 * 1024
 MAX_BATCH_JOBS = 500
+AZURE_BASE_URL = "https://aipodcasting-openai.openai.azure.com/openai/v1/"
 
 def _die(message: str, code: int = 1) -> None:
     print(f"Error: {message}", file=sys.stderr)
@@ -53,7 +58,30 @@ def _warn(message: str) -> None:
     print(f"Warning: {message}", file=sys.stderr)
 
 
-def _ensure_api_env(dry_run: bool) -> None:
+def _azure_api_key() -> str:
+    path = Path.home() / ".codex/.env"
+    try:
+        if stat.S_IMODE(path.stat().st_mode) != 0o600:
+            raise ValueError("Expected owner-only credential file")
+        for line in path.read_text().splitlines():
+            name, _, value = line.removeprefix("export ").partition("=")
+            if name.strip() == "AZURE_OPENAI_API_KEY":
+                values = shlex.split(value)
+                if len(values) == 1 and values[0]:
+                    return values[0]
+    except (OSError, ValueError):
+        pass
+    _die("Azure key missing or invalid in generated ~/.codex/.env. Run "
+         "~/GitHub/agents/codex/scripts/sync-native-env.py --apply; never print the file.")
+    return ""
+
+
+def _ensure_api_env(dry_run: bool, provider: str = "litellm") -> None:
+    if provider == "azure":
+        if not dry_run:
+            _azure_api_key()
+        print(f"Using direct Azure: {AZURE_BASE_URL}", file=sys.stderr)
+        return
     endpoint = os.getenv("LLM_API_ENDPOINT")
     api_key = os.getenv("LLM_API_KEY")
     if endpoint and api_key:
@@ -105,7 +133,7 @@ def _validate_size(size: str, model: str = DEFAULT_MODEL) -> None:
         return
 
     standard_sizes = {"1024x1024", "1536x1024", "1024x1536"}
-    if model != "gpt-image-2":
+    if model != "gpt-image-2" and not model.startswith("gpt-image-2.5-"):
         if size not in standard_sizes:
             _die(
                 f"size must be one of {', '.join(sorted(standard_sizes))}, or auto for {model}."
@@ -136,7 +164,7 @@ def _validate_aspect_ratio(aspect_ratio: str) -> None:
 
 def _validate_quality(quality: str) -> None:
     if quality not in ALLOWED_QUALITIES:
-        _die("quality must be one of low, medium, high, or auto.")
+        _die("quality must be one of low, medium, high, max, or auto.")
 
 
 def _validate_background(background: Optional[str]) -> None:
@@ -414,18 +442,23 @@ def _decode_write_and_downscale(
         print(f"Wrote {derived}")
 
 
-def _create_client():
+def _client_options(provider: str) -> Dict[str, Any]:
+    if provider == "azure":
+        return {"base_url": AZURE_BASE_URL, "api_key": _azure_api_key(),
+                "max_retries": 0, "timeout": 900}
+    return {"base_url": os.getenv("LLM_API_ENDPOINT"), "api_key": os.getenv("LLM_API_KEY"),
+            "max_retries": 0, "timeout": 900}
+
+
+def _create_client(provider: str = "litellm"):
     try:
         from openai import OpenAI
     except ImportError as exc:
         _die("openai SDK not installed. Install it into your normal python3 with `python3 -m pip install --user --break-system-packages openai pillow`.")
-    return OpenAI(
-        base_url=os.getenv("LLM_API_ENDPOINT"),
-        api_key=os.getenv("LLM_API_KEY"),
-    )
+    return OpenAI(**_client_options(provider))
 
 
-def _create_async_client():
+def _create_async_client(provider: str = "litellm"):
     try:
         from openai import AsyncOpenAI
     except ImportError:
@@ -436,10 +469,7 @@ def _create_async_client():
         _die(
             "AsyncOpenAI not available in this openai SDK version. Upgrade your normal python3 package with `python3 -m pip install --user --break-system-packages -U openai`."
         )
-    return AsyncOpenAI(
-        base_url=os.getenv("LLM_API_ENDPOINT"),
-        api_key=os.getenv("LLM_API_KEY"),
-    )
+    return AsyncOpenAI(**_client_options(provider))
 
 
 def _slugify(value: str) -> str:
@@ -651,7 +681,7 @@ async def _run_generate_batch(args: argparse.Namespace) -> int:
             )
         return 0
 
-    client = _create_async_client()
+    client = _create_async_client(args.provider)
     sem = asyncio.Semaphore(args.concurrency)
 
     any_failed = False
@@ -690,7 +720,7 @@ async def _run_generate_batch(args: argparse.Namespace) -> int:
                 result = await _generate_one_with_retries(
                     client,
                     payload,
-                    attempts=args.max_attempts,
+                    attempts=1 if args.provider == "azure" else args.max_attempts,
                     job_label=job_label,
                 )
                 elapsed = time.time() - started
@@ -708,10 +738,11 @@ async def _run_generate_batch(args: argparse.Namespace) -> int:
             return i, None
         except Exception as exc:
             any_failed = True
-            print(f"{job_label} failed: {exc}", file=sys.stderr)
+            print(f"{job_label} failed: {exc.__class__.__name__}; "
+                  "completion may be uncertain. Check before resubmitting.", file=sys.stderr)
             if args.fail_fast:
                 raise
-            return i, str(exc)
+            return i, exc.__class__.__name__
 
     tasks = [asyncio.create_task(run_job(i, job)) for i, job in enumerate(jobs, start=1)]
 
@@ -769,7 +800,7 @@ def _generate(args: argparse.Namespace) -> None:
         file=sys.stderr,
     )
     started = time.time()
-    client = _create_client()
+    client = _create_client(args.provider)
     result = client.images.generate(**payload)
     elapsed = time.time() - started
     print(f"Generation completed in {elapsed:.1f}s.", file=sys.stderr)
@@ -837,7 +868,7 @@ def _edit(args: argparse.Namespace) -> None:
         file=sys.stderr,
     )
     started = time.time()
-    client = _create_client()
+    client = _create_client(args.provider)
 
     with _open_files(image_paths) as image_files, _open_mask(mask_path) as mask_file:
         request = dict(payload)
@@ -954,6 +985,8 @@ def _add_shared_args(parser: argparse.ArgumentParser) -> None:
     # Model selection. Defaults to gpt-image-2 through the shared proxy; pass
     # --model gemini-3-pro-image to select the Gemini image route.
     parser.add_argument("--model", default=DEFAULT_MODEL, choices=sorted(ALLOWED_MODELS))
+    parser.add_argument("--provider", default="litellm", choices=("litellm", "azure"),
+                        help="Azure calls the existing account directly using generated ~/.codex/.env.")
 
     # Post-processing (optional): generate an additional downscaled copy for fast web loading.
     parser.add_argument("--downscale-max-dim", type=int)
@@ -1005,9 +1038,13 @@ def main() -> int:
     _validate_quality(args.quality)
     _validate_background(args.background)
     _validate_model(args.model)
-    _ensure_api_env(args.dry_run)
+    _ensure_api_env(args.dry_run, args.provider)
 
-    args.func(args)
+    try:
+        args.func(args)
+    except Exception as exc:
+        _die(f"Image request failed ({exc.__class__.__name__}); completion may be uncertain. "
+             "Check before deliberately resubmitting. Provider error bodies are omitted.")
     return 0
 
 

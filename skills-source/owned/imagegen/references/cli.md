@@ -20,6 +20,23 @@ Real API calls use the shared LiteLLM proxy environment: `LLM_API_ENDPOINT` and
 `LLM_API_KEY`. On managed machines these are sourced from
 `~/.secrets/litellm/env`, which is generated from the local canonical secret store.
 
+Use `--provider azure` to call the existing `aipodcasting-openai` account directly
+through `https://aipodcasting-openai.openai.azure.com/openai/v1/`. This reads only
+`AZURE_OPENAI_API_KEY` from the generated owner-only `~/.codex/.env`; do not copy
+the key into command arguments or other environment files. Generation uses
+`images/generations`; edits use `images/edits` on that base URL. Both SDK clients
+disable automatic retries and use a 900-second timeout. Direct Azure batches also
+disable CLI retries; a timeout/disconnection may leave completion uncertain.
+
+Verified Azure image deployments: `gpt-image-2.5-sunburst` and
+`gpt-image-2.5-flare`, version `2026-09-08`. Select the exact name explicitly:
+
+```bash
+python3 "$IMAGE_GEN" generate --provider azure --model gpt-image-2.5-sunburst \
+  --prompt "A simple native Mac transcript editor" --size 1536x864 \
+  --quality high --out tmp/imagegen/editor.png
+```
+
 Dry-run (no API call; no network required; does not require the `openai` package):
 
 ```
@@ -66,6 +83,7 @@ Practical size convention:
 
 ## Quality
 - `--quality` works for `generate`, `edit`, and `generate-batch`: `low|medium|high|auto`.
+  The GPT Image 2.5 routes additionally accept `max`; use it only with those models.
 
 Example:
 ```

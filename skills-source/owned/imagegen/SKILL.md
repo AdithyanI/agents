@@ -118,6 +118,9 @@ If installation isn't possible in this environment, tell the user which dependen
 
 ## Defaults & rules
 - Use `gpt-image-2`.
+- For a requested direct Azure route, use the same CLI with `--provider azure`
+  and an exact deployed model such as `gpt-image-2.5-sunburst` or
+  `gpt-image-2.5-flare`. See `references/cli.md` for credentials and endpoints.
 - Assume the user wants a new image unless they explicitly ask for an edit.
 - Unless the user specifies otherwise, request native wide output from
   `gpt-image-2` using a 16:9 size such as `1536x864`, and preserve the API
