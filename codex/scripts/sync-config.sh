@@ -559,6 +559,8 @@ render_global_config() {
   # Codex 0.129 renamed the hooks feature flag; prune the older managed key
   # when applying the new canonical template.
   remove_section_key "$target_file" "features" "codex_hooks"
+  # This previously managed feature flag is no longer recognized by Codex.
+  remove_section_key "$target_file" "features" "remote_connections"
 
   prune_stale_agent_sections "$target_file" "$template_file"
   prune_stale_app_sections "$target_file" "$template_file"

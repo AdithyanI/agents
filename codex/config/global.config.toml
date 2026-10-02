@@ -15,7 +15,6 @@ suppress_unstable_features_warning = true
 [features]
 hooks = true
 js_repl = true
-remote_connections = true
 goals = true
 memories = false
 apps = true

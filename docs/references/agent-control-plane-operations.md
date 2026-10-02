@@ -76,7 +76,7 @@ with `scripts/run-agent-preview-server.py`, which reuses an existing listener on
 `127.0.0.1:<port>` instead of spawning another server. `{repo_root}` resolves to
 the selected checkout, including an explicitly selected worktree.
 
-Codex remote connections use `features.remote_connections` in the global config and managed OpenSSH aliases in `~/.ssh/config`. The scripts repo owns the SSH address, user, key, and Tailscale setup.
+Managed OpenSSH aliases live in `~/.ssh/config`. The scripts repo owns the SSH address, user, key, and Tailscale setup.
 
 ## Retired-client migration
 
