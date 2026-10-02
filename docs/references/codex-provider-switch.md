@@ -39,7 +39,12 @@ avoids the MacBook's older Homebrew CLI, which rejects Astra. Open a new termina
 tab (or run `rehash` in zsh) if an existing shell cached the old executable.
 The native executable also avoids the shell launcher's observed 35-second startup
 delay through `~/bin/codex`, which exceeds Codex Desktop's 30-second SSH WebSocket
-timeout. Rerun the installer to repair existing desktop launcher links.
+timeout. A kernel stackshot located that delay in macOS's script-launch security
+check (`AppleSystemPolicy::evaluateScript` →
+`__WAITING_ON_APPROVAL_FROM_SANDBOXD__`), before the script body ran. The sandbox
+service's 64 worker slots were exhausted by synchronous requests to the TCC
+privacy service; why that service stopped answering remains unverified. Rerun
+the installer to repair existing desktop launcher links.
 These ordinary terminal links remain when uninstalling the menu, so subscription
 sessions keep using a compatible engine. Explicit `/opt/homebrew/bin/codex`
 calls still select Homebrew.
