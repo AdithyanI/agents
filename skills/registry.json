@@ -504,6 +504,10 @@
     {
       "repo": "frontier-lab-intelligence",
       "skill": "fli-daily-intelligence"
+    },
+    {
+      "repo": "snipwit",
+      "skill": "pull-win-episode"
     }
   ],
   "managed_plugin_skills": [
