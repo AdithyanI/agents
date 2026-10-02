@@ -14,6 +14,7 @@ For an audit request, investigate and recommend. For authorized implementation, 
 - Autonomous follow-through, including inspection and repair when the task calls for them. Keep routine decisions with the agent and consequential unresolved intent with the human.
 - Recoverable direct-to-main delivery in trusted solo repos unless local guidance specifies another flow. Use existing Git lifecycle automation and required checks; do not add approval or branch ceremony without a concrete need.
 - Fast, deterministic, actionable checks and relevant product/service proof. Repair a failing delivery gate within scope or report the real blocker; smaller instructions do not justify weaker verification.
+- Local builds, tests, packaging, cleanup, and product verification are the default. An agent-native repo does not require GitHub Actions or remote CI/CD. Do not add or reenable remote workflows unless Adi requests them; source publication and existing deployment contracts remain separate.
 - Non-obvious intent, ownership, privacy, external constraints, and recovery knowledge. Cross-repo orientation belongs with its canonical owner; implementation belongs in the owning repo's source.
 
 ## What to Simplify
