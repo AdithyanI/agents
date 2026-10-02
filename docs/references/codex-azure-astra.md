@@ -45,7 +45,9 @@ contains exactly the four configured GPT-6 models and stays outside Git. A later
 or missing native cache does not replace a complete generated catalog. On initial
 setup, bootstrap can refresh native OpenAI metadata if no catalog is configured;
 this uses the saved ChatGPT login and makes no inference request. Missing complete
-metadata fails before changing provider configuration.
+metadata blocks Azure selection and Azure-mode bootstrap before changing provider
+configuration. Subscription-mode sync continues so unrelated managed config can
+still reconcile; it leaves a missing or last-complete Azure catalog unchanged.
 
 For recovery, select Subscription, run `codex debug models` to refresh metadata,
 rerun shared bootstrap, then select Azure. The provider menu itself stays offline.

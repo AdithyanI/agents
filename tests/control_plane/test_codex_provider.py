@@ -139,6 +139,17 @@ class CodexProviderTests(TempDirTestCase):
         self.assertTrue(json.loads(result.stdout)["data"]["config_in_sync"])
         self.assertNotIn("standalone_web_search", tomllib.loads(self.config.read_text())["features"])
 
+    def test_subscription_config_sync_does_not_require_complete_azure_catalog(self):
+        self.assertEqual(self.cli("subscription", "--apply").returncode, 0)
+        write_json(self.config.parent / "models_cache.json", {"models": self.catalog_models()[:1]})
+        self.catalog_path().unlink(missing_ok=True)
+        result = run_command([
+            sys.executable, str(REPO_ROOT / "codex/scripts/provider_selection.py"), "catalog",
+            str(self.canonical), str(self.config), "--apply",
+        ], env={"HOME": str(self.home)}, check=False)
+        self.assertEqual(result.returncode, 0, result.stderr)
+        self.assertFalse(self.catalog_path().exists())
+
     def test_azure_selection_preserves_supported_client_models(self):
         self.assertEqual(self.cli("azure", "--apply").returncode, 0)
         for model in ("gpt-6.1-sol", "gpt-6-sol", "gpt-6-luna"):

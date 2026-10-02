@@ -145,7 +145,14 @@ def catalog_ready(config: Path) -> bool:
         return False
 
 
-def prepare_catalog(canonical: Path, config: Path, *, apply: bool = False, refresh: bool = False) -> dict | None:
+def prepare_catalog(
+    canonical: Path,
+    config: Path,
+    *,
+    apply: bool = False,
+    refresh: bool = False,
+    required: bool = True,
+) -> dict | None:
     """Materialize an Azure-only runtime snapshot without pinning the shared cache."""
     if load(canonical / PROFILES["azure"]).get("model_catalog_json") != AZURE_CATALOG:
         return None
@@ -170,6 +177,8 @@ def prepare_catalog(canonical: Path, config: Path, *, apply: bool = False, refre
             except (OSError, ValueError, subprocess.TimeoutExpired):
                 pass
     if data is None:
+        if not required:
+            return None
         raise ValueError(
             "Azure GPT-6 model metadata is missing. Select subscription, run "
             "`codex debug models` to refresh native discovery, then rerun shared bootstrap. "
@@ -276,7 +285,13 @@ def main() -> int:
     choice = selected(config)
     if action == "catalog":
         apply = "--apply" in sys.argv[4:]
-        prepare_catalog(canonical, config, apply=apply, refresh=apply)
+        prepare_catalog(
+            canonical,
+            config,
+            apply=apply,
+            refresh=apply,
+            required=choice == "azure",
+        )
     elif action == "render":
         target = Path(sys.argv[4])
         settings = values(canonical, choice, config)
