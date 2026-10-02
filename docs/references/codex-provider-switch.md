@@ -28,13 +28,18 @@ to `scripts/codex-provider.py`. No Xcode project or downloaded UI dependencies
 are needed. The installer never restarts Codex itself.
 
 It also links `~/bin/codex` and its adjacent `codex-code-mode-host` companion to
-the installed desktop engine, updating links from the older desktop bundle layout,
+the installed desktop engine, preferring the native
+`codex-cli/CodexCLI.app/Contents/MacOS/codex` executable when available and
+updating links from the older desktop bundle layouts,
 and installs the existing `codex-azure` /
 `codex-openai` launchers from the scripts repo. Codex resolves the companion
 relative to the invoked command path, so the two desktop links must travel
 together. Managed login/interactive shells already put `~/bin` first. This
 avoids the MacBook's older Homebrew CLI, which rejects Astra. Open a new terminal
 tab (or run `rehash` in zsh) if an existing shell cached the old executable.
+The native executable also avoids the shell launcher's observed 35-second startup
+delay through `~/bin/codex`, which exceeds Codex Desktop's 30-second SSH WebSocket
+timeout. Rerun the installer to repair existing desktop launcher links.
 These ordinary terminal links remain when uninstalling the menu, so subscription
 sessions keep using a compatible engine. Explicit `/opt/homebrew/bin/codex`
 calls still select Homebrew.

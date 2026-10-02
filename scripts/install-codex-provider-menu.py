@@ -23,14 +23,19 @@ DESKTOP_RESOURCES = Path("/Applications/ChatGPT.app/Contents/Resources")
 
 
 def codex_command_targets(home: Path, resources: Path = DESKTOP_RESOURCES) -> dict[Path, Path]:
-    # Current desktop builds place the CLI and its companion in codex-cli/bin.
-    # Keep the older layout usable on machines that have not updated yet.
+    # Keep the code-mode companion beside the invoked command. Current macOS
+    # packages expose a shell launcher in bin; executing that launcher through
+    # ~/bin can exceed the desktop SSH timeout, so prefer its native app binary.
     layouts = (resources / "codex-cli/bin", resources)
     desktop_bin = next((directory for directory in layouts if all(
         (directory / name).is_file() for name in ("codex", "codex-code-mode-host")
     )), layouts[0])
+    codex_target = desktop_bin / "codex"
+    native_codex = resources / "codex-cli/CodexCLI.app/Contents/MacOS/codex"
+    if desktop_bin == layouts[0] and native_codex.is_file():
+        codex_target = native_codex
     return {
-        home / "bin/codex": desktop_bin / "codex",
+        home / "bin/codex": codex_target,
         # Codex resolves this companion relative to argv[0], so a terminal
         # symlink for `codex` must bring the host along with it.
         home / "bin/codex-code-mode-host": desktop_bin / "codex-code-mode-host",
@@ -73,7 +78,11 @@ def link_owned(path: Path, helper: Path) -> bool:
 def codex_link_owned(path: Path, target: Path, resources: Path = DESKTOP_RESOURCES) -> bool:
     if link_owned(path, target):
         return True
-    return path.name in {"codex", "codex-code-mode-host"} and link_owned(path, resources / path.name)
+    return path.name in {"codex", "codex-code-mode-host"} and any(
+        link_owned(path, directory / path.name)
+        for directory in (resources, resources / "codex-cli/bin",
+                          resources / "codex-cli/CodexCLI.app/Contents/MacOS")
+    )
 
 
 def stop_owned_app(app: Path, domain: str) -> None:

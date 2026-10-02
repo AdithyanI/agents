@@ -90,6 +90,26 @@ class CodexProviderTests(TempDirTestCase):
         self.assertTrue(installer.codex_link_owned(old_link, targets[old_link], resources))
         self.assertFalse(installer.link_owned(old_link, targets[old_link]))
 
+    def test_native_desktop_cli_replaces_only_owned_launcher_links(self):
+        resources = self.temp_path / "resources"
+        launchers = resources / "codex-cli/bin"
+        for name in ("codex", "codex-code-mode-host"):
+            write_text(launchers / name, "launcher")
+        native = write_text(resources / "codex-cli/CodexCLI.app/Contents/MacOS/codex", "native")
+        targets = installer.codex_command_targets(self.home, resources)
+        command = self.home / "bin/codex"
+        self.assertEqual(targets[command], native)
+        self.assertEqual(targets[self.home / "bin/codex-code-mode-host"], launchers / "codex-code-mode-host")
+
+        command.parent.mkdir(parents=True)
+        command.symlink_to(launchers / "codex")
+        self.assertTrue(installer.codex_link_owned(command, targets[command], resources))
+        self.assertFalse(installer.link_owned(command, targets[command]))
+
+        command.unlink()
+        command.symlink_to(write_text(self.temp_path / "unrelated/codex", "unrelated"))
+        self.assertFalse(installer.codex_link_owned(command, targets[command], resources))
+
     def test_contract_dry_run_errors_and_plain(self):
         before = self.config.read_bytes()
         result = self.cli("subscription", "--no-input")
