@@ -509,6 +509,10 @@
     {
       "repo": "snipwit",
       "skill": "pull-win-episode"
+    },
+    {
+      "repo": "snipwit",
+      "skill": "future-of-life-editing"
     }
   ],
   "managed_plugin_skills": [
