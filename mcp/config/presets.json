@@ -16,7 +16,8 @@
       "url": "https://developers.openai.com/mcp",
       "repos": [
         "~/GitHub/agents",
-        "~/GitHub/frontier-lab-intelligence"
+        "~/GitHub/frontier-lab-intelligence",
+        "~/GitHub/snipwit"
       ]
     },
     "cloudflare-api": {

@@ -194,6 +194,7 @@
       "repos": [
         "agents",
         "frontier-lab-intelligence",
+        "snipwit",
         "win"
       ],
       "source_path": "skills-source/external/openai-docs",
