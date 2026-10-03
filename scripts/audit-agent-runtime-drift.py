@@ -22,6 +22,7 @@ SCHEMA_VERSION = "1.0"
 COMMAND = "audit-agent-runtime-drift"
 APP_MANAGED_PLUGIN_IDS = {
     "codex-app-tools@openai-bundled",
+    "defense-factory@openai-curated-remote",
     "documents@openai-primary-runtime",
     "pages@openai-curated-remote",
     "pdf@openai-primary-runtime",
