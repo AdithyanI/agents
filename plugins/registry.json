@@ -133,6 +133,14 @@
       "category": "Productivity"
     },
     {
+      "plugin": "write-like-me",
+      "marketplace": "openai-curated-remote",
+      "enabled": false,
+      "scope": "global",
+      "repos": [],
+      "category": "Productivity"
+    },
+    {
       "plugin": "slack",
       "marketplace": "openai-curated-remote",
       "enabled": false,
