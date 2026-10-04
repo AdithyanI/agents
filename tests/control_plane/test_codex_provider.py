@@ -140,13 +140,33 @@ class CodexProviderTests(TempDirTestCase):
             self.assertTrue(after["features"]["hooks"])
             if choice == "azure":
                 self.assertEqual(after["model_catalog_json"], provider.AZURE_CATALOG)
+                self.assertEqual(after["model_context_window"], 400000)
+                self.assertEqual(after["model_auto_compact_token_limit"], 350000)
                 self.assertEqual(json.loads(self.catalog_path().read_text())["models"], self.catalog_models())
             else:
                 self.assertNotIn("model_catalog_json", after)
+                self.assertNotIn("model_context_window", after)
+                self.assertNotIn("model_auto_compact_token_limit", after)
             self.assertNotIn("standalone_web_search", after["features"])
         self.assertNotIn("forced_login_method", after)
         for name, original in protected.items():
             self.assertEqual((self.config.parent / name).read_bytes(), original)
+
+    def test_azure_context_overrides_are_checked_and_removed_on_subscription(self):
+        self.assertEqual(self.cli("azure", "--apply").returncode, 0)
+        self.config.write_text(provider.overlay(self.config.read_text(), {
+            "model_context_window": 512000,
+            "model_auto_compact_token_limit": 450000,
+        }))
+        self.assertFalse(json.loads(self.cli("status").stdout)["data"]["config_in_sync"])
+        self.assertEqual(self.cli("azure", "--apply").returncode, 0)
+        self.assertEqual(tomllib.loads(self.config.read_text())["model_context_window"], 400000)
+        self.assertEqual(tomllib.loads(self.config.read_text())["model_auto_compact_token_limit"], 350000)
+        self.assertEqual(self.cli("subscription", "--apply").returncode, 0)
+        after = tomllib.loads(self.config.read_text())
+        self.assertNotIn("model_context_window", after)
+        self.assertNotIn("model_auto_compact_token_limit", after)
+        self.assertTrue(json.loads(self.cli("status").stdout)["data"]["config_in_sync"])
 
     def test_subscription_uses_native_discovery_without_catalog_dependencies(self):
         # An older CLI can replace the normal cache with a list missing newer
@@ -367,8 +387,12 @@ class CodexProviderTests(TempDirTestCase):
                 if choice == "azure":
                     self.assertEqual(tomllib.loads(config.read_text())["model_catalog_json"], provider.AZURE_CATALOG)
                     self.assertEqual(tomllib.loads(config.read_text())["model"], "gpt-6-sol")
+                    self.assertEqual(tomllib.loads(config.read_text())["model_context_window"], 400000)
+                    self.assertEqual(tomllib.loads(config.read_text())["model_auto_compact_token_limit"], 350000)
                 else:
                     self.assertNotIn("model_catalog_json", tomllib.loads(config.read_text()))
+                    self.assertNotIn("model_context_window", tomllib.loads(config.read_text()))
+                    self.assertNotIn("model_auto_compact_token_limit", tomllib.loads(config.read_text()))
                 self.assertNotIn("standalone_web_search", tomllib.loads(config.read_text()).get("features", {}))
                 self.assertFalse((config.parent / "model-catalogs/azure-astra.json").exists())
                 self.assertEqual((config.parent / "models_cache.json").read_bytes(), source_cache)
@@ -378,8 +402,12 @@ class CodexProviderTests(TempDirTestCase):
                     if name == provider.PROFILES["azure"]:
                         self.assertEqual(profile["model_catalog_json"], provider.AZURE_CATALOG)
                         self.assertEqual(profile["model"], "gpt-6-astra")
+                        self.assertEqual(profile["model_context_window"], 400000)
+                        self.assertEqual(profile["model_auto_compact_token_limit"], 350000)
                     else:
                         self.assertNotIn("model_catalog_json", profile)
+                        self.assertNotIn("model_context_window", profile)
+                        self.assertNotIn("model_auto_compact_token_limit", profile)
                     self.assertNotIn("standalone_web_search", profile.get("features", {}))
                 run_command([sys.executable, str(REPO_ROOT / "codex/scripts/provider_selection.py"), "check",
                              str(root / "codex/config"), str(config)], env={"HOME": str(home)})

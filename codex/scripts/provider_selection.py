@@ -16,8 +16,13 @@ import tomllib
 PROFILES = {"azure": "azure-astra.config.toml", "subscription": "chatgpt.config.toml"}
 AZURE_MODELS = ("gpt-6-astra", "gpt-6.1-sol", "gpt-6-sol", "gpt-6-luna")
 AZURE_CATALOG = "model-catalogs/azure-gpt6.json"
-# Subscription removes the Azure catalog; the retired search override stays owned.
-OWNED = ("model_provider", "model_catalog_json", "forced_login_method", "features.standalone_web_search")
+# Subscription removes the Azure catalog and context overrides so native defaults
+# apply again. The retired search override stays owned for cleanup.
+OWNED = (
+    "model_provider", "model_catalog_json", "forced_login_method",
+    "model_context_window", "model_auto_compact_token_limit",
+    "features.standalone_web_search",
+)
 
 
 def state_path() -> Path:

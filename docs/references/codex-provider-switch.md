@@ -82,6 +82,16 @@ The menu does not copy the Azure CLI profile's reasoning effort into the desktop
 default. Explicit `codex-azure` / `codex-openai` terminal launchers retain their
 per-process behavior regardless of the menu selection.
 
+The Azure profile temporarily sets `model_context_window = 400000` and
+`model_auto_compact_token_limit = 350000`. The provider menu and shared renderer
+also apply these two settings to the desktop/default terminal configuration when
+Azure is selected, and remove them when Subscription is selected so native
+defaults apply again. Codex reserves part of the window internally, so its usable
+context display can be smaller than 400K. Compaction remains enabled at 350K.
+An explicit `codex-openai` profile inherits these global overrides while this Mac
+is set to Azure, just as it inherits the Azure catalog; select Subscription in the
+menu for native subscription defaults.
+
 The switch, shared config apply, and trusted-project config apply use the same
 local lock. Provider writes are atomic and preserve unrelated config. Preference
 is written before config so a later sync can repair an interrupted write; normal
