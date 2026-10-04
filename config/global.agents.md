@@ -27,6 +27,7 @@ Prompts are often dictated. Interpret intent over transcription errors; use the 
 - `~/GitHub/agents` owns shared Codex configuration, skills, registries, and hooks. Edit canonical sources and rerun its bootstrap/check; managed runtime files and skill symlinks are generated surfaces.
 - Prefer a controllable in-app browser for collaborative visual work. Otherwise use an available capability suited to the task; verify access before relying on an open tab.
 - Use parallel agents when useful. Keep shared decisions, integration, and final reporting with the main agent.
+- Temporary delegation preference (2026-10-04, while Adi's Azure priority access is available): the main agent orchestrates and reviews; prefer `gpt-6-sol` with `xhigh` reasoning for implementation sub-agents when the spawn tool accepts these overrides. If a full-history fork must inherit the main agent's model, use a fresh or bounded-context fork when appropriate. The main agent may choose another model for complex or ambiguous work. Provider routing and priority tier remain client-owned, not per-spawn controls.
 - Check `~/GitHub/scripts` before adding shared machine utilities. Application behavior, storage, and repo-specific lifecycle rules belong in their owning repo.
 - For generic media uploads without an app-owned path, use `~/GitHub/scripts/bin/upload-media`. It reads generated credentials from `~/.secrets/media-upload/env`; do not pass storage secrets through flags or ordinary environment variables. GitHub CLI is authenticated.
 
