@@ -1,4 +1,4 @@
-# Azure GPT-6 models in Codex
+# Azure models in Codex
 
 ## Configuration and ownership
 
@@ -14,8 +14,8 @@ Shared sync preserves this local choice; existing tasks retain their provider.
 - Endpoint: `https://aipodcasting-openai.openai.azure.com/openai/v1`.
 - Existing deployment: `gpt-6-astra`, model version `2026-09-03`,
   `GlobalStandard`. This setup does not create or change Azure deployments.
-- The Azure picker contains `gpt-6-astra`, `gpt-6.1-sol`, `gpt-6-sol`, and
-  `gpt-6-luna`. The original three deployments answered a Responses API smoke
+- The Azure picker contains `gpt-6-astra`, `gpt-6.1-sol`, `gpt-6-sol`,
+  `gpt-6-luna`, and `gpt-5.6-sol`. The original three GPT-6 deployments answered a Responses API smoke
   request on September 22.
 - The `gpt-6.1-sol` deployment, version `2026-09-29`, was created on
   October 1, 2026 with `GlobalStandard` and `Default` processing. Capacity
@@ -41,7 +41,9 @@ Restarting alone does not add Azure deployments to that catalog.
 Shared bootstrap generates `~/.codex/model-catalogs/azure-gpt6.json` from complete
 entries in the native `models_cache.json`, preserving upstream prompts,
 capabilities, reasoning levels, and protocol selection. The generated catalog
-contains exactly the four configured GPT-6 models and stays outside Git. A later incomplete
+contains exactly the five configured Azure models and stays outside Git. The
+filename predates the 5.6 Sol addition and is retained so existing installations
+can update the catalog in place. A later incomplete
 or missing native cache does not replace a complete generated catalog. On initial
 setup, bootstrap can refresh native OpenAI metadata if no catalog is configured;
 this uses the saved ChatGPT login and makes no inference request. Missing complete
@@ -217,6 +219,12 @@ Existing tasks can retain their provider; verify the actual provider rather
 than relying on the model name. The menu controls configuration; it does not
 add Azure/subscription entries to Codex's own model dropdown.
 
+Use `codex-provider azure --model gpt-5.6-sol --apply` to select 5.6 Sol as
+this Mac's Azure default. The generated catalog also makes it available in the
+desktop model picker after restarting Codex. A running task retains its current
+model until it is changed in the app; changing this default does not rewrite
+saved tasks.
+
 ## Priority processing
 
 On October 6, 2026, [Microsoft's Priority table](https://learn.microsoft.com/en-us/azure/foundry/openai/concepts/priority-processing#latency-target)
@@ -268,6 +276,10 @@ Also on 2026-09-27, `gpt-5.6-sol` and `gpt-5.6-terra` (both version
 `service_tier = "priority"` for both. The `gpt-5.6-luna`, `gpt-6-astra`, and
 `gpt-6-luna` deployments remain at their default service tier; these model
 versions are absent from Microsoft's supported-model list.
+
+The Azure deployment setting makes 5.6 Sol requests use Priority Processing
+without a Codex Fast preference. Codex's Fast control is a separate client
+choice; confirm the response's actual `service_tier` when checking Azure routing.
 
 For a supported model, Azure can select priority at the deployment level or
 through the Responses API's `service_tier = "priority"`. These are different

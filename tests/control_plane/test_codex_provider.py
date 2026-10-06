@@ -40,7 +40,7 @@ class CodexProviderTests(TempDirTestCase):
             '[plugins."example@fixture"]\nenabled = true\n[projects."/fixture"]\ntrust_level = "trusted"\n')
         write_json(home / ".codex/models_cache.json", {
             "fetched_at": "2026-09-22T20:00:00Z", "etag": "fixture-catalog",
-            "models": [*self.catalog_models(), {"slug": "gpt-5.6-sol", "use_responses_lite": True}],
+            "models": self.catalog_models(),
         })
         write_json(home / ".codex/model-catalogs/azure-astra.json", {"models": [{"slug": "gpt-6-astra", "use_responses_lite": False}]})
         write_text(home / ".codex/.env", "AZURE_OPENAI_API_KEY=fixture-secret\n")
@@ -59,7 +59,8 @@ class CodexProviderTests(TempDirTestCase):
             "tool_mode": "code_mode_only", "use_responses_lite": True,
             "model_messages": {"instructions_template": f"Official instructions for {slug}"},
             "future_metadata": {"retain_exactly": [priority, slug]},
-        } for priority, slug in enumerate(("gpt-6-astra", "gpt-6.1-sol", "gpt-6-sol", "gpt-6-luna"))]
+            "service_tiers": [{"id": "priority", "name": "Fast"}] if slug == "gpt-5.6-sol" else [],
+        } for priority, slug in enumerate(provider.AZURE_MODELS)]
 
     def catalog_path(self, config=None):
         return (config or self.config).parent / provider.AZURE_CATALOG
@@ -192,7 +193,7 @@ class CodexProviderTests(TempDirTestCase):
 
     def test_azure_selection_preserves_supported_client_models(self):
         self.assertEqual(self.cli("azure", "--apply").returncode, 0)
-        for model in ("gpt-6.1-sol", "gpt-6-sol", "gpt-6-luna"):
+        for model in ("gpt-6.1-sol", "gpt-6-sol", "gpt-6-luna", "gpt-5.6-sol"):
             with self.subTest(model=model):
                 self.config.write_text(provider.overlay(self.config.read_text(), {"model": model}))
                 self.assertTrue(json.loads(self.cli("status").stdout)["data"]["config_in_sync"])
@@ -207,12 +208,26 @@ class CodexProviderTests(TempDirTestCase):
 
     def test_azure_selection_defaults_unsupported_model_to_astra(self):
         self.assertEqual(self.cli("azure", "--apply").returncode, 0)
-        self.config.write_text(provider.overlay(self.config.read_text(), {"model": "gpt-5.6-sol"}))
+        self.config.write_text(provider.overlay(self.config.read_text(), {"model": "gpt-5.6-terra"}))
         self.assertFalse(json.loads(self.cli("status").stdout)["data"]["config_in_sync"])
         result = self.cli("azure", "--apply")
         self.assertEqual(result.returncode, 0, result.stdout)
         self.assertEqual(tomllib.loads(self.config.read_text())["model"], "gpt-6-astra")
         self.assertTrue(json.loads(result.stdout)["data"]["config_in_sync"])
+
+    def test_azure_model_selection_sets_client_default_without_changing_provider(self):
+        before = self.config.read_bytes()
+        dry_run = self.cli("azure", "--model", "gpt-5.6-sol")
+        self.assertEqual(dry_run.returncode, 0, dry_run.stdout)
+        self.assertEqual(json.loads(dry_run.stdout)["data"]["requested_model"], "gpt-5.6-sol")
+        self.assertEqual(self.config.read_bytes(), before)
+        result = self.cli("azure", "--model", "gpt-5.6-sol", "--apply")
+        self.assertEqual(result.returncode, 0, result.stdout)
+        self.assertEqual(tomllib.loads(self.config.read_text())["model"], "gpt-5.6-sol")
+        self.assertTrue(json.loads(result.stdout)["data"]["config_in_sync"])
+        invalid = self.cli("subscription", "--model", "gpt-5.6-sol", "--apply")
+        self.assertEqual(invalid.returncode, 2)
+        self.assertEqual(tomllib.loads(self.config.read_text())["model"], "gpt-5.6-sol")
 
     def test_catalog_dry_run_and_apply_preserve_complete_official_metadata_and_cache(self):
         source = self.config.parent / "models_cache.json"

@@ -15,6 +15,7 @@ the icon to see this Mac's current selection; the menu also marks it with a chec
 ```bash
 codex-provider status --plain
 codex-provider azure --apply
+codex-provider azure --model gpt-5.6-sol --apply
 codex-provider subscription --apply
 
 # From the canonical agents checkout on each Mac:
@@ -71,8 +72,9 @@ an actionable error rather than silently changing the provider. An explicit
 provider selection repairs the preference.
 
 The renderer merges the selected profile's provider and authentication method.
-Azure retains the selected GPT-6 model (falling back to Astra for other model names)
-and uses a generated catalog containing Astra, 6.1 Sol, 6 Sol, and Luna.
+Azure retains a selected configured Azure model (falling back to Astra for other
+model names) and uses a generated catalog containing Astra, 6.1 Sol, 6 Sol,
+Luna, and 5.6 Sol.
 Subscription preserves the client's existing model
 choice and removes the catalog override to restore native discovery. The catalog
 retains upstream model metadata and protocol choices; see
@@ -98,8 +100,10 @@ is written before config so a later sync can repair an interrupted write; normal
 write failures restore the previous preference. Existing credential distribution
 remains intact. The switch checks Azure provider/credential readiness or the
 subscription login before changing files. Azure also requires complete metadata
-for its four models and materializes the filtered catalog before selecting it.
-Subscription selection does not require a cache or catalog.
+for its five models and materializes the filtered catalog before selecting it.
+Subscription selection does not require a cache or catalog. The `--model` option
+selects one of the configured Azure models as this Mac's default while selecting
+Azure. It does not choose a model in an already running task.
 It never rewrites login credentials or conversation history.
 
 This affects local execution on the selected Mac. Opening a remote task on the
@@ -114,7 +118,8 @@ commands default to a read-only dry-run and require `--apply` to mutate.
 
 Successful data includes `selected`, `effective_provider`, `persisted`,
 `config_in_sync`, `applied`, `restart_required`, `scope`, `state_file`, and
-`config_file`. `restart_required` describes desktop activation requirements; it
+`config_file`. An Azure model dry run includes `requested_model`.
+`restart_required` describes desktop activation requirements; it
 does not claim to detect which provider a running desktop process has loaded.
 
 Exit codes: 0 success; 2 validation; 3 missing authentication; 4 missing local

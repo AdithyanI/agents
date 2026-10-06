@@ -38,13 +38,16 @@ def main() -> int:
         output.add_argument("--json", action="store_true")
         parser.add_argument("--no-input", action="store_true", help="never prompt (always honored)")
         parser.add_argument("--timeout", type=float, default=60, help="configuration lock timeout in seconds (default 60)")
+        parser.add_argument("--model", help="choose a configured Azure model with the azure action")
         args = parser.parse_args()
         if not 0 < args.timeout <= 300:
             raise ValueError("--timeout must be greater than zero and at most 300 seconds")
+        if args.action == "status" and args.model is not None:
+            raise ValueError("--model requires the azure action.")
         result["command"] = f"codex-provider {args.action}"
         config, canonical = Path.home() / ".codex/config.toml", ROOT / "codex/config"
         result["data"] = provider.status(config, canonical) if args.action == "status" else provider.switch(
-            config, canonical, args.action, args.apply, args.timeout)
+            config, canonical, args.action, args.apply, args.timeout, args.model)
     except (OSError, ValueError, TimeoutError, KeyboardInterrupt) as exc:
         exit_code, code = (5, "E_TIMEOUT") if isinstance(exc, (TimeoutError, KeyboardInterrupt)) else (3, "E_AUTH") if isinstance(exc, PermissionError) else (4, "E_NOT_READY") if isinstance(exc, OSError) else (2, "E_VALIDATION")
         result.update(status="error", error={"code": code, "message": str(exc) or "Interrupted", "retryable": exit_code in (4, 5),
@@ -58,6 +61,8 @@ def main() -> int:
             print(f"This Mac: {data['selected']} (config: {data['effective_provider']}; in sync: {data['config_in_sync']})")
             if data.get("requested"):
                 print(f"Would select: {data['requested']}. Use --apply to save.")
+            if data.get("requested_model"):
+                print(f"Would select model: {data['requested_model']}.")
             print("Applies to new terminal sessions. Reopen Codex and start a new task for the desktop app.")
     else:
         print(json.dumps(result))

@@ -14,7 +14,8 @@ import time
 import tomllib
 
 PROFILES = {"azure": "azure-astra.config.toml", "subscription": "chatgpt.config.toml"}
-AZURE_MODELS = ("gpt-6-astra", "gpt-6.1-sol", "gpt-6-sol", "gpt-6-luna")
+# Keep this order aligned with the Azure picker, independent of native cache order.
+AZURE_MODELS = ("gpt-6-astra", "gpt-6.1-sol", "gpt-6-sol", "gpt-6-luna", "gpt-5.6-sol")
 AZURE_CATALOG = "model-catalogs/azure-gpt6.json"
 # Subscription removes the Azure catalog and context overrides so native defaults
 # apply again. The retired search override stays owned for cleanup.
@@ -130,7 +131,7 @@ def azure_catalog(data: dict) -> dict:
     selected_models = [model for model in models if model.get("slug") in AZURE_MODELS]
     by_slug = {model["slug"]: model for model in selected_models}
     if len(selected_models) != len(AZURE_MODELS) or set(by_slug) != set(AZURE_MODELS):
-        raise ValueError("Model catalog must contain Astra, 6.1 Sol, 6 Sol, and Luna exactly once.")
+        raise ValueError("Model catalog must contain Astra, 6.1 Sol, 6 Sol, Luna, and 5.6 Sol exactly once.")
     return {"models": [by_slug[slug] for slug in AZURE_MODELS]}
 
 
@@ -185,7 +186,7 @@ def prepare_catalog(
         if not required:
             return None
         raise ValueError(
-            "Azure GPT-6 model metadata is missing. Select subscription, run "
+            "Azure model metadata is missing. Select subscription, run "
             "`codex debug models` to refresh native discovery, then rerun shared bootstrap. "
             "Existing config and model catalogs were left unchanged."
         )
@@ -246,18 +247,26 @@ def preflight(config: Path, canonical: Path, choice: str) -> None:
             raise PermissionError("Codex subscription login is missing; sign in with ChatGPT first.")
 
 
-def switch(config: Path, canonical: Path, choice: str, apply: bool, timeout: float) -> dict:
+def switch(config: Path, canonical: Path, choice: str, apply: bool, timeout: float,
+           model: str | None = None) -> dict:
+    if model is not None and (choice != "azure" or model not in AZURE_MODELS):
+        raise ValueError("--model requires azure and one of the configured Azure models.")
     preflight(config, canonical, choice)
     if not apply:
         result = status(config, canonical)
         result["requested"] = choice
+        if model is not None:
+            result["requested_model"] = model
         return result
     with config_lock(config, timeout):
         preflight(config, canonical, choice)
         if choice == "azure":
             prepare_catalog(canonical, config, apply=True)
         before = config.read_text()
-        after = overlay(before, values(canonical, choice, config))
+        settings = values(canonical, choice, config)
+        if model is not None:
+            settings["model"] = model
+        after = overlay(before, settings)
         preference = state_path()
         old_preference = preference.read_text() if preference.is_file() else None
         # Preference first: a subsequent sync repairs a crash between the two writes.
