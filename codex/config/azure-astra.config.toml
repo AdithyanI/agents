@@ -1,4 +1,4 @@
-# Azure GPT-6 picker, with Astra as the starting model.
+# Azure model picker, with Astra as the starting model.
 # Use with: codex --profile azure-astra
 
 model = "gpt-6-astra"
