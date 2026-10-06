@@ -92,6 +92,60 @@ class CodexControlPlaneCheckTests(TempDirTestCase):
         self.assertTrue((adi / ".codex/config.toml").is_file())
         self.assertTrue((adi / ".codex/hooks.json").is_file())
 
+    def test_global_agent_limit_allows_only_the_runtime_setting(self) -> None:
+        root, home, adi = self._make_codex_repo_fixture()
+        self._render_repo_configs(root, home)
+        global_template = root / "codex/config/global.config.toml"
+        original = global_template.read_text(encoding="utf-8")
+        self.assertIn("max_concurrent_threads_per_session = 30", original)
+
+        for fallback in ("", "1"):
+            env = {"HOME": str(home), "CODEX_FORCE_TOML_FALLBACK": fallback}
+            with self.subTest(fallback=fallback, setting="concurrency limit"):
+                result = run_command(self._check_command(root, home, adi), env=env)
+                self.assertIn("OK: Codex control plane validation passed", result.stdout)
+
+            invalid_settings = (
+                (
+                    "named agent role",
+                    original + '\n[agents.reviewer]\ndescription = "Review code"\n',
+                    "managed agents or unsupported agent settings",
+                ),
+                (
+                    "legacy limit key",
+                    original.replace("max_concurrent_threads_per_session", "max_threads"),
+                    "managed agents or unsupported agent settings",
+                ),
+                (
+                    "noninteger limit",
+                    original.replace("max_concurrent_threads_per_session = 30", "max_concurrent_threads_per_session = true"),
+                    "must be a positive integer",
+                ),
+            )
+            for label, contents, error in invalid_settings:
+                with self.subTest(fallback=fallback, setting=label):
+                    global_template.write_text(contents, encoding="utf-8")
+                    result = run_command(
+                        self._check_command(root, home, adi), env=env, check=False
+                    )
+                    self.assertNotEqual(result.returncode, 0)
+                    self.assertIn(error, result.stderr)
+            global_template.write_text(original, encoding="utf-8")
+
+            with self.subTest(fallback=fallback, setting="repo-local limit"):
+                repo_config = adi / ".codex/config.toml"
+                repo_original = repo_config.read_text(encoding="utf-8")
+                repo_config.write_text(
+                    repo_original + "\n[agents]\nmax_concurrent_threads_per_session = 30\n",
+                    encoding="utf-8",
+                )
+                result = run_command(
+                    self._check_command(root, home, adi), env=env, check=False
+                )
+                self.assertNotEqual(result.returncode, 0)
+                self.assertIn("managed agents or unsupported agent settings", result.stderr)
+                repo_config.write_text(repo_original, encoding="utf-8")
+
     def test_check_script_rejects_client_owned_global_thread_selection(self) -> None:
         root, home, adi = self._make_codex_repo_fixture()
         global_template = root / "codex/config/global.config.toml"

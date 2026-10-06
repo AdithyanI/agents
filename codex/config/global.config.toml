@@ -20,6 +20,9 @@ memories = false
 apps = true
 external_migration = false
 
+[agents]
+max_concurrent_threads_per_session = 30
+
 [notice.external_config_migration_prompts]
 home = true
 

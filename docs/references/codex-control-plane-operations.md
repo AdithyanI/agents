@@ -106,6 +106,7 @@ Use [Codex Control Plane Ownership](/Users/dobby/GitHub/agents/docs/references/c
 - Bootstrap and sync scripts remain renderers: they do not commit or push repositories directly. When `CODEX_THREAD_ID` is absent, such as unattended machine reconciliation, they apply runtime state without creating a Codex Stop transaction.
 - `~/.codex/config.toml` contains exact trusted repo entries for local repos such as `focus`
 - `~/.codex/config.toml` enables Codex hooks through `[features].hooks = true`
+- `~/.codex/config.toml` sets `[agents].max_concurrent_threads_per_session = 30` as the configured per-session agent concurrency cap; actual availability depends on the Codex runtime.
 - `~/.codex/config.toml` contains `[hooks.state]` trust hashes for managed hooks rendered by this control plane, so global and repo-local lifecycle hooks do not need repeated `/hooks` review on every machine bootstrap.
 - `~/.codex/config.toml` explicitly preserves enabled native Codex plugins such as `computer-use@openai-bundled`, points `openai-bundled` at Codex's reserved managed root under `~/.codex/.tmp/bundled-marketplaces/`, and disables bundled Codex skills classified as `disabled` in [`bundled-skills-policy.json`](/Users/dobby/GitHub/agents/codex/config/bundled-skills-policy.json)
 - `scripts/audit-agent-runtime-drift.py --repair-managed-plugin-drift` repairs missing managed native Codex plugin config/cache state by running [`sync-config.sh`](/Users/dobby/GitHub/agents/codex/scripts/sync-config.sh) once and then re-auditing. The scripts repo health check uses this path so app/runtime cache churn does not require a manual `computer-use` repair.
@@ -135,7 +136,7 @@ Use [Codex Control Plane Ownership](/Users/dobby/GitHub/agents/docs/references/c
   - strips foreign-user project and system-skill entries before writing
   - prunes stale global `apps.*` and `plugins.*` sections that are no longer present in the canonical template or plugin registry, so old local connector/plugin state does not stick around
   - prunes stale global terminal `mcp_servers.*` sections that are no longer present in the canonical template
-  - prunes stale managed agent declarations and runtime role files left by older control-plane versions
+  - prunes stale managed agent role declarations and runtime role files left by older control-plane versions
   - fails fast if the target config contains unresolved Git conflict markers
   - skips no-op rewrites
 - [`sync-hook-trust-state.py`](/Users/dobby/GitHub/agents/codex/scripts/sync-hook-trust-state.py)
@@ -166,7 +167,7 @@ Use [Codex Control Plane Ownership](/Users/dobby/GitHub/agents/docs/references/c
   - validates [`bundled-skills-policy.json`](/Users/dobby/GitHub/agents/codex/config/bundled-skills-policy.json) and fails if a local OpenAI-bundled Codex skill exists under `~/.codex/skills/.system` or `~/.codex/skills/codex-primary-runtime` without being classified as `allowed` or `disabled`
   - validates that the live global Codex config disables each skill classified as `disabled`
   - validates [`hooks/registry.json`](/Users/dobby/GitHub/agents/hooks/registry.json), rendered global `~/.codex/hooks.json`, and rendered repo-local `.codex/hooks.json` files when hooks are enabled
-  - fails if managed agent declarations reappear in canonical or generated Codex config
+  - fails if managed agent role declarations reappear in canonical or generated Codex config
   - runs `sync-repo-codex-configs.sh --check`, so stale or hand-edited repo-local `.codex/config.toml`, `.codex/hooks.json`, and older managed `.codex/agents/*.toml` files fail validation
 - [`sync-repo-bootstrap-registry.sh`](/Users/dobby/GitHub/agents/codex/scripts/sync-repo-bootstrap-registry.sh)
   - validates [`repo-bootstrap.json`](/Users/dobby/GitHub/agents/codex/config/repo-bootstrap.json)

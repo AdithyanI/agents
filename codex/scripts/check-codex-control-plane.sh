@@ -344,13 +344,22 @@ def parse_toml_fallback(text: str) -> dict:
     return root
 
 
-def validate_no_agent_declarations(config_path: Path) -> None:
+def validate_no_agent_declarations(config_path: Path, *, allow_global_limit: bool = False) -> None:
     data = load_toml(config_path)
-    agents = data.get("agents", {}) or {}
+    agents = data.get("agents", {})
     if not isinstance(agents, dict):
         fail(f"`agents` must be a TOML table in {config_path}")
-    if agents:
-        fail(f"{config_path} declares managed agents; this control plane no longer materializes agent roles")
+    if allow_global_limit and "max_concurrent_threads_per_session" in agents:
+        limit = agents["max_concurrent_threads_per_session"]
+        if type(limit) is not int or limit < 1:
+            fail(f"{config_path} agents.max_concurrent_threads_per_session must be a positive integer")
+    allowed_keys = {"max_concurrent_threads_per_session"} if allow_global_limit else set()
+    unsupported_keys = sorted(set(agents) - allowed_keys)
+    if unsupported_keys:
+        fail(
+            f"{config_path} declares managed agents or unsupported agent settings: "
+            f"{', '.join(unsupported_keys)}"
+        )
 
 
 def validate_global_plugin_runtime(
@@ -731,12 +740,12 @@ bundled_skills_policy = load_bundled_skills_policy(bundled_skills_policy_path)
 audit_installed_bundled_skills(bundled_skills_policy)
 codex_feature_statuses = load_codex_feature_statuses()
 
-validate_no_agent_declarations(global_template)
+validate_no_agent_declarations(global_template, allow_global_limit=True)
 validate_feature_flags(global_template, codex_feature_statuses)
 validate_client_owned_global_selection(global_template)
 
 if global_config.exists():
-    validate_no_agent_declarations(global_config)
+    validate_no_agent_declarations(global_config, allow_global_limit=True)
     validate_feature_flags(global_config, codex_feature_statuses)
 
 if not registry_path.is_file():
