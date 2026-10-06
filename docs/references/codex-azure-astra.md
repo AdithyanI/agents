@@ -221,6 +221,10 @@ add Azure/subscription entries to Codex's own model dropdown.
 
 On October 6, 2026, [Microsoft's Priority table](https://learn.microsoft.com/en-us/azure/foundry/openai/concepts/priority-processing#latency-target)
 listed `gpt-6.1-sol` version `2026-09-29` with a 99% > 50 TPS target. This
+is a latency target, not a regional availability listing. The same page's
+Global Standard and US Data Zone Standard regional tables omit `gpt-6.1-sol`,
+so they do not identify another region where its Priority tier is available.
+The omission does not prove that every region rejects it. This
 resource's Sweden Central `GlobalStandard` deployment still could not enable it:
 ARM PUT requests using both `2026-05-15-preview` and `2026-09-15-preview`, with
 `properties.serviceTier = "Priority"`, returned `InvalidResourceProperties`:
