@@ -219,14 +219,22 @@ add Azure/subscription entries to Codex's own model dropdown.
 
 ## Priority processing
 
-Verified on October 1, 2026: `gpt-6.1-sol` version `2026-09-29` does not support
-Priority. A management API creation attempt with `properties.serviceTier =
-"Priority"` returned `InvalidResourceProperties`, explicitly rejecting that
-model/version. The deployment was then created with `Default`. A Responses
-request explicitly asking for `priority` completed with actual `service_tier =
-"default"`; request acceptance does not establish Priority support. For smoke
-requests, use reasoning effort `low`: this Azure model rejected `none` and listed
-`low`, `medium`, `high`, `xhigh`, and `max` as supported values.
+On October 6, 2026, [Microsoft's Priority table](https://learn.microsoft.com/en-us/azure/foundry/openai/concepts/priority-processing#latency-target)
+listed `gpt-6.1-sol` version `2026-09-29` with a 99% > 50 TPS target. This
+resource's Sweden Central `GlobalStandard` deployment still could not enable it:
+ARM PUT requests using both `2026-05-15-preview` and `2026-09-15-preview`, with
+`properties.serviceTier = "Priority"`, returned `InvalidResourceProperties`:
+"The model 'gpt-6.1-sol' version '2026-09-29' does not support Priority service
+tier." A fresh deployment read confirmed `serviceTier = "Default"`, unchanged
+model, SKU/capacity, RAI policy, and upgrade policy. A Responses request with
+`service_tier = "priority"` completed but reported actual `service_tier =
+"default"`. An otherwise similar request to this resource's `gpt-6-sol`
+deployment reported `priority`, so the 6.1 Sol result is specific to its current
+Azure availability. Do not claim Priority is active for 6.1 Sol until the ARM
+update succeeds and a response reports `priority`. The October 1 creation
+attempt was rejected the same way. For smoke requests, use reasoning effort
+`low`: this Azure model rejected `none` and listed `low`, `medium`, `high`,
+`xhigh`, and `max` as supported values.
 
 Verified against Azure on 2026-09-16: this deployment's `gpt-6-astra` model
 version `2026-09-03` does not support Priority Processing. An authorized
