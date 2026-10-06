@@ -281,6 +281,15 @@ The Azure deployment setting makes 5.6 Sol requests use Priority Processing
 without a Codex Fast preference. Codex's Fast control is a separate client
 choice; confirm the response's actual `service_tier` when checking Azure routing.
 
+On October 6, 2026, `gpt-5.6-sol` was increased from capacity `10000` to
+`15000`, using its full subscription-wide Global Standard quota. A fresh ARM
+read reported 15,000,000 tokens/minute, 15,000 requests/minute, `Succeeded`,
+`Running`, and `Priority`. The quota read showed allocation `15000` against
+limit `15000`; a subsequent Responses request completed with actual
+`service_tier = "priority"`. The model version, safety policy, and upgrade
+policy were preserved. This is the currently granted quota, not a promise that
+Azure cannot grant a higher limit later.
+
 For a supported model, Azure can select priority at the deployment level or
 through the Responses API's `service_tier = "priority"`. These are different
 field names and casing: the current [ARM deployment schema](https://learn.microsoft.com/en-us/azure/templates/microsoft.cognitiveservices/accounts/deployments)
