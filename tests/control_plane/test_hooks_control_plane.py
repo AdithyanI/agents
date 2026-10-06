@@ -519,7 +519,7 @@ class HooksControlPlaneTests(TempDirTestCase):
         self.assertIn('plan_mode_reasoning_effort = "max"', rendered_config)
         self.assertNotIn('\nservice_tier = ', rendered_config)
         self.assertIn("hooks = true", rendered_config)
-        self.assertIn("max_concurrent_threads_per_session = 30", rendered_config)
+        self.assertIn("max_concurrent_threads_per_session = 100", rendered_config)
         self.assertIn('[plugins."computer-use@openai-bundled"]', rendered_config)
         self.assertNotIn("build-ios-apps@openai-curated", rendered_config)
         self.assertIn(

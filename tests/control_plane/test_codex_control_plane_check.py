@@ -97,7 +97,7 @@ class CodexControlPlaneCheckTests(TempDirTestCase):
         self._render_repo_configs(root, home)
         global_template = root / "codex/config/global.config.toml"
         original = global_template.read_text(encoding="utf-8")
-        self.assertIn("max_concurrent_threads_per_session = 30", original)
+        self.assertIn("max_concurrent_threads_per_session = 100", original)
 
         for fallback in ("", "1"):
             env = {"HOME": str(home), "CODEX_FORCE_TOML_FALLBACK": fallback}
@@ -118,7 +118,7 @@ class CodexControlPlaneCheckTests(TempDirTestCase):
                 ),
                 (
                     "noninteger limit",
-                    original.replace("max_concurrent_threads_per_session = 30", "max_concurrent_threads_per_session = true"),
+                    original.replace("max_concurrent_threads_per_session = 100", "max_concurrent_threads_per_session = true"),
                     "must be a positive integer",
                 ),
             )
