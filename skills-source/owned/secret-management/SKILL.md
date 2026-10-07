@@ -24,10 +24,9 @@ there is no permanent source/mirror role. Git carries code, guidance and mapping
 not values. Check the scripts repo's `docs/references/shared-api-credentials.md`
 for activation evidence before assuming a peer is ready.
 
-The approved move out of `~/Documents/DobbySecrets` belongs to Scripts'
-`bin/migrate-secret-store`; follow its runbook before using an unmigrated peer.
-Do not maintain two roots, add a symlink alias, or request broader macOS privacy
-access to keep the old location alive. Local-only scopes move without becoming shared.
+Use the service-owned root directly, without a second store or compatibility
+alias. It needs no Documents or Full Disk Access grant for normal file access.
+Local-only scopes remain unshared unless explicitly enrolled.
 
 Mappings and explicit source sets select shared names and local consumers. Existing
 Mac tool outputs remain Mac-only. Materialization requires the selected local
