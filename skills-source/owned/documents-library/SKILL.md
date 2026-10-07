@@ -13,11 +13,18 @@ endpoint and credential file for the current person/workspace.
 
 ## Client setup and readiness
 
-Use the installed private `documents` package, version 0.2.0 or newer. For a fresh
-machine, install a wheel built from accepted private source, pin its version and
-SHA-256, and follow the owning bootstrap's executable path. Installation and
-client/API details live in `~/GitHub/documents/docs/references/http-client.md`;
-do not invent another wrapper, package, or credential store.
+Use the installed private `documents` package, version 0.2.0 or newer. A fresh
+machine uses Documents' `scripts/install-client.py` with a local wheel and its
+trusted expected SHA-256. Accepted ASUS releases provide the wheel, installer,
+and revision/checksum manifest privately at
+`/srv/services/documents/current/client/`; an authorized operator delivers them
+to the client machine. The default executable is
+`~/.local/share/documents-client/bin/documents`. The installer supports updates
+and removal, verifies the client before activation, and leaves PATH, existing
+commands, and person configuration unchanged. There is no automatic bootstrap
+installation. Exact commands and artifact checks live in
+`~/GitHub/documents/docs/references/http-client.md`; do not invent another
+wrapper, package, or credential store.
 
 On an enrolled development peer, Scripts materializes the canonical
 `documents--api-key` into `~/.secrets/documents/api-key`:
@@ -26,7 +33,8 @@ On an enrolled development peer, Scripts materializes the canonical
 python3 ~/GitHub/scripts/setup/asus/materialize-documents-api-key.py --apply --json --no-input
 export DOCUMENTS_ENDPOINT=https://documents.adithyan.io
 export DOCUMENTS_API_KEY_FILE="$HOME/.secrets/documents/api-key"
-documents status --no-input
+documents_client="$HOME/.local/share/documents-client/bin/documents"
+"$documents_client" status --no-input
 ```
 
 The generated credential file is private and user-owned. Pass only its path;
@@ -49,9 +57,9 @@ Dobby person's corpus. See `~/GitHub/dobby-engine/docs/references/documents.md`.
 ## Find, retrieve, and cite
 
 ```bash
-documents search --query "residence permit" --limit 10
-documents search --query "income statement" --year 2025 --bucket work --ext pdf
-documents get --document-id <id-from-search> --output tmp/document.pdf
+"$documents_client" search --query "residence permit" --limit 10
+"$documents_client" search --query "income statement" --year 2025 --bucket work --ext pdf
+"$documents_client" get --document-id DOCUMENT_ID_FROM_SEARCH --output tmp/document.pdf
 ```
 
 Search accepts exact names/identifiers plus `--year`, `--bucket`, `--ext`,
@@ -81,7 +89,7 @@ processing or a new provider service merely because a search missed a document.
 ## Copy-only import and failures
 
 ```bash
-documents ingest --source ~/Downloads/statement.pdf
+"$documents_client" ingest --source ~/Downloads/statement.pdf
 ```
 
 HTTPS ingest accepts one regular file per call and preserves its source. It

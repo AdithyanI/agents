@@ -13,7 +13,7 @@ This is the canonical cross-repo orientation for Dobby. Use it when ownership or
 | --- | --- |
 | `~/GitHub/adi`, `~/GitHub/angie` | Separate person workspaces: constitution, memory, journal, person prompts, workspace hooks, and `./bin/dobby` shim |
 | `~/GitHub/dobby-engine` | Shared CLI/engine, dashboard source, shared behavior, storage contracts, and default prompts |
-| `~/GitHub/documents` | Document inventory, copy-only ingest/import, extraction, catalog/search and metadata for `/Volumes/DobbyData/Documents`; raw documents stay outside Git |
+| `~/GitHub/documents` | Document inventory, copy-only ingest/import, extraction, catalog/search and metadata for the canonical ASUS corpus at `/srv/storage/documents`, with `/Volumes/DobbyData/Documents` retained during migration; raw documents stay outside Git |
 | `~/GitHub/dobby-gateway` | HTTP front door, assistant runtime routing, bearer auth, shared client contracts, and gateway service behavior |
 | `~/GitHub/dobby-ios` | iOS app, SwiftUI, and iOS build/deploy/TestFlight tooling |
 | `~/GitHub/agents` | Shared Codex configuration, skills, MCP/plugin registries, and lifecycle distribution |
