@@ -1,0 +1,4 @@
+interface:
+  display_name: "Documents Library"
+  short_description: "Find, retrieve, and cite personal documents"
+  default_prompt: "Use $documents-library to find the relevant records and answer from verified original documents with version and page citations."

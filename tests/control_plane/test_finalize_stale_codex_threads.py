@@ -409,6 +409,7 @@ class FinalizeCodexThreadTests(TempDirTestCase):
                 self.assertEqual(module.thread_read(client, "target"), {"id": "target"})
         self.assertEqual(connect.call_args.args, (str(self.temp_path / "app-server-control/app-server-control.sock"),))
         self.assertIsNone(connect.call_args.kwargs["compression"])
+        self.assertEqual(connect.call_args.kwargs["max_size"], 64 * 1024 * 1024)
         methods = [json.loads(call.args[0])["method"] for call in connection.send.call_args_list]
         self.assertEqual(methods, ["initialize", "initialized", "thread/read"])
         spawn.assert_not_called()

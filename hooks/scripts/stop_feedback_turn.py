@@ -19,6 +19,9 @@ DEFAULT_TIMEOUT_SECONDS = 30.0
 DEFAULT_TURN_TIMEOUT_SECONDS = 900.0
 DEFAULT_RETRY_SECONDS = 2.0
 DEFAULT_RETRIES = 10
+# Long tool-heavy threads exceed the WebSocket library's 1 MiB default.
+# Keep a finite ceiling while allowing complete repository discovery responses.
+MAX_APP_SERVER_MESSAGE_BYTES = 64 * 1024 * 1024
 
 
 class FeedbackTurnError(Exception):
@@ -48,18 +51,61 @@ class AppServerClient:
     def __init__(self, timeout_seconds: float) -> None:
         self.timeout_seconds = timeout_seconds
         self.proc: subprocess.Popen[str] | None = None
+        self.connection: Any = None
         self.messages: queue.Queue[dict[str, Any]] = queue.Queue()
         self.stderr_lines: list[str] = []
         self.next_id = 1
 
     def __enter__(self) -> "AppServerClient":
-        self.start()
+        try:
+            self.start()
+        except Exception:
+            self.close()
+            raise
         return self
 
     def __exit__(self, *_exc: object) -> None:
         self.close()
 
     def start(self) -> None:
+        codex_dir = Path(os.environ.get("CODEX_HOME", str(Path.home() / ".codex"))).expanduser()
+        socket_path = codex_dir / "app-server-control" / "app-server-control.sock"
+        if (not os.environ.get("AGENTS_CODEX_BIN", "").strip()
+                and (socket_path.exists() or socket_path.is_symlink())):
+            self._start_shared(socket_path)
+        else:
+            self._start_stdio()
+        self.request(
+            "initialize",
+            {
+                "clientInfo": {
+                    "name": "agents_stop_feedback_turn",
+                    "title": "Agents Stop Hook Feedback Turn",
+                    "version": "1",
+                },
+                "capabilities": {"experimentalApi": False},
+            },
+        )
+        self.notify("initialized", {})
+
+    def _start_shared(self, socket_path: Path) -> None:
+        try:
+            from websockets.sync.client import unix_connect
+        except ImportError as exc:
+            raise FeedbackTurnError(
+                "Missing WebSocket dependency; run "
+                "codex/scripts/install-thread-finalizer-deps.sh --apply"
+            ) from exc
+        try:
+            self.connection = unix_connect(
+                str(socket_path), uri="ws://localhost/rpc", compression=None,
+                user_agent_header=None, open_timeout=self.timeout_seconds, close_timeout=2,
+                max_size=MAX_APP_SERVER_MESSAGE_BYTES,
+            )
+        except Exception as exc:
+            raise FeedbackTurnError(f"Cannot connect to shared app-server at {socket_path}: {exc}") from exc
+
+    def _start_stdio(self) -> None:
         executable = resolve_codex_executable()
         try:
             self.proc = subprocess.Popen(
@@ -77,20 +123,12 @@ class AppServerClient:
         assert self.proc.stderr is not None
         threading.Thread(target=self._read_stdout, args=(self.proc.stdout,), daemon=True).start()
         threading.Thread(target=self._read_stderr, args=(self.proc.stderr,), daemon=True).start()
-        self.request(
-            "initialize",
-            {
-                "clientInfo": {
-                    "name": "agents_stop_feedback_turn",
-                    "title": "Agents Stop Hook Feedback Turn",
-                    "version": "1",
-                },
-                "capabilities": {"experimentalApi": False},
-            },
-        )
-        self.notify("initialized", {})
 
     def close(self) -> None:
+        if self.connection is not None:
+            connection = self.connection
+            self.connection = None
+            connection.close()
         if self.proc is None:
             return
         proc = self.proc
@@ -120,6 +158,12 @@ class AppServerClient:
                 del self.stderr_lines[:-80]
 
     def _write(self, message: dict[str, Any]) -> None:
+        if self.connection is not None:
+            try:
+                self.connection.send(json.dumps(message, separators=(",", ":")))
+            except Exception as exc:
+                raise FeedbackTurnError(f"shared app-server send failed: {exc}") from exc
+            return
         if self.proc is None or self.proc.stdin is None:
             raise FeedbackTurnError("app-server is not running")
         if self.proc.poll() is not None:
@@ -146,6 +190,14 @@ class AppServerClient:
         return self._read_response(request_id, method=method, timeout_seconds=timeout_seconds or self.timeout_seconds)
 
     def _next_message(self, *, timeout_seconds: float) -> dict[str, Any]:
+        if self.connection is not None:
+            try:
+                payload = json.loads(self.connection.recv(timeout=timeout_seconds))
+            except Exception as exc:
+                raise FeedbackTurnError(f"shared app-server receive failed: {exc}") from exc
+            if not isinstance(payload, dict):
+                raise FeedbackTurnError("shared app-server returned a non-object message")
+            return payload
         if self.proc is not None and self.proc.poll() is not None and self.messages.empty():
             stderr_tail = "\n".join(self.stderr_lines[-20:])
             raise FeedbackTurnError(

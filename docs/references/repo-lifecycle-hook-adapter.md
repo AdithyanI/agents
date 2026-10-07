@@ -118,13 +118,24 @@ All repo lifecycle hooks are Python. Do not add shell compatibility shims.
   the hook returns actionable incomplete-finalization feedback instead of
   publishing only the primary repo. A repeated continuation emits a warning
   rather than starting an unbounded retry loop.
-- The Stop App Server client prefers the macOS desktop application's bundled
-  Codex executable over a separately installed CLI on PATH. Desktop updates can
+- When the shared Codex daemon socket exists at
+  `$CODEX_HOME/app-server-control/app-server-control.sock` (default `~/.codex`),
+  the Stop client reads activity through that daemon using WebSocket framing
+  with compression disabled and a bounded 64 MiB receive limit. Long tool-heavy
+  threads can exceed the WebSocket library's default 1 MiB limit; their activity
+  must be read completely rather than truncated. This keeps discovery on the running server and
+  avoids launching a private reader that can stall or lack the current task.
+  Connection or history failures still block discovery; an existing but broken
+  daemon never silently falls back to private history. The WebSocket dependency
+  is installed by `codex/scripts/install-thread-finalizer-deps.sh --apply`.
+- Without that socket, the Stop App Server client prefers the macOS desktop
+  application's bundled Codex executable over a separately installed CLI on PATH. Desktop updates can
   add stored history variants that an older CLI cannot deserialize. The resolver
   checks current `codex-cli/bin/codex` and older `Resources/codex` layouts under
   `/Applications` and `~/Applications`; machines without a bundle use PATH.
   `AGENTS_CODEX_BIN` explicitly selects an executable for a custom installation
-  or hermetic test. An invalid override fails rather than silently falling back.
+  or hermetic test and bypasses the shared daemon. An invalid override fails
+  rather than silently falling back.
   This changes the reader version, not the discovery requirements: malformed or
   incomplete history still blocks publication, and stored task records are never
   rewritten to make an old reader accept them.

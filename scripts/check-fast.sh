@@ -6,13 +6,16 @@ cd "$(dirname "$0")/.."
 # Exact-source release gates run from a detached temporary worktree. Code checks use that frozen
 # tree, while machine enrollment checks address the canonical managed checkout because temporary
 # worktree paths are intentionally absent from the repo bootstrap registry.
+# Live credentials, installed plugins and profile drift belong to the separate
+# runtime check. This source gate uses mapping validation and hermetic fixtures.
 MANAGED_REPO_CHECK_ROOT="${AGENTS_MANAGED_REPO_CHECK_ROOT:-$HOME/GitHub/agents}"
 
 scripts/check-repo-hygiene.sh
 bash -n hooks/git/pre-commit scripts/sync-managed-git-hooks.sh scripts/check-agent-control-planes.sh scripts/auto-apply-agent-control-planes.sh scripts/enroll-managed-repos.sh scripts/serve-control-plane-dashboard.sh scripts/install-control-plane-dashboard-launchagent.sh scripts/deploy-control-plane-dashboard.sh scripts/local-production-source.sh
 scripts/check-skills-registry.sh --staged-ok
 scripts/check-plugins-registry.sh --staged-ok
-python3 -m unittest tests.control_plane.test_project_archive tests.control_plane.test_skills_sync tests.control_plane.test_codex_native_env tests.control_plane.test_codex_provider tests.control_plane.test_managed_repo_enrollment
+python3 codex/scripts/sync-native-env.py --check-sources
+python3 -m unittest tests.control_plane.test_project_archive tests.control_plane.test_skills_sync tests.control_plane.test_codex_native_env tests.control_plane.test_codex_plugin_component tests.control_plane.test_codex_provider tests.control_plane.test_codex_control_plane_check tests.control_plane.test_fast_gate_boundary tests.control_plane.test_managed_repo_enrollment
 python3 -m unittest \
   tests.control_plane.test_git_payload_guard \
   tests.control_plane.test_stop_whitespace \
@@ -28,7 +31,6 @@ bash tests/control_plane/test_local_production_source.sh
     --check \
     --hooks-path "$MANAGED_REPO_CHECK_ROOT/hooks/git" \
     --repo "$MANAGED_REPO_CHECK_ROOT"
-  "$PWD/codex/scripts/check-codex-control-plane.sh" --repo "$MANAGED_REPO_CHECK_ROOT"
 )
 
-echo "[check-fast] passed"
+echo "[check-fast] passed; live credentials, plugin installation and runtime profile drift not checked (use scripts/check-agent-control-planes.sh)"

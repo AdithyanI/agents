@@ -4,6 +4,7 @@ from tests.control_plane.support import (
     REPO_ROOT,
     TempDirTestCase,
     default_mcp_registry,
+    default_plugin_registry,
     init_git_repo,
     make_control_plane_root,
     run_command,
@@ -91,6 +92,59 @@ class CodexControlPlaneCheckTests(TempDirTestCase):
         self.assertIn("OK: Codex control plane validation passed", result.stdout)
         self.assertTrue((adi / ".codex/config.toml").is_file())
         self.assertTrue((adi / ".codex/hooks.json").is_file())
+
+    def test_full_check_requires_plugin_installation_and_managed_config(self) -> None:
+        root, home, adi = self._make_codex_repo_fixture()
+        registry = default_plugin_registry()
+        registry["managed_plugins"][0]["plugin"] = "browser"
+        write_json(root / "plugins/registry.json", registry)
+        write_json(root / "codex/config/bundled-skills-policy.json", {"version": 1, "roots": {}})
+        self._render_repo_configs(root, home)
+        app_marketplace = home / "app-bundled-marketplace"
+        managed_marketplace = home / ".codex/.tmp/bundled-marketplaces/openai-bundled"
+        managed_manifest = managed_marketplace / ".agents/plugins/marketplace.json"
+        write_json(app_marketplace / ".agents/plugins/marketplace.json", {"plugins": [{"name": "browser"}]})
+        write_json(app_marketplace / "plugins/browser/.codex-plugin/plugin.json", {"name": "browser", "version": "1.0"})
+        write_json(managed_manifest, {"plugins": []})
+        (managed_marketplace / "plugins").mkdir()
+        config = write_text(
+            home / ".codex/config.toml",
+            '[features]\nhooks = false\n'
+            f'[marketplaces.openai-bundled]\nsource = "{managed_marketplace}"\n'
+            '[plugins."browser@openai-bundled"]\nenabled = true\n',
+        )
+        env = {"HOME": str(home), "CODEX_BUNDLED_MARKETPLACE": str(app_marketplace)}
+        full_command = self._check_command(root, home, adi)
+
+        for missing, error in (
+            ("marketplace entry", "browser@openai-bundled` is absent from Codex's managed marketplace"),
+            ("cached package", f"browser@openai-bundled` is missing from {home / '.codex/plugins/cache/openai-bundled'}"),
+        ):
+            with self.subTest(missing=missing):
+                if missing == "cached package":
+                    write_json(managed_manifest, {"plugins": [{"name": "browser"}]})
+                result = run_command(full_command, env=env, check=False)
+                self.assertNotEqual(result.returncode, 0)
+                self.assertIn(error, result.stderr)
+
+        original_config = config.read_text()
+        config.write_text(original_config.replace(str(managed_marketplace), str(home / "unmanaged-marketplace")))
+        result = run_command(full_command, env=env, check=False)
+        self.assertNotEqual(result.returncode, 0)
+        self.assertIn("openai-bundled marketplace must use Codex's reserved managed root", result.stderr)
+        config.write_text(original_config)
+
+        config.write_text(config.read_text().replace("enabled = true", "enabled = false"))
+        result = run_command(full_command, env=env, check=False)
+        self.assertNotEqual(result.returncode, 0)
+        self.assertIn('browser@openai-bundled".enabled=False; expected True', result.stderr)
+
+        config.write_text(config.read_text().replace("enabled = false", "enabled = true"))
+        registry["managed_plugins"][0]["enabled"] = "true"
+        write_json(root / "plugins/registry.json", registry)
+        result = run_command(full_command, env=env, check=False)
+        self.assertNotEqual(result.returncode, 0)
+        self.assertIn("enabled must be a boolean", result.stderr)
 
     def test_global_agent_limit_allows_only_the_runtime_setting(self) -> None:
         root, home, adi = self._make_codex_repo_fixture()

@@ -4,10 +4,31 @@
 from __future__ import annotations
 
 import argparse
+import importlib
+import importlib.util
 from pathlib import Path
 import subprocess
 import sys
 import tomllib
+
+
+def validate_mapping_sources(materializer: Path, mapping: Path) -> None:
+    """Use the scripts-owned grammar and name contract without reading values."""
+    spec = importlib.util.spec_from_file_location("codex_native_mapping_contract", materializer)
+    if spec is None or spec.loader is None:
+        raise ValueError(f"cannot load mapping validator from {materializer}")
+    module = importlib.util.module_from_spec(spec)
+    sys.modules[spec.name] = module
+    spec.loader.exec_module(module)
+    mappings = module._parse_mapping_file(mapping)
+    store = importlib.import_module("local_secret_store")
+    for item in mappings:
+        # secret_path only validates components and constructs a path. Neither
+        # it nor the mapping parser opens the canonical store or generated env.
+        try:
+            store.secret_path(root=materializer.parent, scope_name="shared", secret_name=item.secret_name)
+        except store.LocalSecretStoreError as exc:
+            raise ValueError(str(exc)) from exc
 
 
 def main() -> int:
@@ -18,7 +39,8 @@ def main() -> int:
     modes = parser.add_mutually_exclusive_group()
     modes.add_argument("--apply", action="store_true")
     modes.add_argument("--check", action="store_true")
-    modes.add_argument("--dry-run", action="store_true", help="validate sources without writing (default)")
+    modes.add_argument("--dry-run", action="store_true", help="validate canonical credential readiness without writing (default)")
+    modes.add_argument("--check-sources", action="store_true", help="validate provider mappings only; do not read live credential values or generated .env")
     args = parser.parse_args()
 
     try:
@@ -42,11 +64,17 @@ def main() -> int:
             if env_key not in keys:
                 raise ValueError(f"provider {provider} requires {env_key}; declare it in {mapping}")
         if not mapping.is_file():
+            if args.check_sources:
+                print("Codex native environment source validation passed; live credentials not checked (no native mapping).")
             return 0
 
         materializer = args.github_root / "scripts/sync/materialize_machine_env.py"
         if not materializer.is_file():
             raise ValueError(f"missing {materializer}; sync the scripts repo before applying Codex config")
+        if args.check_sources:
+            validate_mapping_sources(materializer, mapping)
+            print("Codex native environment source validation passed; live credentials not checked.")
+            return 0
         command = [
             sys.executable, str(materializer), "--secret-scope", "shared",
             "--mapping-file", str(mapping), "--output-file", str(args.runtime_dir / ".env"),

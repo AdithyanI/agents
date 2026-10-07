@@ -44,6 +44,13 @@ Use [Codex Control Plane Ownership](/Users/dobby/GitHub/agents/docs/references/c
 - Validate shared skills, plugins, repo-local hook files, and Codex rendered runtime state:
   - [`check-agent-control-planes.sh`](/Users/dobby/GitHub/agents/scripts/check-agent-control-planes.sh)
   - `~/GitHub/agents/scripts/check-agent-control-planes.sh`
+- Validate source before publication:
+  - `~/GitHub/agents/scripts/check-fast.sh` checks repository hygiene, registries, canonical provider mappings, hermetic rendering/provider regressions, and managed Git hook enrollment. It does not invoke the live Codex control-plane checker.
+  - `sync-native-env.py --check-sources` validates mapping syntax/duplicates and shared-scope secret names through the scripts-owned parser without opening the canonical store or generated `.env`. Fast-gate output explicitly says live credentials, plugin installation and runtime profile drift were not checked.
+  - Run `scripts/check-agent-control-planes.sh` for those separate runtime checks; `scripts/check-full.sh` runs both gates. Default `check-codex-control-plane.sh` remains strict about canonical credentials, generated `.env`, installed plugins, profiles and rendered runtime state. Bootstrap retains its credential preflight and plugin installation. The native materializer's 30-second timeout remains blocking in runtime checks; source-gate success does not certify runtime readiness.
+- Reconcile only managed plugin configuration:
+  - `~/GitHub/agents/codex/scripts/sync-config.sh --plugins-only` previews plugin-section drift; add `--apply` to reconcile it in an existing global config through the canonical renderer.
+  - This component command validates the registry and applies canonical/registered plugin entries, preserving unregistered native-app additions. It verifies that every non-managed plugin entry and every other parsed config field is unchanged before installation. It does not read or write credentials, auth, hooks, profiles, provider preferences or plugin caches. Default/full sync and bootstrap still run their strict native credential preflight and existing stale-plugin pruning.
 - Validate managed plugins:
   - [`sync-plugins-registry.sh`](/Users/dobby/GitHub/agents/scripts/sync-plugins-registry.sh)
   - `~/GitHub/agents/scripts/sync-plugins-registry.sh --apply`
@@ -194,6 +201,7 @@ Use [Codex Control Plane Ownership](/Users/dobby/GitHub/agents/docs/references/c
   - takes only `--thread-id` as canonical thread identity
   - connects using WebSocket over `$CODEX_HOME/app-server-control/app-server-control.sock` (default `~/.codex`) to the existing daemon, uses `thread/read` to derive the thread `cwd`, resolves the repo root, runs optional repo policy at `scripts/hooks/finalize_codex_thread.py`, then archives the source thread through `thread/archive`; repo policy owns any finalization model turn
   - uses `websockets==16.0`, installed by `codex/scripts/install-thread-finalizer-deps.sh --apply` for the shared preferred Python. The socket requires WebSocket framing with compression disabled; `codex app-server proxy` only relays bytes and cannot accept bare JSONL requests
+  - both shared-daemon readers allow messages up to 64 MiB, avoiding the library's 1 MiB default cutoff on long thread activity. The bound remains finite; oversized or unreadable activity fails finalization instead of silently truncating repository discovery
   - requires the shared daemon even for a dry-run; check it with `codex app-server daemon version`. A missing daemon fails before repo policy runs, without falling back to a private server; the hourly scheduler retries eligible tasks on its next run
   - the daemon broadcasts `thread/archived` to connected clients, allowing a Desktop SSH connection using that daemon to remove the sidebar entry. The archive/sidebar step makes no model calls and does not edit Codex databases directly
   - checks shared-daemon activity before repo policy and again before archive, including loaded descendants because archive closes descendants too; an active task family is left for a later run with `skipped_reason=active_thread`. These checks reduce races but are not an atomic conditional archive. Connection or archive failure may leave the task unarchived, and a later retry may rerun its repo hook

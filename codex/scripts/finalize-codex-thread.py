@@ -19,6 +19,8 @@ HOOK_EVENT = "FinalizeCodexThread"
 DEFAULT_TIMEOUT_SECONDS = 60.0
 DEFAULT_FINALIZATION_TIMEOUT_SECONDS = 900.0
 MAX_OUTPUT_CHARS = 12_000
+# Match the Stop reader: full thread activity can exceed the 1 MiB library default.
+MAX_APP_SERVER_MESSAGE_BYTES = 64 * 1024 * 1024
 REPO_FINALIZER = Path("scripts/hooks/finalize_codex_thread.py")
 
 
@@ -141,6 +143,7 @@ class AppServerClient:
                 user_agent_header=None,
                 open_timeout=self.timeout_seconds,
                 close_timeout=2,
+                max_size=MAX_APP_SERVER_MESSAGE_BYTES,
             )
         except Exception as exc:
             raise AppServerError(

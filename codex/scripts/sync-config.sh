@@ -8,6 +8,8 @@ ROOT_DIR="$(cd "$CONTROL_PLANE_DIR/.." && pwd)"
 
 APPLY=0
 SYNC_GLOBAL=1
+PLUGINS_ONLY=0
+GLOBAL_ONLY_REQUESTED=0
 GITHUB_ROOT="${HOME}/GitHub"
 GLOBAL_CONFIG="${HOME}/.codex/config.toml"
 GLOBAL_HOOKS="${HOME}/.codex/hooks.json"
@@ -34,6 +36,7 @@ Options:
   --apply                    Apply changes in place (default: dry-run)
   --dry-run                  Show planned changes only (default)
   --global-only              Sync ~/.codex/config.toml only
+  --plugins-only             Reconcile managed plugin sections in an existing config only
   --github-root <path>       Root path for workspace-write writable_roots
                              (default: ~/GitHub)
   --global-config <path>     Override global codex config target
@@ -88,6 +91,11 @@ while [[ $# -gt 0 ]]; do
       ;;
     --global-only)
       SYNC_GLOBAL=1
+      GLOBAL_ONLY_REQUESTED=1
+      shift
+      ;;
+    --plugins-only)
+      PLUGINS_ONLY=1
       shift
       ;;
     --github-root)
@@ -137,6 +145,10 @@ while [[ $# -gt 0 ]]; do
       ;;
   esac
 done
+
+if (( PLUGINS_ONLY == 1 && GLOBAL_ONLY_REQUESTED == 1 )); then
+  die "--plugins-only and --global-only are mutually exclusive"
+fi
 
 if (( APPLY == 1 )) && [[ "${CODEX_CONFIG_LOCK_HELD:-}" != "$GLOBAL_CONFIG" ]]; then
   cleanup
@@ -1201,6 +1213,62 @@ sync_global() {
   cleanup_agent_role_dir "Global Agent Roles" "$GLOBAL_AGENTS_DIR"
 }
 
+sync_plugins_only() {
+  local original="$GLOBAL_CONFIG"
+  local rendered="${TMP_DIR}/plugins.config.toml"
+  local entries="${TMP_DIR}/plugin.entries"
+  local section key value
+
+  require_readable_file "$original"
+  require_readable_file "$CANONICAL_GLOBAL_TEMPLATE"
+  require_readable_file "$PLUGIN_REGISTRY"
+  # Capture extraction first: failures inside process substitution do not
+  # propagate through a bash read loop. Invalid registries must prevent writes.
+  extract_codex_plugin_entries "$PLUGIN_REGISTRY" > "$entries"
+  prepare_work_file "$original" "$rendered"
+  while IFS=$'\x1f' read -r section key value; do
+    [[ "$section" == plugins.* && -n "$key" ]] || continue
+    upsert_section_key "$rendered" "$section" "$key" "$value"
+  done < <(extract_toml_entries "$CANONICAL_GLOBAL_TEMPLATE")
+  while IFS=$'\x1f' read -r section key value; do
+    [[ -n "$key" ]] || continue
+    upsert_section_key "$rendered" "$section" "$key" "$value"
+  done < "$entries"
+  # Component maintenance owns only registered/canonical entries. Native-app
+  # additions remain intact; full sync retains its existing stale-plugin prune.
+  python3 - "$original" "$rendered" "$CANONICAL_GLOBAL_TEMPLATE" "$entries" <<'PY'
+import sys
+import tomllib
+from pathlib import Path
+
+original, rendered, template, entries = map(Path, sys.argv[1:])
+try:
+    before = tomllib.loads(original.read_text())
+    after = tomllib.loads(rendered.read_text())
+    managed = set(tomllib.loads(template.read_text()).get("plugins", {}))
+    for line in entries.read_text().splitlines():
+        section, key, value = line.split("\x1f")
+        managed.update(tomllib.loads(f"[{section}]\n{key} = {value}\n")["plugins"])
+    for config in (before, after):
+        plugins = config.get("plugins", {})
+        for name in managed:
+            plugins.pop(name, None)
+        if not plugins:
+            config.pop("plugins", None)
+    if before != after:
+        raise ValueError("plugin reconciliation changed unrelated configuration")
+except (OSError, ValueError) as exc:
+    raise SystemExit(f"ERROR: plugin component validation failed: {exc}")
+PY
+
+  log ""
+  log "=== Managed Codex Plugins (${original}) ==="
+  show_diff "$original" "$rendered"
+  if (( APPLY == 1 )); then
+    install_rendered_file "$rendered" "$original"
+  fi
+}
+
 render_profile_config() {
   local profile_template="$1"
   local target_file="$2"
@@ -1452,7 +1520,9 @@ else
   log "Mode: DRY-RUN (no files written)"
 fi
 
-if (( SYNC_GLOBAL == 1 )); then
+if (( PLUGINS_ONLY == 1 )); then
+  sync_plugins_only
+elif (( SYNC_GLOBAL == 1 )); then
   catalog_args=()
   if (( APPLY == 1 )); then
     catalog_args+=(--apply)
@@ -1462,7 +1532,7 @@ if (( SYNC_GLOBAL == 1 )); then
   sync_profile_configs
   cleanup_retired_azure_catalog
 fi
-if (( APPLY == 1 )); then
+if (( APPLY == 1 && PLUGINS_ONLY == 0 )); then
   ensure_enabled_openai_bundled_plugins
 fi
 
