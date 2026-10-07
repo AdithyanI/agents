@@ -5,7 +5,7 @@ Use this when adding or moving a secret in this environment.
 ## Stable Values And Runtime State
 
 The selected v2 policy uses the same logical
-`~/Documents/DobbySecrets/scopes/shared` folder on the Mac Mini, MacBook and ASUS.
+`~/.local/share/dobby-secrets/scopes/shared` folder on the Mac Mini, MacBook and ASUS.
 All three peers can write enrolled stable values through `bin/local-secrets`;
 Syncthing uses send/receive on each. The scripts repo's
 `docs/references/shared-api-credentials.md` owns activation and readiness evidence.
@@ -109,7 +109,7 @@ Canonical docs:
 - `$HOME/GitHub/scripts/docs/references/local-secret-store.md`
 - `$HOME/GitHub/scripts/docs/references/shared-api-credentials.md`
 - `$HOME/GitHub/scripts/bin/local-secrets`
-- `$HOME/Documents/DobbySecrets/scopes/<scope>/<secret-name>` (untracked values)
+- `$HOME/.local/share/dobby-secrets/scopes/<scope>/<secret-name>` (untracked values)
 
 Typical app files:
 - `scripts/local/secrets/secret_env_map.env.example`

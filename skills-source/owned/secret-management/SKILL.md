@@ -17,12 +17,17 @@ Read [references/decision-guide.md](references/decision-guide.md) for the concre
 
 ## Shared Policy
 
-Stable enrolled credentials use one logical `DobbySecrets/scopes/shared` store
+Stable enrolled credentials use one logical `~/.local/share/dobby-secrets/scopes/shared` store
 across the Mac Mini, MacBook and ASUS. The selected v2 policy makes all three
 peers writable through `bin/local-secrets` with send/receive synchronization;
 there is no permanent source/mirror role. Git carries code, guidance and mappings,
 not values. Check the scripts repo's `docs/references/shared-api-credentials.md`
 for activation evidence before assuming a peer is ready.
+
+The approved move out of `~/Documents/DobbySecrets` belongs to Scripts'
+`bin/migrate-secret-store`; follow its runbook before using an unmigrated peer.
+Do not maintain two roots, add a symlink alias, or request broader macOS privacy
+access to keep the old location alive. Local-only scopes move without becoming shared.
 
 Mappings and explicit source sets select shared names and local consumers. Existing
 Mac tool outputs remain Mac-only. Materialization requires the selected local
@@ -55,7 +60,7 @@ existing runtime owners and are excluded from stable-value replication.
 Use for deployed application secrets.
 
 - Enroll stable shared values under
-  `~/Documents/DobbySecrets/scopes/shared/<secret-name>` on the authorized peers.
+  `~/.local/share/dobby-secrets/scopes/shared/<secret-name>` on the authorized peers.
   Keep mutable authentication state in its owning runtime lane.
 - Wire the value through the owning runtime's actual materialization contract. Current Mac Mini
   services use repo mappings plus generated `.env` files and repo-owned deploy/restart commands.
@@ -109,6 +114,6 @@ values remain in the logical shared store.
 - Treat file-based credentials as a separate case; they may need materialization, not `KEY=value` sync.
 - Use `~/GitHub/scripts/bin/local-secrets` for reads/writes/import/status workflows; never print
   secret values in logs or agent responses.
-- Keep store files untracked with `0700` directories and `0600` files. Preserve
-  existing Mac Backblaze coverage; follow the ASUS backup contract for Linux.
+- Keep store files untracked with `0700` directories and `0600` files. Mac Mini
+  Backblaze coverage ended on 2026-09-23; follow the ASUS backup contract for Linux.
   Synchronization is not a substitute for backup or conflict recovery.

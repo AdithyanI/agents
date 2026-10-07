@@ -108,7 +108,7 @@ works for GUI launches without shell environment inheritance. It contains
 credentials and must never be printed, committed, or hand-maintained.
 
 The canonical value is maintained on the Mac mini at
-`~/Documents/DobbySecrets/scopes/shared/litellm--azure-openai-api-key`.
+`~/.local/share/dobby-secrets/scopes/shared/litellm--azure-openai-api-key`.
 The scripts-owned shared API credential policy mirrors it to the MacBook Pro with
 Syncthing; Git carries only mappings and configuration. Update the named value on
 the mini using `scripts/bin/local-secrets` (`--stdin` or `--value-file`, never a

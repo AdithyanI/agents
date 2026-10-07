@@ -89,7 +89,7 @@ def main() -> int:
             print(result.stdout + result.stderr, end="", file=sys.stderr)
             raise ValueError(
                 "native credentials are not ready. Provision the mapped secrets in this machine's "
-                "DobbySecrets store, then run codex/scripts/sync-config.sh --apply. "
+                "~/.local/share/dobby-secrets store, then run codex/scripts/sync-config.sh --apply. "
                 "Git sync carries mappings, not secret values; sync both repos if --check is unrecognized."
             )
         print(result.stdout, end="")
