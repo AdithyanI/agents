@@ -10,6 +10,11 @@ session stores. The durable shared layer is a control plane for intent:
 repository identity, guidance, capabilities, lifecycle policy, and validation.
 Each client then gets a thin native renderer and adapter.
 
+Equal support means equivalent repository operability, not one canonical agent.
+Codex and Claude may use different agent definitions, prompts, models,
+subagents, and native orchestration as long as either can discover the contract,
+perform the work, run the same repo-owned gates, and reach a verified outcome.
+
 This is also what the strongest historical implementation converged on. Claude
 support was later removed as a product decision, not after evidence that the
 architecture failed.
@@ -47,16 +52,19 @@ The reusable substrate is broader than prompt files:
    and made available through each client's native discovery paths.
 3. **Deterministic enforcement** — hooks and Git checks enforce rules that must
    not depend on model memory or judgment.
-4. **Executable completion** — agents can build, inspect, test, repair, and
-   deliver within the repository's declared contract.
-5. **Continuity** — projects, session handoff/finalization, and recovery state
+4. **Fast executable feedback** — each repo provides a local, deterministic,
+   actionable fast gate that agents and Git hooks can invoke without remote CI.
+5. **Executable completion** — agents can build, inspect, test, repair, and
+   deliver within the repository's declared contract, using slower full checks
+   and product proof when risk requires them.
+6. **Continuity** — projects, session handoff/finalization, and recovery state
    have explicit owners and resume points.
-6. **Safe autonomy** — routine work is automated, but credentials, runtime
+7. **Safe autonomy** — routine work is automated, but credentials, runtime
    history, user preferences, spending, and destructive actions keep their
    existing authority boundaries.
-7. **Observable correctness** — bootstrap, check, and drift commands can explain
+8. **Observable correctness** — bootstrap, check, and drift commands can explain
    the effective state for every repository and client.
-8. **Recoverability** — generated outputs are ownership-marked, updates are
+9. **Recoverability** — generated outputs are ownership-marked, updates are
    idempotent, and removal affects only known managed material.
 
 An `AGENTS.md` file alone makes a repository easier for an agent to understand;
@@ -175,6 +183,7 @@ actually created.
 | MCP | Neutral definitions and repo assignments | `[mcp_servers.*]` in Codex TOML | `.mcp.json` for shared project scope; `~/.claude.json` only for intentional personal scope | Current renderer and schema are Codex-only |
 | Lifecycle hooks | Logical event, repository scope, timeout, normalized payload | Codex `hooks.json` and Codex payload adapter | `hooks` in Claude settings and Claude payload adapter | Validator/runtime accept only Codex; Stop implementation is Codex-specific |
 | Git delivery | Shared hook path and repo-owned checks | Existing shared Git hooks | Same shared Git hooks | Already portable; conversation-end attribution is not |
+| Fast checks | Repo `scripts/check-fast.sh` contract | Called by shared pre-commit and Codex workflow | Same repo command, reachable from Claude workflow/hooks | Existing contract is strong but not yet represented as a first-class cross-client capability |
 | Runtime settings | Client-specific owned overlay | Codex TOML templates | Ownership-aware merge into `~/.claude/settings.json` and shared project settings | Claude overlay/renderer absent; current retirement touches local settings |
 | Plugins | Capability identity only when useful | Codex native plugin registry/cache | Claude marketplaces/plugins | Must remain separate unless a component is explicitly promoted to a standalone skill or MCP |
 | Subagents | Optional role purpose, scope, and access intent | Codex-native role/config behavior | `~/.claude/agents` or repo `.claude/agents` Markdown | No current shared role registry; defer until a repeated role justifies it |
@@ -310,6 +319,39 @@ for policy.
   commit/rebase/push on the Codex path only. Both clients may operate in one
   checkout, so “commit every dirty file in the current repo” is unsafe.
 
+### Fast checks and shared hook flow
+
+The fast gate is a core agent-native interface, not merely a Git convenience.
+Its implementation belongs to each repository because only that repository can
+define the cheapest meaningful proof of a change. The shared control plane owns
+discovery and invocation, not the contents of every check.
+
+```mermaid
+flowchart LR
+    A[Codex native event] --> C[Codex adapter]
+    B[Claude native event] --> D[Claude adapter]
+    C --> E[Normalized repo-hook payload]
+    D --> E
+    E --> F[Repo lifecycle entrypoint]
+    F --> G[scripts/check-fast.sh]
+    H[Shared Git pre-commit hook] --> G
+    G --> I[Actionable pass or failure]
+    I --> C
+    I --> D
+```
+
+- `scripts/check-fast.sh` should remain local, deterministic, quick, and safe to
+  run repeatedly. It should identify the failing component and return a useful
+  exit code.
+- Expensive integration suites, packaging, and full product verification remain
+  in `scripts/check-full.sh` or the repository's equivalent. The agent chooses
+  them in proportion to the change and repairs failures before handoff.
+- Client hooks may trigger or surface the gate, but must not create separate
+  Claude and Codex implementations of the same repository validation.
+- The shared `hooks/git/pre-commit` path remains a client-independent backstop.
+  Client lifecycle hooks add context, recovery, and completion behavior around
+  it; they do not replace it.
+
 ### Plugins and subagents
 
 - Keep `plugins/registry.json` Codex-native.
@@ -352,6 +394,25 @@ for policy.
 - Concurrent Codex/Claude dirty-worktree tests before shared automatic delivery.
 - Relevant repository fast checks, full control-plane tests, dashboard build, and
   runtime drift audit before rollout.
+
+## Later Harness Improvement Loop
+
+Restoring coexistence establishes the baseline; improving the harness is a
+separate continuous activity driven by real failures from both clients.
+
+For each recurring failure, trace where completion became uncertain:
+
+1. Could the agent find the owner and applicable guidance?
+2. Could it invoke the needed capability non-interactively?
+3. Did the fast check expose the problem quickly and explain the repair?
+4. Did the lifecycle hook preserve context and return feedback correctly?
+5. Could the agent recover and finish without human coordination?
+
+Repair the smallest owning layer and add a focused regression when recurrence
+justifies it. Promote an improvement to the neutral core only when both clients
+share the intent; keep client-specific strengths in the native adapter. This
+creates a learning harness without accumulating speculative abstractions or
+larger instruction files as substitutes for executable feedback.
 
 ## Current Claude Facts Used By This Proposal
 

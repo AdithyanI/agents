@@ -9,6 +9,9 @@ canonical guidance or capability sources.
 The result should make Claude Code a first-class client, not a compatibility
 afterthought, while preserving the current Codex behavior. Neither client is
 architecturally primary. A machine or repository may enable either or both.
+The clients do not need to use the same agent definition, persona, prompt stack,
+or runtime features. They need equivalent ability to understand, change,
+validate, and finish work in the repository.
 
 ## Why This Project Exists
 
@@ -33,6 +36,8 @@ A managed repository is agent-native when a fresh supported client can:
   context;
 - discover only the skills, tools, and MCP servers intended for that repository;
 - run the relevant build, test, preview, and delivery workflows non-interactively;
+- run a fast, deterministic, actionable repository gate before delivery, with
+  slower verification kept in the repository's full-check path;
 - receive deterministic lifecycle feedback and recover from failures;
 - preserve user-owned settings, credentials, sessions, and unrelated runtime
   state;
@@ -70,6 +75,8 @@ A managed repository is agent-native when a fresh supported client can:
 ## Target Principles
 
 - Share intent and source content; render native client artifacts.
+- Target operational parity, not agent-identity parity. Native agents, models,
+  prompts, roles, and orchestration may differ between clients.
 - Keep one canonical repository identity and capability-assignment model.
 - Give repositories stable IDs; treat checkout paths as deployment locations.
 - Make client enablement explicit and symmetric. Do not make Codex mandatory or
@@ -95,6 +102,12 @@ A managed repository is agent-native when a fresh supported client can:
 - Claude receives the canonical global guidance, repository `AGENTS.md`
   hierarchy, scoped standalone skills, assigned MCP servers, and approved
   lifecycle hooks through current native surfaces.
+- Every managed repo exposes a quick local `scripts/check-fast.sh` or an explicit
+  equivalent, and the shared Git hook plus both client workflows use that same
+  repo-owned gate rather than duplicating validation logic.
+- Native lifecycle events pass through client adapters into shared normalized
+  repo-hook contracts, with actionable feedback returned in the form each client
+  supports.
 - Root bootstrap, post-sync reconcile, checks, drift audit, and dashboard all
   understand both clients and work when one client is intentionally absent.
 - Bootstrap never modifies client credentials, conversation history, runtime
@@ -130,6 +143,8 @@ A managed repository is agent-native when a fresh supported client can:
 4. **Lifecycle integration**
    - Restore normalized Claude payload adapters for safe shared repo hooks.
    - Start with `SessionStart` and `UserPromptSubmit` where useful.
+   - Make the existing fast-check contract directly discoverable and callable
+     from both clients while preserving the shared pre-commit path.
    - Design and prove Claude Stop/finalization attribution separately before
      enabling automatic Git delivery.
 5. **Operations and rollout**
@@ -141,6 +156,13 @@ A managed repository is agent-native when a fresh supported client can:
      for roles that are repeatedly useful.
    - Evaluate Claude plugins, preview launch surfaces, session maintenance, and
      cloud/Cowork distribution independently rather than assuming parity.
+7. **Harness improvement loop**
+   - Use real Codex and Claude work to identify where agents lose context, stop
+     early, run the wrong check, or cannot recover.
+   - Fix each repeated failure in the smallest effective layer: source, tool,
+     fast check, lifecycle adapter, skill, or guidance.
+   - Keep useful cross-client improvements in the neutral core and leave
+     client-native advantages in their owning adapters.
 
 ## Current Batch
 
@@ -165,6 +187,8 @@ A managed repository is agent-native when a fresh supported client can:
   not required for guidance/skills/MCP parity.
 - Whether any Claude Desktop, Cowork, or cloud-session behavior belongs in this
   project. The initial target should be local Claude Code unless expanded.
+- Which observed harness failures should seed the later improvement loop. Avoid
+  designing a generic framework before side-by-side use supplies evidence.
 
 ## Resume Point
 
