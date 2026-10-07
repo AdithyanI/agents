@@ -115,6 +115,21 @@
   display: none !important;
 }
 
+.nav-files-container .tree-item-self[data-path="skills-source/owned/imagegen/agents"],
+.nav-files-container .tree-item-self[data-path^="skills-source/owned/imagegen/agents/"] {
+  display: none !important;
+}
+
+.nav-files-container .tree-item-self[data-path="skills-source/owned/imagegen/assets"],
+.nav-files-container .tree-item-self[data-path^="skills-source/owned/imagegen/assets/"] {
+  display: none !important;
+}
+
+.nav-files-container .tree-item-self[data-path="skills-source/owned/imagegen/scripts"],
+.nav-files-container .tree-item-self[data-path^="skills-source/owned/imagegen/scripts/"] {
+  display: none !important;
+}
+
 .nav-files-container .tree-item-self[data-path="skills-source/owned/cv-creator/agents"],
 .nav-files-container .tree-item-self[data-path^="skills-source/owned/cv-creator/agents/"] {
   display: none !important;
@@ -257,6 +272,11 @@
 
 .nav-files-container .tree-item-self[data-path="skills-source/owned/dobby-workspace/agents"],
 .nav-files-container .tree-item-self[data-path^="skills-source/owned/dobby-workspace/agents/"] {
+  display: none !important;
+}
+
+.nav-files-container .tree-item-self[data-path="skills-source/owned/imagegen/styles/assets"],
+.nav-files-container .tree-item-self[data-path^="skills-source/owned/imagegen/styles/assets/"] {
   display: none !important;
 }
 

@@ -9,9 +9,11 @@ Canonical source of truth: [`skills/registry.json`](/Users/dobby/GitHub/agents/s
 - Runtime discovery paths are symlinks, not real copies.
 - The registry tells sync scripts what to link and where.
 
-The owned `imagegen` skill was removed on October 7, 2026. It has no registry
-entry or managed runtime link; its source and reusable assets are recoverable
-through Git history. Keep the native bundled `imagegen` disabled in
+The owned `imagegen` skill is dormant as of October 7, 2026. Its source and
+reusable assets remain tracked, while `scope: "dormant"` prevents managed runtime
+links and agent discovery. Direct Azure generation is disabled. Reactivation
+requires an explicit registry change and a provider update: its historical
+default proxy model is retired. Keep the native bundled `imagegen` disabled in
 `codex/config/bundled-skills-policy.json` so bootstrap does not expose a fallback.
 Codex's Azure provider and credential delivery remain independently managed.
 
