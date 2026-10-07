@@ -13,7 +13,8 @@ This is the canonical cross-repo orientation for Dobby. Use it when ownership or
 | --- | --- |
 | `~/GitHub/adi`, `~/GitHub/angie` | Separate person workspaces: constitution, memory, journal, person prompts, workspace hooks, and `./bin/dobby` shim |
 | `~/GitHub/dobby-engine` | Shared CLI/engine, dashboard source, shared behavior, storage contracts, and default prompts |
-| `~/GitHub/documents` | Document inventory, copy-only ingest/import, extraction, catalog/search and metadata for the canonical ASUS corpus at `/srv/storage/documents`, with `/Volumes/DobbyData/Documents` retained during migration; raw documents stay outside Git |
+| `~/GitHub/documents` | Document corpus, catalog, extraction, authenticated API and packaged client; ASUS owns the canonical corpus at `/srv/storage/documents`, and raw documents stay outside Git |
+| `~/GitHub/photo-search` | Authenticated photo/video search API, indexed annotations and agent client on ASUS; Immich owns originals, metadata and asset authorization |
 | `~/GitHub/dobby-gateway` | HTTP front door, assistant runtime routing, bearer auth, shared client contracts, and gateway service behavior |
 | `~/GitHub/dobby-ios` | iOS app, SwiftUI, and iOS build/deploy/TestFlight tooling |
 | `~/GitHub/agents` | Shared Codex configuration, skills, MCP/plugin registries, and lifecycle distribution |
@@ -25,7 +26,8 @@ This is the canonical cross-repo orientation for Dobby. Use it when ownership or
 - Workspaces hold identity and data, with `./bin/dobby` pinning the workspace and calling the shared engine. Do not copy engine implementation into workspaces or hardcode person paths in shared code; resolve `DOBBY_WORKSPACE` or the workspace marker.
 - Gateway and product clients consume workspace-bound CLI/API contracts. Do not read private memory, SQLite, or legacy JSON directly from another product.
 - Private corpus, memory, and artifact content stays in the person's workspace or its explicitly configured data store, not in engine, gateway, iOS, agents, or public/content repos.
-- Documents are an explicit domain bridge. The engine exposes `dobby documents` operations; the `documents` repo owns catalog/ingest/index behavior. Each workspace opts into a root such as `DOBBY_DOCUMENTS_DATA_ROOT`; do not infer a person's corpus from a machine-wide default.
+- Documents and photos are explicit domain bridges. The engine exposes `dobby documents` and `dobby photos`, delegating to the domain-owned clients rather than duplicating API, authentication or indexing behavior. Each workspace selects its endpoint and generated credential-file path; photos also require an explicit library. Do not infer a person's corpus from machine-wide credentials or another workspace.
+- Routine document/photo/video lookup uses the authenticated APIs from any configured agent machine; it does not require SSH to ASUS, mounted storage or local indexes. Scripts owns client provisioning and generated credential delivery from the shared secret store. Missing setup or failed API access must not silently fall back to another person, host or corpus. Exact command and configuration contracts live in engine `docs/references/documents.md` and `docs/references/photos.md`.
 - Health uses engine-owned SQLite at `~/Library/Application Support/Dobby/health/health.sqlite`, with `person_id` isolation. Access it through workspace-bound Dobby commands or gateway responses. Workspace health JSON is import/audit/backup material.
 - Shelf uses engine-owned SQLite at `~/Library/Application Support/Dobby/shelf/shelf.sqlite`, with `person_id` isolation. It is per-machine and not Git-replicated: dashboard-visible writes must reach the serving host or an explicit remote-authoritative API. Workspace `state/shelf.json` is legacy import/audit/backup material.
 - Live launchd plists are machine-local runtime state. `scripts` owns installers and scheduling wrappers; real domain behavior stays with its owner.
