@@ -1,6 +1,0 @@
-interface:
-  display_name: "Image Gen"
-  short_description: "Generate and edit images with AI"
-  icon_small: "./assets/imagegen-small.svg"
-  icon_large: "./assets/imagegen.png"
-  default_prompt: "Use $imagegen for this AI image generation or editing task: check relevant styles, choose the requested provider/model (including direct Azure), structure prompts clearly, inspect outputs, iterate privately when useful, and return the strongest final output."

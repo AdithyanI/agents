@@ -9,6 +9,12 @@ Canonical source of truth: [`skills/registry.json`](/Users/dobby/GitHub/agents/s
 - Runtime discovery paths are symlinks, not real copies.
 - The registry tells sync scripts what to link and where.
 
+The owned `imagegen` skill was removed on October 7, 2026. It has no registry
+entry or managed runtime link; its source and reusable assets are recoverable
+through Git history. Keep the native bundled `imagegen` disabled in
+`codex/config/bundled-skills-policy.json` so bootstrap does not expose a fallback.
+Codex's Azure provider and credential delivery remain independently managed.
+
 ```mermaid
 flowchart LR
     A[skills/registry.json] --> B[Real skill folder in skills-source/...]

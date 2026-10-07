@@ -221,14 +221,6 @@
       "upstream_ref": "-"
     },
     {
-      "skill": "imagegen",
-      "origin": "owned",
-      "scope": "global",
-      "repos": [],
-      "source_path": "skills-source/owned/imagegen",
-      "upstream_ref": "-"
-    },
-    {
       "skill": "skill-router",
       "origin": "owned",
       "scope": "dormant",
