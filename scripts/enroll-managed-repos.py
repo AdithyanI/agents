@@ -177,7 +177,7 @@ def main() -> int:
         repos.append({
             "id": repo_id,
             "path": display_path(candidate.declared_path, home),
-            "clients": {"codex": {"enabled": True, "config": {}}, "claude": {"enabled": False}},
+            "clients": {"codex": {"enabled": True, "config": {}}, "claude": {"enabled": True}},
         })
     repos.sort(key=lambda item: repo_sort_key(item, home))
     write_json(registry_path, data)

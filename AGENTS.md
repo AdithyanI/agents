@@ -1,6 +1,6 @@
 # Agents Control-Plane Repo
 
-Shared agent guidance, skills, MCPs, repository policy, and native client adapters, reproduced across MacBook and Mac Mini. Codex is deployed across enrolled repos; Claude Code is piloting in `agents`.
+Shared agent guidance, skills, MCPs, repository policy, and native client adapters, reproduced across MacBook and Mac Mini. Codex and Claude Code are both enabled across enrolled repos on opted-in machines.
 
 ## Orientation
 
@@ -39,13 +39,13 @@ Shared bootstrap/check support exact repository paths, such as `--repo ~/GitHub/
 
 ## Contracts
 
-- Repository client enablement is explicit in `repos/registry.json`; Claude additionally requires machine-local opt-in. Claude Code requires at least `2.1.281` for native root and nested `AGENTS.md` discovery. Keep new rollout within the pilot until native capability checks pass.
+- Repository client enablement is explicit in `repos/registry.json`; Claude additionally requires machine-local opt-in. Claude Code requires at least `2.1.281` for native root and nested `AGENTS.md` discovery. New enrollments enable both clients.
 - Historical retired-client cleanup is an explicit destructive migration, excluded from bootstrap and health checks. Never run it to repair current Claude setup.
 - Repo bootstrap entries define behavior such as `personality`, `model_instructions_file`, `developer_instructions`, `project_root_markers`, and `features`. Model, reasoning effort, profile, and Fast/service tier remain client-owned.
 - A repo's identity prompt is declared once as `model_instructions_file`; it reaches Codex through the generated repo config.
 - MCP schema version 3 assigns each definition to `repos: "all"` or an explicit array of managed repository paths. Empty arrays leave a definition unassigned. Enabled clients render native repo `.codex/config.toml` or `.mcp.json` outputs.
 - Standalone skills use symlinks at `~/.agents/skills/<skill>` or repo `.agents/skills/<skill>`. Keep repo-local skills in their owning repos unless explicitly promoted.
-- Claude links explicitly compatible standalone skills into native `.claude/skills` locations. Native Codex plugin bundles stay with Codex. Claude updates and disablement touch only renderer-owned paths or keys; preserve user settings, credentials, sessions, and `settings.local.json`.
+- Every skill entry names its `clients`. Claude links its skills, plus each repo's own `.agents/skills`, into native `.claude/skills` locations; repo outputs are listed in that clone's `.git/info/exclude` so they are never committed. Native Codex plugin bundles stay with Codex. Claude updates and disablement touch only renderer-owned paths or keys; preserve user settings, credentials, sessions, and `settings.local.json`.
 - Keep `unmanaged_repo_local_skills` and `unmanaged_repo_local_plugins` in their existing registries. An existing repo must contain every declared local skill; fix stale entries rather than hiding errors. Do not add mapping manifests.
 - Keep global skills/plugins a minimal default kit. Native plugins use global/manual enablement; their repo scope is not reliable. If a bundled MCP needs one-repo scope, promote that MCP into the standalone MCP registry.
 - Do not decompose native plugins into standalone skills/MCPs without an explicit need. A rendered plugin entry is distinct from an installed package: bootstrap installs missing enabled packages, and runtime drift checks verify availability.

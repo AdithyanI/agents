@@ -43,9 +43,9 @@ class NeutralRepoRegistryTests(TempDirTestCase):
             with self.assertRaises(ValueError):
                 validate_registry(data, home=self.temp_path)
 
-    def test_canonical_pilot_keeps_existing_codex_enrollment(self):
+    def test_canonical_registry_enables_both_clients_everywhere(self):
         data = load_registry(REPO_ROOT / "repos/registry.json")
-        self.assertEqual([repo["id"] for repo in enabled_repositories(data, "claude")], ["agents"])
+        self.assertEqual(len(enabled_repositories(data, "claude")), len(data["repos"]))
         self.assertEqual(len(enabled_repositories(data, "codex")), len(data["repos"]))
         self.assertIn("github", {repo["id"] for repo in data["repos"]})
 

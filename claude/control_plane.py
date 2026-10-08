@@ -174,8 +174,66 @@ def desired_outputs(root: Path, home: Path, github_root: Path | None, selected: 
                 assigned = any(target == repo["id"] or ("/" not in target and target == path.name) or mapped_repo(target, home, github_root) == path for target in targets)
                 if assigned:
                     add(path / ".claude/skills" / name, str(path), "link", str(source))
+    # Repo-owned skills already live in the repo's .agents/skills; Claude reads
+    # only .claude/skills, so mirror them with relative links.
+    for local in skills.get("unmanaged_repo_local_skills", []):
+        name = local.get("skill")
+        if not isinstance(name, str) or not re.fullmatch(r"[a-z0-9][a-z0-9_-]*", name) or name in RESERVED_SKILLS:
+            raise ClaudeSyncError(f"Unsafe or reserved Claude skill name: {name}")
+        for path, repo in active.items():
+            if local.get("repo") not in {repo["id"], path.name}:
+                continue
+            if not (path / ".agents/skills" / name / "SKILL.md").is_file():
+                raise ClaudeSyncError(f"Declared repo-local skill is missing: {path}/.agents/skills/{name}/SKILL.md")
+            add(path / ".claude/skills" / name, str(path), "link", f"../../.agents/skills/{name}")
     # Native plugin skills deliberately have no translation into Claude.
+
+    # Keep machine-rendered repo outputs out of commits without editing tracked
+    # .gitignore files; git honors info/exclude like .gitignore, per clone.
+    for path in active:
+        owned = sorted(name for name, entry in desired.items() if entry["scope"] == str(path))
+        for name in owned:
+            if desired[name]["kind"] in {"mcp", "hooks"} and git_tracks(path, Path(name)):
+                raise ClaudeSyncError(f"Refusing to render into tracked {name}; machine-local Claude output would be committed. Move shared settings out of it or exclude this repository.")
+        if owned:
+            entries = ["/" + Path(name).relative_to(path).as_posix() for name in owned]
+            add(path / ".git/info/exclude", str(path), "exclude", entries)
     return desired, missing
+
+
+EXCLUDE_BEGIN = "# >>> agents-control-plane: machine-local Claude outputs (generated)"
+EXCLUDE_END = "# <<< agents-control-plane"
+
+
+def git_tracks(repo: Path, path: Path) -> bool:
+    result = subprocess.run(["git", "-C", str(repo), "ls-files", "--error-unmatch", "--", str(path.relative_to(repo))], capture_output=True, text=True, check=False, timeout=10)
+    return result.returncode == 0
+
+
+def merge_exclude(path: Path, current: dict[str, Any] | None, old: dict[str, Any] | None, new: dict[str, Any] | None) -> dict[str, Any] | None:
+    """Replace only the marked block; user exclude patterns stay untouched."""
+    if current and current["kind"] != "file":
+        raise ClaudeSyncError(f"Refusing linked exclude file: {path}")
+    lines = current["value"].splitlines() if current else []
+    if EXCLUDE_BEGIN in lines:
+        start = lines.index(EXCLUDE_BEGIN)
+        if EXCLUDE_END not in lines[start:]:
+            raise ClaudeSyncError(f"Unterminated managed block in {path}; repair it before syncing.")
+        end = lines.index(EXCLUDE_END, start)
+        if start and lines[start - 1] == "":
+            start -= 1
+        lines = lines[:start] + lines[end + 1:]
+    entries = (new or {}).get("value", [])
+    if entries:
+        if lines and lines[-1] != "":
+            lines.append("")
+        lines += [EXCLUDE_BEGIN, *entries, EXCLUDE_END]
+    text = "\n".join(lines) + "\n" if lines else ""
+    if current and text == current["value"]:
+        return current
+    if not text and old and old.get("created", False) and not new:
+        return None
+    return {"kind": "file", "value": text}
 
 
 def validate_output(path: Path, entry: dict[str, Any], home: Path) -> None:
@@ -184,7 +242,7 @@ def validate_output(path: Path, entry: dict[str, Any], home: Path) -> None:
     if not anchor.is_absolute() or not path.is_absolute():
         raise ClaudeSyncError(f"Invalid output ownership: {path}")
     base = anchor / ".claude"
-    valid = (kind == "text" and scope == "global" and path == base / "CLAUDE.md") or (kind == "hooks" and path == base / "settings.json") or (kind == "mcp" and scope != "global" and path == anchor / ".mcp.json") or (kind == "link" and path.parent == base / "skills" and path.name not in RESERVED_SKILLS)
+    valid = (kind == "text" and scope == "global" and path == base / "CLAUDE.md") or (kind == "hooks" and path == base / "settings.json") or (kind == "mcp" and scope != "global" and path == anchor / ".mcp.json") or (kind == "exclude" and scope != "global" and path == anchor / ".git/info/exclude") or (kind == "link" and path.parent == base / "skills" and path.name not in RESERVED_SKILLS)
     if not valid:
         raise ClaudeSyncError(f"Invalid managed output path/kind: {path}")
     safe_parent(path, anchor)
@@ -257,7 +315,11 @@ def build_plan(root: Path, home: Path, github_root: Path | None = None, selected
     previous = manifest["outputs"]
     retained = copy.deepcopy(previous)
     plan = []
-    for name in sorted(previous.keys() | desired.keys()):
+    # Write git exclusions before the outputs they cover.
+    def order(name: str) -> tuple[bool, str]:
+        return ((desired.get(name) or previous[name])["kind"] != "exclude", name)
+
+    for name in sorted(previous.keys() | desired.keys(), key=order):
         path = Path(name)
         old, new = previous.get(name), desired.get(name)
         entry = new or old
@@ -273,6 +335,8 @@ def build_plan(root: Path, home: Path, github_root: Path | None = None, selected
         kind = entry["kind"]
         if kind in {"mcp", "hooks"}:
             target = merge_json(path, current, old, new)
+        elif kind == "exclude":
+            target = merge_exclude(path, current, old, new)
         else:
             if current:
                 if not old:
@@ -287,7 +351,7 @@ def build_plan(root: Path, home: Path, github_root: Path | None = None, selected
             record = copy.deepcopy(new)
             if kind == "text":
                 record["sha256"] = file_hash(record.pop("value"))
-            if kind in {"mcp", "hooks"}:
+            if kind in {"mcp", "hooks", "exclude"}:
                 record["created"] = old.get("created", False) if old else current is None
             retained[name] = record
         else:

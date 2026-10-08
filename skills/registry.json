@@ -31,6 +31,7 @@
     },
     {
       "skill": "pretty-mermaid",
+      "clients": ["codex", "claude"],
       "origin": "owned",
       "scope": "dormant",
       "repos": [],
@@ -48,6 +49,7 @@
     },
     {
       "skill": "adi-writing",
+      "clients": ["codex", "claude"],
       "origin": "owned",
       "scope": "repo",
       "repos": [
@@ -70,6 +72,7 @@
     },
     {
       "skill": "social-media-publishing",
+      "clients": ["codex", "claude"],
       "origin": "owned",
       "scope": "repo",
       "repos": [
@@ -82,6 +85,7 @@
     },
     {
       "skill": "ai-podcasting",
+      "clients": ["codex", "claude"],
       "origin": "owned",
       "scope": "repo",
       "repos": [
@@ -92,6 +96,7 @@
     },
     {
       "skill": "win-aip-contract-sync",
+      "clients": ["codex", "claude"],
       "origin": "owned",
       "scope": "repo",
       "repos": [
@@ -103,6 +108,7 @@
     },
     {
       "skill": "codex-agent-loop",
+      "clients": ["codex", "claude"],
       "origin": "owned",
       "scope": "repo",
       "repos": [
@@ -114,6 +120,7 @@
     },
     {
       "skill": "codex-app-server",
+      "clients": ["codex", "claude"],
       "origin": "owned",
       "scope": "repo",
       "repos": [
@@ -126,6 +133,7 @@
     },
     {
       "skill": "codex-reset-credits",
+      "clients": ["codex"],
       "origin": "owned",
       "scope": "dormant",
       "repos": [],
@@ -134,6 +142,7 @@
     },
     {
       "skill": "dobby-system",
+      "clients": ["codex", "claude"],
       "origin": "owned",
       "scope": "repo",
       "repos": [
@@ -148,6 +157,7 @@
     },
     {
       "skill": "documents-library",
+      "clients": ["codex", "claude"],
       "origin": "owned",
       "scope": "repo",
       "repos": [
@@ -169,6 +179,7 @@
     },
     {
       "skill": "cv-creator",
+      "clients": ["codex", "claude"],
       "origin": "owned",
       "scope": "repo",
       "repos": [
@@ -180,6 +191,7 @@
     },
     {
       "skill": "modal-function-sync",
+      "clients": ["codex", "claude"],
       "origin": "owned",
       "scope": "repo",
       "repos": [
@@ -207,6 +219,7 @@
     },
     {
       "skill": "openai-docs",
+      "clients": ["codex", "claude"],
       "origin": "external",
       "scope": "repo",
       "repos": [
@@ -229,6 +242,7 @@
     },
     {
       "skill": "imagegen",
+      "clients": ["codex"],
       "origin": "owned",
       "scope": "dormant",
       "repos": [],
@@ -237,6 +251,7 @@
     },
     {
       "skill": "skill-router",
+      "clients": ["codex", "claude"],
       "origin": "owned",
       "scope": "dormant",
       "repos": [],
@@ -245,6 +260,7 @@
     },
     {
       "skill": "show-password-setup",
+      "clients": ["codex", "claude"],
       "origin": "owned",
       "scope": "dormant",
       "repos": [],
@@ -271,6 +287,7 @@
     },
     {
       "skill": "fal-seedance",
+      "clients": ["codex", "claude"],
       "origin": "owned",
       "scope": "repo",
       "repos": [
@@ -281,6 +298,7 @@
     },
     {
       "skill": "whiyh-gpt-hill-climb",
+      "clients": ["codex", "claude"],
       "origin": "owned",
       "scope": "dormant",
       "repos": [],
@@ -307,6 +325,7 @@
     },
     {
       "skill": "vercel-react-best-practices",
+      "clients": ["codex", "claude"],
       "origin": "external",
       "scope": "repo",
       "repos": [
@@ -318,6 +337,7 @@
     },
     {
       "skill": "impeccable",
+      "clients": ["codex"],
       "origin": "external",
       "scope": "global",
       "repos": [],
@@ -326,6 +346,7 @@
     },
     {
       "skill": "fli-review",
+      "clients": ["codex", "claude"],
       "origin": "owned",
       "scope": "repo",
       "repos": [
@@ -336,6 +357,7 @@
     },
     {
       "skill": "remotion",
+      "clients": ["codex", "claude"],
       "origin": "external",
       "scope": "repo",
       "repos": [
@@ -346,6 +368,7 @@
     },
     {
       "skill": "audit-xcode-security-settings",
+      "clients": ["codex", "claude"],
       "origin": "external",
       "scope": "dormant",
       "repos": [],
@@ -354,6 +377,7 @@
     },
     {
       "skill": "c-bounds-safety",
+      "clients": ["codex", "claude"],
       "origin": "external",
       "scope": "dormant",
       "repos": [],
@@ -362,6 +386,7 @@
     },
     {
       "skill": "device-interaction",
+      "clients": ["codex", "claude"],
       "origin": "external",
       "scope": "dormant",
       "repos": [],
@@ -370,6 +395,7 @@
     },
     {
       "skill": "swiftui-specialist",
+      "clients": ["codex", "claude"],
       "origin": "external",
       "scope": "repo",
       "repos": [
@@ -381,6 +407,7 @@
     },
     {
       "skill": "swiftui-whats-new-27",
+      "clients": ["codex", "claude"],
       "origin": "owned",
       "scope": "repo",
       "repos": [
@@ -392,6 +419,7 @@
     },
     {
       "skill": "test-modernizer",
+      "clients": ["codex", "claude"],
       "origin": "external",
       "scope": "dormant",
       "repos": [],
@@ -400,6 +428,7 @@
     },
     {
       "skill": "uikit-app-modernization",
+      "clients": ["codex", "claude"],
       "origin": "external",
       "scope": "dormant",
       "repos": [],
@@ -408,6 +437,7 @@
     },
     {
       "skill": "figma-use",
+      "clients": ["codex", "claude"],
       "origin": "owned",
       "scope": "repo",
       "repos": [
@@ -418,6 +448,7 @@
     },
     {
       "skill": "agent-browser",
+      "clients": ["codex", "claude"],
       "origin": "external",
       "scope": "dormant",
       "repos": [],
@@ -426,6 +457,7 @@
     },
     {
       "skill": "chart-visualization",
+      "clients": ["codex", "claude"],
       "origin": "external",
       "scope": "dormant",
       "repos": [],
@@ -434,6 +466,7 @@
     },
     {
       "skill": "modal",
+      "clients": ["codex", "claude"],
       "origin": "external",
       "scope": "repo",
       "repos": [
@@ -446,6 +479,7 @@
     },
     {
       "skill": "swift-concurrency",
+      "clients": ["codex", "claude"],
       "origin": "external",
       "scope": "repo",
       "repos": [

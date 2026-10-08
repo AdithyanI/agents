@@ -299,6 +299,48 @@ class ClaudeControlPlaneTests(unittest.TestCase):
         self.assertEqual(before["value"], guidance.read_text())
         self.assertEqual(0, self.run_sync("check"))
 
+    def git_status(self, repo: Path) -> str:
+        return subprocess.run(["git", "-C", str(repo), "status", "--porcelain", "--untracked-files=all"], capture_output=True, text=True, check=True).stdout
+
+    def test_repo_local_skills_are_mirrored_and_outputs_stay_out_of_git(self) -> None:
+        self.write(self.repo / ".agents/skills/local-skill/SKILL.md", "repo-owned")
+        self.skills["unmanaged_repo_local_skills"] = [{"repo": "agents", "skill": "local-skill"}]
+        self.json(self.root / "skills/registry.json", self.skills)
+        exclude = self.repo / ".git/info/exclude"
+        self.write(exclude, "# user pattern\n*.scratch\n")
+
+        self.assertEqual(0, self.run_sync())
+        link = self.repo / ".claude/skills/local-skill"
+        self.assertEqual("../../.agents/skills/local-skill", os.readlink(link))
+        self.assertEqual("repo-owned", (link / "SKILL.md").read_text())
+        text = exclude.read_text()
+        self.assertTrue(text.startswith("# user pattern\n*.scratch\n\n"))
+        for entry in ("/.claude/skills/local-skill", "/.claude/skills/repo-helper", "/.mcp.json"):
+            self.assertIn(entry + "\n", text)
+        # Only the repo's own skill source is visible to Git; generated outputs are excluded.
+        self.assertEqual(self.git_status(self.repo), "?? .agents/skills/local-skill/SKILL.md\n")
+        self.assertEqual(self.git_status(self.other), "")
+        self.assertEqual(0, self.run_sync("check"))
+
+        for repo in self.registry["repos"]:
+            repo["clients"]["claude"]["enabled"] = False
+        self.json(self.root / "repos/registry.json", self.registry)
+        self.assertEqual(0, self.run_sync())
+        self.assertEqual("# user pattern\n*.scratch\n", exclude.read_text())
+        self.assertFalse(link.is_symlink())
+
+    def test_tracked_json_target_and_missing_local_skill_are_refused(self) -> None:
+        self.json(self.other / ".mcp.json", {"mcpServers": {}})
+        subprocess.run(["git", "-C", str(self.other), "add", ".mcp.json"], check=True)
+        with self.assertRaisesRegex(ClaudeSyncError, "tracked"):
+            self.run_sync()
+        subprocess.run(["git", "-C", str(self.other), "rm", "-q", "--cached", ".mcp.json"], check=True)
+        self.skills["unmanaged_repo_local_skills"] = [{"repo": "agents", "skill": "absent-skill"}]
+        self.json(self.root / "skills/registry.json", self.skills)
+        with self.assertRaisesRegex(ClaudeSyncError, "Declared repo-local skill is missing"):
+            self.run_sync()
+        self.assertFalse((self.home / STATE / "manifest.json").exists())
+
 
 class ClaudeClientProbeTests(unittest.TestCase):
     def test_optional_missing_and_required_missing(self) -> None:

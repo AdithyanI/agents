@@ -40,7 +40,7 @@ Use [Codex Control Plane Ownership](codex-control-plane-ownership.md) for the ex
 - Enroll top-level GitHub repos into the managed repo bootstrap registry:
   - [`enroll-managed-repos.sh`](../../scripts/enroll-managed-repos.sh)
   - `~/GitHub/agents/scripts/enroll-managed-repos.sh --apply --github-root ~/GitHub`
-  - this scans only direct child Git repos under the GitHub root and adds stable IDs and explicit Codex-enabled/Claude-disabled entries to [`repos/registry.json`](../../repos/registry.json)
+  - this scans only direct child Git repos under the GitHub root and adds stable IDs and explicit Codex- and Claude-enabled entries to [`repos/registry.json`](../../repos/registry.json)
 - Validate shared skills, plugins, repo-local hook files, and Codex rendered runtime state:
   - [`check-agent-control-planes.sh`](../../scripts/check-agent-control-planes.sh)
   - `~/GitHub/agents/scripts/check-agent-control-planes.sh`

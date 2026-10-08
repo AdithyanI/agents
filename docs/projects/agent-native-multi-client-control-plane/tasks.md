@@ -186,7 +186,9 @@ A managed repository is agent-native when a fresh supported client can:
 | complete | Remove machine-specific absolute paths | About 90 `/Users/dobby` doc links became repo-relative; guidance and skills use `~/GitHub` or skill names; the fal-seedance mapping path resolves per machine |
 | complete | First live Claude Stop publication | `b2f37d1e` checked, committed, pushed, and queued for local production by `runtime=claude` |
 | complete | Make Claude finalization global | Claude joined `global-stop`; attribution hook is global. Both render to `~/.claude/settings.json` on opted-in machines only, as Codex's Stop is global. Repo enablement now governs skills, MCP, and context hooks |
-| pending | Wider rollout | `adi`, then the second machine; see Next Steps |
+| complete | Enable Claude in every managed repo | All 30 registry repos enabled; every skill names its `clients` (Codex-only: `impeccable`, `imagegen`, `codex-reset-credits`); repo-local `.agents/skills` mirrored into `.claude/skills` with relative links; generated repo outputs listed in each clone's `.git/info/exclude`; tracked JSON targets refused. 84 outputs applied, second apply zero, generated files absent from `git status`; a fresh Claude session in `win` lists its repo-local skills |
+| pending | Dobby identity and continuity for Claude in `adi`/`angie` | See Next Steps 2 |
+| pending | Second machine | See Next Steps 3 |
 
 ## Current Implementation Decisions
 
@@ -196,8 +198,9 @@ A managed repository is agent-native when a fresh supported client can:
   matching Codex's `approval_policy = "never"`.
   Permission mode stays a user-owned Claude setting; the control plane renders
   no permissions, provider, model, or credential changes.
-- Initial rollout: `agents` only; `adi` follows once its Codex identity prompt
-  (`model_instructions_file`) has a chosen Claude mapping.
+- Rollout: Claude is enabled in every managed repo on opted-in machines. Codex
+  repo `config` (identity prompt, personality, developer instructions) has no
+  renderer translation; Dobby identity reaches Claude through repo-owned files.
 - Cross-client Git attribution selects repositories; both clients then stage
   repository-wide, matching the shared-main-checkout contract. Concurrent
   sessions may publish each other's dirty files. This is accepted parity, not
@@ -221,12 +224,15 @@ A managed repository is agent-native when a fresh supported client can:
 1. Adi sets `permissions.defaultMode: bypassPermissions` and
    `skipDangerousModePermissionPrompt: true` in `~/.claude/settings.json`
    (user-owned; Codex already runs `approval_policy = "never"`).
-2. Enable `adi`: choose how its Codex identity prompt reaches Claude (project
-   `CLAUDE.md` import, output style, or appended system prompt), confirm its
-   fast gate, then enable Claude in `repos/registry.json` and reapply.
+2. Dobby in `adi`/`angie` (Claude is enabled; identity and continuity are not
+   yet equivalent): load `dobby/constitution.md` for Claude, enable the
+   `repo-session-start` hook for Claude and give it the redesigned packet in
+   `dobby-engine` (non-Codex runtimes still get the legacy packet), and decide
+   end-of-session memory capture (`remember-claude-session` exists; no Claude
+   hook invokes it).
 3. Second machine: install Claude Code >= 2.1.281, run
    `python3 claude/scripts/sync-claude.py --apply --enable`, then shared bootstrap.
-4. Give Claude the `impeccable` build made for it. Our source tracks upstream
+4. Decide `impeccable`: drop it, or give Claude the build made for it. Our source tracks upstream
    `.agents/skills/impeccable`, which assumes Codex question and sub-agent
    tools; upstream also ships `.claude/skills/impeccable`. The registry holds one
    source per skill, so this needs a per-client source or a separate entry.
