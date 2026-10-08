@@ -2,7 +2,6 @@ from __future__ import annotations
 
 import json
 import os
-from unittest.mock import patch
 
 from tests.control_plane.support import (
     REPO_ROOT,
@@ -19,9 +18,12 @@ class AgentRuntimeDriftAuditTests(TempDirTestCase):
     def setUp(self) -> None:
         super().setUp()
         self.codex_bin = write_executable(self.temp_path / "fixture-codex", "#!/bin/sh\nexit 0\n")
-        override = patch.dict(os.environ, {"CODEX_BIN": str(self.codex_bin)})
-        override.start()
-        self.addCleanup(override.stop)
+        original_codex_bin = os.environ.get("CODEX_BIN")
+        os.environ["CODEX_BIN"] = str(self.codex_bin)
+        if original_codex_bin is None:
+            self.addCleanup(os.environ.pop, "CODEX_BIN", None)
+        else:
+            self.addCleanup(os.environ.__setitem__, "CODEX_BIN", original_codex_bin)
         self.agents_repo = make_control_plane_root(self.temp_path)
         # These fixtures own their plugin policy; machine registry changes must
         # not introduce new required packages into otherwise hermetic audits.

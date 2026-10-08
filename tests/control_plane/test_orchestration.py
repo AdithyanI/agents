@@ -2,7 +2,6 @@ from __future__ import annotations
 
 import os
 from pathlib import Path
-from unittest.mock import patch
 
 from tests.control_plane.support import (
     repository_registry,
@@ -26,7 +25,6 @@ printf '%s|%s\\n' "$(basename "$0")" "$*" >> "${LOG_FILE:?}"
 
 PYTHON_STUB = """import os
 from pathlib import Path
-from unittest.mock import patch
 import os
 import sys
 with Path(os.environ["LOG_FILE"]).open("a") as log:
@@ -58,9 +56,12 @@ class AvailableCodexTestCase(TempDirTestCase):
     def setUp(self) -> None:
         super().setUp()
         self.codex_bin = write_executable(self.temp_path / "fixture-codex", "#!/bin/sh\nexit 0\n")
-        override = patch.dict(os.environ, {"CODEX_BIN": str(self.codex_bin)})
-        override.start()
-        self.addCleanup(override.stop)
+        original_codex_bin = os.environ.get("CODEX_BIN")
+        os.environ["CODEX_BIN"] = str(self.codex_bin)
+        if original_codex_bin is None:
+            self.addCleanup(os.environ.pop, "CODEX_BIN", None)
+        else:
+            self.addCleanup(os.environ.__setitem__, "CODEX_BIN", original_codex_bin)
 
 
 class SharedBootstrapWrapperTests(AvailableCodexTestCase):
