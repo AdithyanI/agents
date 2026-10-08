@@ -100,8 +100,9 @@ plain context; the shared dispatcher wraps it in event-specific JSON.
 `Stop`
 
 - Native Codex hook event, rendered as the shared global turn-end commit gate.
-- For Claude, `claude-stop` and `claude-turn-attribution` are repo-scoped (`*`)
-  and render only into Claude-enabled repositories. Claude exposes no turn
+- For Claude, `global-stop` and `claude-turn-attribution` render into
+  `~/.claude/settings.json` on opted-in machines, so finalization covers every
+  repository a Claude session touches, matching Codex. Claude exposes no turn
   record to query, so the PostToolUse adapter registers each Edit/Write/Notebook
   path and each Bash cwd and literal path into the session transaction as it
   happens; Stop finalizes those repositories plus the starting repository.

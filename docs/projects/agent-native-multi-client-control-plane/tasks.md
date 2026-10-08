@@ -182,16 +182,18 @@ A managed repository is agent-native when a fresh supported client can:
 | complete | Finish integrated source validation | `scripts/check-full.sh` passes, including 384 hermetic regressions; shared runtime checks, dashboard data and dashboard build pass |
 | complete | Native Claude acceptance in `agents` | Claude Code 2.1.286 desktop session: global guidance and root `AGENTS.md` loaded; nested `docs/AGENTS.md` discovered on file access; four global and two repo skills listed; `openaiDeveloperDocs` MCP search returned results |
 | complete | Confirm Claude skill discovery surface | Probe: a skill only in `.agents/skills` is not discovered; the same skill linked into `.claude/skills` is. Keep the `.claude/skills` renderer |
-| complete | Claude turn finalization | `hooks/scripts/claude_tool_use.py` (PostToolUse) registers touched repositories per session; shared `stop.py --runtime claude` finalizes them plus the starting repo. Hooks are repo-scoped `*` and render only into Claude-enabled repos. Live session registration observed, including a subagent Bash call under the parent session_id. `test_claude_stop.py` is in the fast gate; full suite 389 OK |
+| complete | Claude turn finalization | `hooks/scripts/claude_tool_use.py` (PostToolUse) registers touched repositories per session; shared `stop.py --runtime claude` finalizes them plus the starting repo. Live session registration observed, including a subagent Bash call under the parent session_id. `test_claude_stop.py` is in the fast gate; full suite 389 OK |
 | complete | Remove machine-specific absolute paths | About 90 `/Users/dobby` doc links became repo-relative; guidance and skills use `~/GitHub` or skill names; the fal-seedance mapping path resolves per machine |
-| pending | First live Claude Stop publication | Expect `runtime=claude ok turn-repo-pushed` in `~/.local/state/agents-control-plane/log/hooks-stop.log` after the acceptance session's turn |
+| complete | First live Claude Stop publication | `b2f37d1e` checked, committed, pushed, and queued for local production by `runtime=claude` |
+| complete | Make Claude finalization global | Claude joined `global-stop`; attribution hook is global. Both render to `~/.claude/settings.json` on opted-in machines only, as Codex's Stop is global. Repo enablement now governs skills, MCP, and context hooks |
 | pending | Wider rollout | `adi`, then the second machine; see Next Steps |
 
 ## Current Implementation Decisions
 
 - Minimum Claude Code version: `2.1.281`, using native root/nested `AGENTS.md`
   discovery. No generated project `CLAUDE.md` bridge.
-- Claude permission posture: Adi wants autonomous (bypass-permissions) agents.
+- Claude permission posture: Adi wants autonomous (bypass-permissions) agents,
+  matching Codex's `approval_policy = "never"`.
   Permission mode stays a user-owned Claude setting; the control plane renders
   no permissions, provider, model, or credential changes.
 - Initial rollout: `agents` only; `adi` follows once its Codex identity prompt
@@ -216,7 +218,9 @@ A managed repository is agent-native when a fresh supported client can:
 
 ## Next Steps
 
-1. Confirm the first live Claude Stop publication in `hooks-stop.log`.
+1. Adi sets `permissions.defaultMode: bypassPermissions` and
+   `skipDangerousModePermissionPrompt: true` in `~/.claude/settings.json`
+   (user-owned; Codex already runs `approval_policy = "never"`).
 2. Enable `adi`: choose how its Codex identity prompt reaches Claude (project
    `CLAUDE.md` import, output style, or appended system prompt), confirm its
    fast gate, then enable Claude in `repos/registry.json` and reapply.

@@ -153,15 +153,17 @@ class HooksControlPlaneTests(TempDirTestCase):
             repo: json.dumps(render_codex_hooks(registry, repo_name=repo), sort_keys=True)
             for repo in (None, "agents", "adi", "angie")
         }
-        # Claude finalization is repo-scoped; the Claude renderer writes repo hooks
-        # only into Claude-enabled repositories and never into user settings.
-        finalization = render_runtime_hooks(registry, "claude", repo_name="agents")
+        # Claude turn finalization is global like Codex Stop; the Claude renderer
+        # writes it to user settings only on opted-in machines.
+        finalization = render_runtime_hooks(registry, "claude")
         self.assertEqual(sorted(finalization["hooks"]), ["PostToolUse", "Stop"])
         self.assertEqual(
             finalization["hooks"]["PostToolUse"][0]["matcher"],
             "Edit|MultiEdit|Write|NotebookEdit|Bash",
         )
-        self.assertEqual(render_runtime_hooks(registry, "claude"), {"hooks": {}})
+        self.assertIn("stop.py\" --runtime claude", finalization["hooks"]["Stop"][0]["hooks"][0]["command"])
+        for repo in ("agents", "adi", "angie"):
+            self.assertEqual(render_runtime_hooks(registry, "claude", repo_name=repo), {"hooks": {}})
 
         for event in ("SessionStart", "UserPromptSubmit"):
             hook = {
@@ -190,8 +192,8 @@ class HooksControlPlaneTests(TempDirTestCase):
                            "command": "python3 hook.py --runtime claude --event UserPromptSubmit"}],
             }],
         })
-        self.assertEqual(render_runtime_hooks(registry, "claude"), {"hooks": {}})
-        self.assertEqual(render_runtime_hooks(registry, "claude", repo_name="adi"), finalization)
+        self.assertEqual(render_runtime_hooks(registry, "claude"), finalization)
+        self.assertEqual(render_runtime_hooks(registry, "claude", repo_name="adi"), {"hooks": {}})
         for repo, original in codex_before.items():
             self.assertEqual(json.dumps(render_codex_hooks(registry, repo_name=repo), sort_keys=True), original)
 

@@ -57,7 +57,7 @@ Shared bootstrap/check support exact repository paths, such as `--repo ~/GitHub/
 ## Hooks and Validation
 
 - Optional repo lifecycle scripts live at `scripts/hooks/session_start.py`, `scripts/hooks/user_prompt_submit.py`, and `scripts/hooks/finalize_codex_thread.py`. Follow `docs/references/repo-lifecycle-hook-adapter.md` for their contracts.
-- Claude supports the first two events plus turn finalization in Claude-enabled repos: `hooks/scripts/claude_tool_use.py` (PostToolUse) records touched repositories per session, and the shared `stop.py` finalizer checks, commits, rebases, and pushes them as it does for Codex.
+- Claude supports the first two events plus global turn finalization on opted-in machines: `hooks/scripts/claude_tool_use.py` (PostToolUse) records touched repositories per session, and the shared `global-stop` finalizer checks, commits, rebases, and pushes them as it does for Codex.
 - Managed repos use `core.hooksPath` pointing at this repo's `hooks/git/`. Commit-time validation delegates to repo `scripts/check-fast.sh` when present. Keep it local, deterministic, and quick; slower checks belong in `scripts/check-full.sh`.
 - Skill/plugin registry changes require their sync/check in the same change.
 - MCP, bootstrap, or preview registry changes require shared bootstrap/check and inspection of affected Codex output.
