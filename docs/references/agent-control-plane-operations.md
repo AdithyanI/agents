@@ -51,6 +51,16 @@ The private opt-in and output ownership records live under
 `~/.local/state/agents-control-plane/claude/`; normal sync skips machines that
 have not opted in. `--apply --disable` removes only renderer-owned outputs and
 keys, while retaining user data. Local opt-in does not enable other machines.
+The pilot's `.claude/skills`, `.claude/settings.json`, and `.mcp.json` outputs are
+Git-ignored so repository sync cannot bypass that machine selection. Before
+enabling another repository, establish the same generated-output exclusions;
+do not untrack a hand-written shared configuration as part of rollout.
+
+Shared orchestration skips Codex-only materialization and runtime checks when
+the Codex executable is absent, while continuing shared validation and Claude.
+Installed Codex still runs its normal checks. After installing a previously
+absent client, rerun bootstrap; post-sync reconciliation tracks source revisions,
+not application installation events.
 
 Claude Code must be at least `2.1.281`. Root and nested `AGENTS.md` discovery uses
 the client's built-in support; no project instruction mirror is generated.

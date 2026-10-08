@@ -177,7 +177,9 @@ A managed repository is agent-native when a fresh supported client can:
 | complete | Establish native AGENTS.md version floor | `claude/config/policy.json` requires 2.1.281; this Mac upgraded to 2.1.286 |
 | complete | Introduce neutral repository identity and client selection | `repos/registry.json`; Codex projection exactly equals previous source; Claude enabled only for `agents` |
 | complete | Add safe Claude context-hook adapters | SessionStart/UserPromptSubmit tests pass; Claude Stop rejected; no unnecessary live hooks enabled |
-| in_progress | Render and verify the agents pilot | Ownership-aware guidance, compatible standalone skills, MCP and selected-hook reconciliation; runtime apply and integrated verification in progress |
+| complete | Render and apply the agents pilot | Eight outputs: global guidance, four global skills, two repo skills, and project MCP; check passes and second apply makes zero changes |
+| complete | Integrate machine selection and operations | Claude requires local opt-in; absent Codex is skipped by shared orchestration; bootstrap, check, reconciliation and runtime audit support both clients |
+| complete | Finish integrated source validation | `scripts/check-full.sh` passes, including 384 hermetic regressions; shared runtime checks, dashboard data and dashboard build pass |
 | pending | Native Claude acceptance and wider rollout | A fresh Claude Code session verifies actual instruction/skill/MCP discovery and a real task before other repos or the second machine are enabled |
 
 ## Current Implementation Decisions
@@ -188,16 +190,71 @@ A managed repository is agent-native when a fresh supported client can:
   profile, provider, model, or credential changes.
 - Initial rollout: `agents` only; `adi` should follow
   after identity-prompt behavior and cross-client Git attribution are proven.
+- This Mac is opted in through `~/.local/state/agents-control-plane/claude/enabled.json`.
+  Other machines remain opted out. Pilot project outputs are Git-ignored so
+  source sync cannot bypass the machine gate.
 - Custom subagents and native plugins are optional later extensions.
 - Initial target is local Claude Code. Desktop, Cowork, and cloud-session
   behavior require separate acceptance.
 - Which observed harness failures should seed the later improvement loop. Avoid
   designing a generic framework before side-by-side use supplies evidence.
 
-## Resume Point
+## Claude Code Handoff
 
-Finish integrated pilot verification, record exact evidence and a Claude Code handoff.
+Start a fresh Claude Code session in `~/GitHub/agents`. The CLI is 2.1.286 on this
+Mac; an already-running session may still use the previous version. Keep normal
+permissions and the current `agents`-only pilot.
+
+1. Inspect `/context`: confirm global guidance plus root `AGENTS.md` load, then
+   open a source under `codex/` and confirm nested `codex/AGENTS.md` discovery.
+   If native AGENTS support is absent on the first session after upgrading, start
+   another fresh session and inspect the built-in AGENTS plugin before changing
+   configuration.
+2. Inspect `/skills`: confirm the four shared global skills (`project`,
+   `agent-native-repo-playbook`, `client-interface-guidelines`, `skill-creator`)
+   and the two repo skills (`media-toolkit`, `media-storage-lifecycle`).
+3. Inspect `/mcp` and approve `openaiDeveloperDocs` interactively if requested.
+   `claude mcp get openaiDeveloperDocs` already recognizes the correct project
+   HTTP configuration and currently reports **Pending approval**. Prove one
+   actual MCP request works.
+4. Complete a small real repo task using these capabilities and the repo fast
+   gate, then record actual native acceptance here. There is no live Claude
+   lifecycle hook to inspect in this pilot because `agents` has no dynamic repo
+   hook; context-adapter behavior is covered by hermetic fixtures.
+
+After native acceptance, continue the remaining shared rollout work:
+
+- Prove cross-client attribution before enabling Claude automatic Git delivery
+  or assuming concurrent Codex/Claude sessions isolate publication. Existing
+  Codex Stop still consolidates dirty files in selected repositories.
+- Convert remaining capability name/path assignments to stable repository IDs,
+  add per-client capability presentation to the dashboard, and finish
+  ownership-aware cleanup of disabled Codex outputs.
+- Audit remaining skill portability and repo fast gates, then enable selected
+  repos and the second machine. Prepare local generated-output Git exclusions
+  in each new repo without untracking hand-written shared configuration.
+- Keep optional native plugins/subagents and later harness improvements driven
+  by real usage.
+
 The project remains active until native acceptance and rollout criteria are met.
+
+## Validation Evidence — October 8, 2026
+
+- `scripts/check-full.sh` passes, including the fast source gate and all 384
+  hermetic control-plane tests. Post-documentation hygiene and whitespace checks
+  pass. Private local evidence is retained under
+  `~/.local/state/agents-control-plane/claude/migration-evidence/20261008/`.
+- Shared bootstrap applied successfully; Codex runtime validation covers 18
+  present managed repositories.
+- Compared 47 pre-migration Codex outputs: 29 remain byte-identical; 18 repo
+  configs change only the comment pointing to `repos/registry.json`. Parsed
+  configuration and guidance content are unchanged in all 47.
+- Claude check passes and a second apply changes zero outputs. Machine-disabled
+  and missing-client behavior, user-state preservation, conflict refusal,
+  selective cleanup, and interrupted-write recovery have regression coverage.
+- Runtime drift audit: zero errors and zero warnings.
+- Dashboard data command and `npm run build` pass. The dashboard was built
+  locally; production activation remains owned by existing delivery automation.
 
 Machine recovery evidence lives in the legacy archive's `migration-record.json`
 and `karabiner-before.json`. Two skill links in the non-Git `whos-in-your-head`

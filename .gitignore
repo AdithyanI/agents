@@ -31,6 +31,11 @@ log/
 # Local rendered runtime backups
 .codex/*.bak.*
 
+# Claude pilot projections are machine-local; registries are shared source.
+/.claude/skills/
+/.claude/settings.json
+/.mcp.json
+
 # Obsidian runtime UI state (local/session-specific)
 .obsidian/graph.json
 .obsidian/workspace*.json
