@@ -226,8 +226,12 @@ A managed repository is agent-native when a fresh supported client can:
    fast gate, then enable Claude in `repos/registry.json` and reapply.
 3. Second machine: install Claude Code >= 2.1.281, run
    `python3 claude/scripts/sync-claude.py --apply --enable`, then shared bootstrap.
-4. Review Claude compatibility for global skills still marked Codex-only:
-   `adi-design`, `find-skills`, `impeccable`, `pdf`, `secret-management`.
+4. Give Claude the `impeccable` build made for it. Our source tracks upstream
+   `.agents/skills/impeccable`, which assumes Codex question and sub-agent
+   tools; upstream also ships `.claude/skills/impeccable`. The registry holds one
+   source per skill, so this needs a per-client source or a separate entry.
+   (`adi-design`, `find-skills`, `pdf`, and `secret-management` are enabled for
+   both clients.)
 5. Convert remaining capability name/path assignments to stable repository IDs,
    add per-client capability presentation to the dashboard, and finish
    ownership-aware cleanup of disabled Codex outputs.
