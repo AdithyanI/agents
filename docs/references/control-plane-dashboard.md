@@ -55,7 +55,7 @@ Default URLs on this machine:
 
 ```text
 http://127.0.0.1:8765/
-https://dobbys-mac-mini.tail7857da.ts.net:8765/
+https://mac-mini.tail7857da.ts.net:8765/
 ```
 
 The URL uses the Mac Mini name because the dashboard runs on the Mac Mini. A
@@ -92,7 +92,7 @@ Python settings instead of the GUI launchd domain's unrelated inherited credenti
 Serve owns the private tailnet URL:
 
 ```text
-https://dobbys-mac-mini.tail7857da.ts.net:8765/
+https://mac-mini.tail7857da.ts.net:8765/
 ```
 
 Inspect the service through the production client:
