@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+from tests.control_plane.support import repository_registry
+
 import importlib.util
 import json
 import os
@@ -28,10 +30,10 @@ class RetireAgentClientsTests(TempDirTestCase):
         self.github = self.home / "GitHub"
         self.repo = init_git_repo(self.github / "angie")
         self.other = init_git_repo(self.github / "other")
-        self.registry = write_json(self.home / "repos.json", {"repos": [
+        self.registry = write_json(self.home / "repos.json", repository_registry({"repos": [
             {"path": "~/GitHub/angie", "model_instructions_file": "../identity.md"},
             {"path": "~/GitHub/other"},
-        ]})
+        ]}))
         self.entries = [
             {"root": self.repo, "model_instructions_file": "../identity.md"},
             {"root": self.other},
@@ -162,7 +164,7 @@ class RetireAgentClientsTests(TempDirTestCase):
 
     def test_codex_identity_source_in_retired_guidance_location_is_preserved(self) -> None:
         source = write_text(self.other / "CLAUDE.md", "still the Codex identity source\n")
-        write_json(self.registry, {"repos": [{"path": "~/GitHub/other", "model_instructions_file": "../CLAUDE.md"}]})
+        write_json(self.registry, repository_registry({"repos": [{"path": "~/GitHub/other", "model_instructions_file": "../CLAUDE.md"}]}))
         self.run_retire("--apply")
         self.assertEqual(source.read_text(), "still the Codex identity source\n")
         source.unlink()

@@ -179,6 +179,16 @@ def validate_registry(
             scope = ensure_str(item.get("scope"), "scope", idx)
             source_path = ensure_str(item.get("source_path"), "source_path", idx)
             upstream_ref = item.get("upstream_ref", "-")
+            clients = item.get("clients", ["codex"])
+            if (
+                not isinstance(clients, list)
+                or not clients
+                or any(not isinstance(client, str) or client not in {"codex", "claude"} for client in clients)
+                or len(clients) != len(set(clients))
+            ):
+                raise ValueError(f"{label}[{idx}] clients must name unique supported clients")
+            if label == "managed_plugin_skills" and clients != ["codex"]:
+                raise ValueError(f"{label}[{idx}] native plugin skills are Codex-only")
             if origin not in ALLOWED_ORIGINS:
                 raise ValueError(f"{label}[{idx}] invalid origin: {origin}")
             if scope not in ALLOWED_SCOPES:
@@ -211,6 +221,7 @@ def validate_registry(
                 "source_path": source_path,
                 "source_abs": src,
                 "upstream_ref": str(upstream_ref).strip() or "-",
+                "clients": clients,
             }
             if label == "managed_plugin_skills":
                 validated["source_plugin"] = str(item.get("source_plugin", "")).strip()
@@ -257,6 +268,8 @@ def run_sync(
     dormant_skills: set[str] = set()
     touched_links: set[Path] = set()
     for item in managed:
+        if "codex" not in item.get("clients", ["codex"]):
+            continue
         skill = item["skill"]
         src = item["source_abs"]
         if item["scope"] == "global":

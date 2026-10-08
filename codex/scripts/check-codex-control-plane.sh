@@ -12,7 +12,7 @@ GLOBAL_AUTH="${HOME}/.codex/auth.json"
 GLOBAL_MCP_CREDENTIALS="${HOME}/.codex/.credentials.json"
 GITHUB_ROOT="${HOME}/GitHub"
 CANONICAL_DIR="${CONTROL_PLANE_DIR}/config"
-REGISTRY_FILE="${CANONICAL_DIR}/repo-bootstrap.json"
+REGISTRY_FILE="${CANONICAL_DIR}/../../repos/registry.json"
 MCP_REGISTRY_FILE="${ROOT_DIR}/mcp/config/presets.json"
 HOOKS_REGISTRY_FILE="${ROOT_DIR}/hooks/registry.json"
 PLUGIN_REGISTRY_FILE="${ROOT_DIR}/plugins/registry.json"
@@ -49,7 +49,7 @@ while [[ $# -gt 0 ]]; do
       ;;
     --canonical-dir)
       CANONICAL_DIR="${2:-}"
-      REGISTRY_FILE="${CANONICAL_DIR}/repo-bootstrap.json"
+      REGISTRY_FILE="${CANONICAL_DIR}/../../repos/registry.json"
       shift 2
       ;;
     --global-config)
@@ -596,6 +596,7 @@ repo_filters = {str(Path(p).expanduser().resolve()) for p in sys.argv[10:] if p.
 root_dir = canonical_dir.parent.parent.resolve()
 sys.path.insert(0, str(root_dir))
 
+from repos.repo_registry import load_registry, client_registry
 from hooks.control_plane import load_hooks_registry, render_codex_hooks
 from mcp.control_plane import load_mcp_catalog_data
 from plugins.derived import validate_plugin_registry
@@ -757,7 +758,8 @@ if not hooks_registry_path.is_file():
 if not plugin_registry_path.is_file():
     fail(f"missing plugin registry file: {plugin_registry_path}")
 try:
-    registry = json.loads(registry_path.read_text(encoding="utf-8"))
+    neutral_registry = load_registry(registry_path)
+    registry = client_registry(neutral_registry, "codex")
 except Exception as exc:
     fail(f"invalid JSON in {registry_path}: {exc}")
 validate_client_owned_repo_selection(registry, registry_path)
@@ -783,7 +785,7 @@ repos = registry.get("repos", [])
 if not isinstance(repos, list):
     fail(f"repos must be an array in {registry_path}")
 try:
-    mcp_catalog = load_mcp_catalog_data(mcp_registry, repos)
+    mcp_catalog = load_mcp_catalog_data(mcp_registry, neutral_registry["repos"])
 except ValueError as exc:
     fail(f"invalid MCP registry {mcp_registry_path}: {exc}")
 

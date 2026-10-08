@@ -12,7 +12,7 @@ REPO_FILTERS=()
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 CONTROL_PLANE_DIR="$(cd "$SCRIPT_DIR/.." && pwd)"
 ROOT_DIR="$(cd "$CONTROL_PLANE_DIR/.." && pwd)"
-DEFAULT_REGISTRY_FILE="${CONTROL_PLANE_DIR}/config/repo-bootstrap.json"
+DEFAULT_REGISTRY_FILE="${CONTROL_PLANE_DIR}/../repos/registry.json"
 DEFAULT_MCP_REGISTRY_FILE="${ROOT_DIR}/mcp/config/presets.json"
 DEFAULT_HOOKS_REGISTRY_FILE="${ROOT_DIR}/hooks/registry.json"
 DEFAULT_PLUGIN_REGISTRY_FILE="${ROOT_DIR}/plugins/registry.json"
@@ -29,7 +29,7 @@ Options:
   --dry-run              Show diffs only (default)
   --check                Fail if rendered files differ from repo-local files
   --registry <path>      Override repo bootstrap registry
-                         (default: codex/config/repo-bootstrap.json)
+                         (default: repos/registry.json)
   --mcp-registry <path>  Override shared MCP registry
                          (default: mcp/config/presets.json)
   --hooks-registry <path>
@@ -264,7 +264,7 @@ def render_repo_config(
 ) -> str:
     lines = [
         "# Managed by ~/GitHub/agents/codex/scripts/sync-repo-codex-configs.sh.",
-        "# Edit ~/GitHub/agents/codex/config/repo-bootstrap.json and re-run the sync script.",
+        "# Edit ~/GitHub/agents/repos/registry.json and re-run the sync script.",
     ]
     rendered_anything = False
 
@@ -320,18 +320,20 @@ plugin_registry_path = Path(sys.argv[4]).expanduser().resolve()
 tmp_dir = Path(sys.argv[5]).resolve()
 filters = {normalize_path(path) for path in sys.argv[6:] if path}
 
-root_dir = registry_path.parent.parent.parent.resolve()
+root_dir = registry_path.parent.parent.resolve()
 sys.path.insert(0, str(root_dir))
 
+from repos.repo_registry import load_registry, client_registry
 from hooks.control_plane import load_hooks_registry, render_codex_hooks
 from mcp.control_plane import load_mcp_catalog
 from plugins.derived import resolve_repo_root, validate_plugin_registry
 
 
-data = json.loads(registry_path.read_text(encoding="utf-8"))
+neutral_registry = load_registry(registry_path)
+data = client_registry(neutral_registry, "codex")
 defaults = data.get("defaults", {})
 repos_raw = data.get("repos", [])
-mcp_catalog = load_mcp_catalog(mcp_registry_path, repos_raw)
+mcp_catalog = load_mcp_catalog(mcp_registry_path, neutral_registry["repos"])
 hooks_registry = load_hooks_registry(hooks_registry_path)
 plugin_registry_data = json.loads(plugin_registry_path.read_text(encoding="utf-8"))
 plugins, _unmanaged_plugins, plugin_github_root = validate_plugin_registry(

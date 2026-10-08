@@ -20,7 +20,7 @@ Default mode is dry-run. Use --apply to write changes.
 Options:
   --apply                Apply changes
   --dry-run              Show actions only (default)
-  --github-root <path>   Root used for workspace-write + repo trust scan
+  --github-root <path>   Workspace root used by native config and credential setup
   --global-config <p>    Override ~/.codex/config.toml target
   --global-hooks <p>     Override ~/.codex/hooks.json target
   --global-agents <p>    Override ~/.codex/AGENTS.md target
@@ -134,7 +134,6 @@ log "+ ${sync_global_agents_cmd[*]}"
 sync_trusted_cmd=(
   "$SYNC_TRUSTED_SCRIPT"
   "$MODE_FLAG"
-  --root "$GITHUB_ROOT"
   --global-config "$GLOBAL_CONFIG"
 )
 log "+ ${sync_trusted_cmd[*]}"

@@ -16,6 +16,28 @@ from tests.control_plane.support import (
 
 
 class ManagedSkillsRegistrySyncTests(TempDirTestCase):
+    def test_codex_sync_honors_explicit_skill_client_compatibility(self) -> None:
+        root = make_control_plane_root(self.temp_path)
+        home = self.temp_path / "home"
+        registry = {"managed_skills": [], "paths": {"github_root": str(home / "GitHub")}}
+        for skill, clients in (("shared", ["codex", "claude"]), ("claude-only", ["claude"]), ("default-codex", None)):
+            source = make_skill_source(root / "skills-source/owned" / skill, skill)
+            item = {"skill": skill, "origin": "owned", "scope": "global", "source_path": str(source)}
+            if clients is not None:
+                item["clients"] = clients
+            registry["managed_skills"].append(item)
+        path = root / "skills/registry.json"
+        write_json(path, registry)
+        run_command(["python3", str(REPO_ROOT / "scripts/sync-skills-registry.py"), "--apply", str(path)], env={"HOME": str(home)})
+        self.assertTrue((home / ".agents/skills/shared").is_symlink())
+        self.assertTrue((home / ".agents/skills/default-codex").is_symlink())
+        self.assertFalse((home / ".agents/skills/claude-only").is_symlink())
+        registry["managed_skills"][0]["clients"] = ["unknown"]
+        write_json(path, registry)
+        result = run_command(["python3", str(REPO_ROOT / "scripts/sync-skills-registry.py"), "--apply", str(path)], env={"HOME": str(home)}, check=False)
+        self.assertNotEqual(0, result.returncode)
+        self.assertIn("clients must name unique supported clients", result.stderr)
+
     def test_syncs_managed_skill_links_and_prunes_stale_links(self) -> None:
         root = make_control_plane_root(self.temp_path)
         home = self.temp_path / "home"

@@ -3,6 +3,7 @@ from __future__ import annotations
 
 import argparse
 import json
+import re
 import subprocess
 import sys
 from dataclasses import dataclass
@@ -10,7 +11,9 @@ from pathlib import Path
 from typing import Any
 
 ROOT_DIR = Path(__file__).resolve().parent.parent
-DEFAULT_REGISTRY_FILE = ROOT_DIR / "codex" / "config" / "repo-bootstrap.json"
+sys.path.insert(0, str(ROOT_DIR))
+from repos.repo_registry import load_registry as load_repo_registry
+DEFAULT_REGISTRY_FILE = ROOT_DIR / "repos" / "registry.json"
 
 
 @dataclass(frozen=True)
@@ -52,27 +55,7 @@ def git_repo_root(path: Path) -> Path | None:
 
 
 def load_registry(path: Path) -> dict[str, Any]:
-    data = json.loads(path.read_text(encoding="utf-8"))
-    if not isinstance(data, dict):
-        raise ValueError(f"{path}: registry root must be an object")
-    repos = data.get("repos", [])
-    if not isinstance(repos, list):
-        raise ValueError(f"{path}: repos must be an array")
-    for idx, item in enumerate(repos):
-        if not isinstance(item, dict):
-            raise ValueError(f"{path}: repos[{idx}] must be an object")
-        raw_path = item.get("path")
-        if not isinstance(raw_path, str) or not raw_path.strip():
-            raise ValueError(f"{path}: repos[{idx}].path must be a non-empty string")
-    exclusions = data.get("auto_enrollment_exclusions", [])
-    if not isinstance(exclusions, list):
-        raise ValueError(f"{path}: auto_enrollment_exclusions must be an array")
-    for idx, raw_path in enumerate(exclusions):
-        if not isinstance(raw_path, str) or not raw_path.strip():
-            raise ValueError(f"{path}: auto_enrollment_exclusions[{idx}] must be a non-empty path")
-        if not (raw_path.startswith("~/") or Path(raw_path).is_absolute()):
-            raise ValueError(f"{path}: auto_enrollment_exclusions[{idx}] must be an absolute or ~/ path")
-    return data
+    return load_repo_registry(path)
 
 
 def discover_direct_child_git_repos(github_root: Path) -> list[RepoCandidate]:
@@ -174,6 +157,14 @@ def main() -> int:
         print("OK: all eligible discovered repos are already enrolled.")
         return 0
 
+    used_ids = {repo["id"] for repo in repos}
+    for candidate in missing:
+        repo_id = candidate.declared_path.name.lower().lstrip(".")
+        if not re.fullmatch(r"[a-z0-9][a-z0-9_-]*", repo_id) or repo_id in used_ids:
+            print(f"ERROR: assign an explicit unique repository id before enrolling {candidate.declared_path}", file=sys.stderr)
+            return 1
+        used_ids.add(repo_id)
+
     for candidate in missing:
         print(f"ADD {display_path(candidate.declared_path, home)}")
 
@@ -181,10 +172,13 @@ def main() -> int:
         print("Dry run complete. Re-run with --apply to update the registry.")
         return 0
 
-    repos.extend(
-        {"path": display_path(candidate.declared_path, home)}
-        for candidate in missing
-    )
+    for candidate in missing:
+        repo_id = candidate.declared_path.name.lower().lstrip(".")
+        repos.append({
+            "id": repo_id,
+            "path": display_path(candidate.declared_path, home),
+            "clients": {"codex": {"enabled": True, "config": {}}, "claude": {"enabled": False}},
+        })
     repos.sort(key=lambda item: repo_sort_key(item, home))
     write_json(registry_path, data)
     print(f"Updated: {registry_path}")

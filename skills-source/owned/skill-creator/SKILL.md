@@ -24,13 +24,13 @@ Use `scripts/bootstrap-skill.sh <skills.sh-url-or-upstream-ref> --repo <repo>` f
 Validate an edited skill with the bundled helper:
 
 ```bash
-python3 /Users/dobby/GitHub/agents/skills-source/owned/skill-creator/scripts/quick_validate.py <skill-dir>
+python3 ~/GitHub/agents/skills-source/owned/skill-creator/scripts/quick_validate.py <skill-dir>
 ```
 
 Update `agents/openai.yaml` when user-facing behavior or scope changes. Quote the default prompt so the shell preserves the skill name:
 
 ```bash
-python3 /Users/dobby/GitHub/agents/skills-source/owned/skill-creator/scripts/generate_openai_yaml.py <skill-dir> --interface 'display_name=Example Skill' --interface 'short_description=Describe the specific capability clearly.' --interface 'default_prompt=Use $example-skill to complete this task.'
+python3 ~/GitHub/agents/skills-source/owned/skill-creator/scripts/generate_openai_yaml.py <skill-dir> --interface 'display_name=Example Skill' --interface 'short_description=Describe the specific capability clearly.' --interface 'default_prompt=Use $example-skill to complete this task.'
 ```
 
 The Python helpers require PyYAML. Test added or changed executable helpers against their actual behavior; wording-only edits need parsing and route checks.

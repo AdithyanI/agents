@@ -24,7 +24,7 @@ class McpControlPlaneTests(unittest.TestCase):
         self.assertEqual(self.catalog([]).repos_for("docs"), [])
 
     def test_unknown_repo_fails_before_rendering(self) -> None:
-        with self.assertRaisesRegex(McpRegistryError, "missing from repo-bootstrap.json"):
+        with self.assertRaisesRegex(McpRegistryError, "missing from repos/registry.json"):
             self.catalog(["~/GitHub/not-managed"])
 
     def test_retired_client_target_schema_is_rejected(self) -> None:

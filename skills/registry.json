@@ -13,6 +13,7 @@
   "managed_skills": [
     {
       "skill": "agent-native-repo-playbook",
+      "clients": ["codex", "claude"],
       "origin": "owned",
       "scope": "global",
       "repos": [],
@@ -37,6 +38,7 @@
     },
     {
       "skill": "project",
+      "clients": ["codex", "claude"],
       "origin": "owned",
       "scope": "global",
       "repos": [],
@@ -156,6 +158,7 @@
     },
     {
       "skill": "client-interface-guidelines",
+      "clients": ["codex", "claude"],
       "origin": "owned",
       "scope": "global",
       "repos": [],
@@ -186,6 +189,7 @@
     },
     {
       "skill": "media-storage-lifecycle",
+      "clients": ["codex", "claude"],
       "origin": "owned",
       "scope": "repo",
       "repos": [
@@ -246,6 +250,7 @@
     },
     {
       "skill": "media-toolkit",
+      "clients": ["codex", "claude"],
       "origin": "owned",
       "scope": "repo",
       "repos": [
@@ -281,6 +286,7 @@
     },
     {
       "skill": "skill-creator",
+      "clients": ["codex", "claude"],
       "origin": "owned",
       "scope": "global",
       "repos": [],

@@ -42,7 +42,7 @@ class FastGateBoundaryTests(TempDirTestCase):
         write_executable(
             bin_dir / "python3",
             '#!/bin/sh\nprintf "%s\\n" "python3 $*" >> "$GATE_LOG"\n'
-            'case "$*" in *sync-native-env.py*)\n'
+            'case "$*" in *codex/runtime.py*) printf "%s\\n" "$CODEX_BIN"; exit 0 ;; *sync-native-env.py*)\n'
             '  test "$2" = "--check-sources" || exit 88\n'
             '  exit "${MAPPING_CHECK_EXIT:-0}" ;; esac\n',
         )
@@ -55,6 +55,7 @@ class FastGateBoundaryTests(TempDirTestCase):
             "PATH": f"{bin_dir}:/usr/bin:/bin",
             "AGENTS_MANAGED_REPO_CHECK_ROOT": str(self.root),
             "GATE_LOG": str(self.log),
+            "CODEX_BIN": str(write_executable(self.temp_path / "fixture-codex", "#!/bin/sh\nexit 0\n")),
         }
 
     def test_fast_gate_runs_source_mapping_check_without_live_runtime_check(self) -> None:

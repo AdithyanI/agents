@@ -15,6 +15,7 @@ bash -n hooks/git/pre-commit scripts/sync-managed-git-hooks.sh scripts/check-age
 scripts/check-skills-registry.sh --staged-ok
 scripts/check-plugins-registry.sh --staged-ok
 python3 codex/scripts/sync-native-env.py --check-sources
+python3 -m unittest tests.control_plane.test_repo_registry tests.control_plane.test_claude_control_plane
 python3 -m unittest tests.control_plane.test_project_archive tests.control_plane.test_skills_sync tests.control_plane.test_codex_native_env tests.control_plane.test_codex_plugin_component tests.control_plane.test_codex_provider tests.control_plane.test_codex_control_plane_check tests.control_plane.test_fast_gate_boundary tests.control_plane.test_managed_repo_enrollment
 python3 -m unittest \
   tests.control_plane.test_git_payload_guard \

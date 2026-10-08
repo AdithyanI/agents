@@ -4,6 +4,7 @@ from __future__ import annotations
 import argparse
 import hashlib
 import json
+import sys
 from pathlib import Path
 
 try:
@@ -22,7 +23,9 @@ EVENT_LABELS = {
 }
 
 ROOT_DIR = Path(__file__).resolve().parents[2]
-DEFAULT_REPO_REGISTRY = ROOT_DIR / "codex" / "config" / "repo-bootstrap.json"
+sys.path.insert(0, str(ROOT_DIR))
+from repos.repo_registry import load_registry as load_repo_registry, client_registry
+DEFAULT_REPO_REGISTRY = ROOT_DIR / "repos" / "registry.json"
 
 
 def parse_args() -> argparse.Namespace:
@@ -230,7 +233,7 @@ def hook_state_entries(hooks_path: Path) -> dict[str, str]:
 
 
 def registry_repo_paths(registry_path: Path, repo_filters: set[Path]) -> list[Path]:
-    data = load_json(registry_path)
+    data = client_registry(load_repo_registry(registry_path), "codex")
     repos = data.get("repos", [])
     if not isinstance(repos, list):
         raise SystemExit(f"ERROR: repos must be a list in {registry_path}")

@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 from tests.control_plane.support import (
+    repository_registry,
     REPO_ROOT,
     TempDirTestCase,
     default_mcp_registry,
@@ -16,13 +17,13 @@ class CodexRepoSyncTests(TempDirTestCase):
     def test_rejects_client_owned_thread_selection(self) -> None:
         root = make_control_plane_root(self.temp_path)
         adi = init_git_repo(self.temp_path / "adi")
-        registry = root / "codex/config/repo-bootstrap.json"
+        registry = root / "repos/registry.json"
         write_json(
             registry,
-            {
+            repository_registry({
                 "defaults": {},
                 "repos": [{"path": str(adi), "model_reasoning_effort": "high"}],
-            },
+            }),
         )
         write_json(root / "mcp/config/presets.json", default_mcp_registry())
 
@@ -47,7 +48,7 @@ class CodexRepoSyncTests(TempDirTestCase):
         root = make_control_plane_root(self.temp_path)
         adi = init_git_repo(self.temp_path / "adi")
 
-        repo_registry_path = root / "codex/config/repo-bootstrap.json"
+        repo_registry_path = root / "repos/registry.json"
         mcp_registry_path = root / "mcp/config/presets.json"
         plugin_registry_path = root / "plugins/registry.json"
         stale_managed_role = write_text(
@@ -64,14 +65,14 @@ class CodexRepoSyncTests(TempDirTestCase):
         )
         write_json(
             repo_registry_path,
-            {
+            repository_registry({
                 "defaults": {"personality": "friendly"},
                 "repos": [
                     {
                         "path": str(adi),
                     }
                 ],
-            },
+            }),
         )
         mcp_registry = default_mcp_registry()
         mcp_registry["presets"]["cloudflare-docs"]["repos"] = [str(adi)]
@@ -115,19 +116,19 @@ class CodexRepoSyncTests(TempDirTestCase):
         adi = init_git_repo(github_root / "adi")
         win = init_git_repo(github_root / "win")
 
-        repo_registry_path = root / "codex/config/repo-bootstrap.json"
+        repo_registry_path = root / "repos/registry.json"
         mcp_registry_path = root / "mcp/config/presets.json"
         plugin_registry_path = root / "plugins/registry.json"
 
         write_json(
             repo_registry_path,
-            {
+            repository_registry({
                 "defaults": {},
                 "repos": [
                     {"path": str(adi)},
                     {"path": str(win)},
                 ],
-            },
+            }),
         )
         write_json(mcp_registry_path, default_mcp_registry())
         write_json(

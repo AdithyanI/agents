@@ -8,7 +8,7 @@ Canonical inputs stay split by ownership:
 - `plugins/registry.json`
 - `mcp/config/presets.json`
 - `hooks/registry.json`
-- `codex/config/repo-bootstrap.json`
+- `repos/registry.json`
 - `codex/config/global.config.toml`
 - `dev-servers/registry.json`
 
@@ -219,7 +219,9 @@ contains that resolved coverage, with `scope` set to `global`, `targeted`, or
 Assignments live only in `mcp/config/presets.json`; the UI renders the normalized
 coverage without interpreting registry selectors itself.
 
-Repo entries come from `codex/config/repo-bootstrap.json`. If a managed repo
+Repo entries come from `repos/registry.json`. Their `details.repository_id` and
+`details.clients` expose stable identity and native client enablement/configuration.
+The current config and capability views retain their Codex presentation. If a managed repo
 path no longer exists on the current machine, the dashboard keeps the row but
 adds a `managed_repo_missing` warning so the stale registry entry appears in the
 Attention view instead of silently looking healthy.

@@ -24,7 +24,7 @@ Prove the completion criteria against current state, resolve remaining work, and
 Archive the complete project directory under the same tracker home's `archive/` path. The bundled helper moves the complete directory, including resources:
 
 ```bash
-python3 /Users/dobby/GitHub/agents/skills-source/owned/project/scripts/archive_project.py --source <active-project-dir> --destination <tracker-home>/archive/<project> --no-input
+python3 ~/GitHub/agents/skills-source/owned/project/scripts/archive_project.py --source <active-project-dir> --destination <tracker-home>/archive/<project> --no-input
 ```
 
 Use `--dry-run` when an inspection pass is useful. Require `source_removed: true`, verify the active directory is gone, repair relative links affected by the move, and run the relevant repo hygiene check. Do not leave a completed project or empty placeholder in the active folder. If work is still incomplete, keep it active and name the remaining work; do not archive merely to finish a turn.

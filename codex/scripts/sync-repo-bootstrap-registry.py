@@ -9,7 +9,7 @@ from pathlib import Path
 from typing import Any
 
 ROOT_DIR = Path(__file__).resolve().parents[2]
-DEFAULT_REGISTRY_FILE = ROOT_DIR / "codex" / "config" / "repo-bootstrap.json"
+DEFAULT_REGISTRY_FILE = ROOT_DIR / "repos" / "registry.json"
 DEFAULT_MCP_REGISTRY_FILE = ROOT_DIR / "mcp" / "config" / "presets.json"
 
 try:
@@ -88,8 +88,8 @@ def validate_registry(
         raise ValueError("defaults.features must be an object")
 
     repos_raw = data.get("repos")
-    if not isinstance(repos_raw, list) or not repos_raw:
-        raise ValueError("repos must be a non-empty array")
+    if not isinstance(repos_raw, list):
+        raise ValueError("repos must be an array")
 
     seen: set[str] = set()
     repos: list[dict[str, Any]] = []
@@ -179,7 +179,7 @@ def main() -> int:
         return 1
 
     config_dir = registry_file.parent
-    root_dir = config_dir.parent.parent
+    root_dir = config_dir.parent
     plugin_registry_file = (
         Path(args.plugin_registry).expanduser().resolve()
         if args.plugin_registry
@@ -191,12 +191,14 @@ def main() -> int:
 
     if str(root_dir) not in sys.path:
         sys.path.insert(0, str(root_dir))
+    from repos.repo_registry import client_registry, validate_registry as validate_repo_registry
     from mcp.control_plane import load_mcp_catalog_data
     from plugins.derived import validate_plugin_registry
 
     home = Path.home()
     try:
-        _defaults, repos = validate_registry(data, home)
+        validate_repo_registry(data, home=home)
+        _defaults, repos = validate_registry(client_registry(data, "codex"), home)
         catalog = load_mcp_catalog_data(mcp_data, data.get("repos"))
         plugin_data = json.loads(plugin_registry_file.read_text(encoding="utf-8"))
         managed_plugins, unmanaged_plugins, _github_root = validate_plugin_registry(

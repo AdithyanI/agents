@@ -1,6 +1,6 @@
 # Agents Control-Plane Repo
 
-Personal Codex configuration, skills, plugins, MCPs, previews, and lifecycle hooks, reproduced across MacBook and Mac Mini.
+Shared agent guidance, skills, MCPs, repository policy, and native client adapters, reproduced across MacBook and Mac Mini. Codex is deployed across enrolled repos; Claude Code is piloting in `agents`.
 
 ## Orientation
 
@@ -10,13 +10,15 @@ For changes affecting Dobby ownership, engine/workspace boundaries, dashboard/ga
 
 | Source | Owns |
 | --- | --- |
-| `config/global.agents.md` | Machine-wide guidance rendered to `~/.codex/AGENTS.md` |
-| `codex/config/` | Personal Codex config, bundled-skill policy, and shared repo inventory in `repo-bootstrap.json` |
+| `config/global.agents.md` | Shared guidance rendered to Codex and the opted-in Claude runtime |
+| `repos/registry.json` | Stable repository IDs, paths, explicit client enablement, and native client config |
+| `codex/config/` | Personal Codex config and bundled-skill policy |
+| `claude/` | Native Claude guidance, skill, MCP, settings, and ownership reconciliation |
 | `skills/registry.json` | Standalone skill ownership and distribution |
 | `skills-source/owned/`, `skills-source/external/` | Canonical managed skill content |
 | `plugins/registry.json` | Native Codex plugin enablement and installation |
 | `mcp/config/presets.json` | MCP definitions and repository scopes |
-| `hooks/registry.json`, `hooks/scripts/` | Codex lifecycle hook configuration and implementations |
+| `hooks/registry.json`, `hooks/scripts/` | Shared lifecycle intent and native runtime adapters |
 | `hooks/git/` | Shared local Git hooks |
 | `dev-servers/registry.json` | Opt-in local previews rendered to `.codex/environments/environment.toml` |
 | `dashboard-app/` | Read-only control-plane dashboard |
@@ -37,11 +39,13 @@ Shared bootstrap/check support exact repository paths, such as `--repo ~/GitHub/
 
 ## Contracts
 
-- Codex is the sole supported development client. Retired-client cleanup is a removal migration, not an optional runtime framework.
+- Repository client enablement is explicit in `repos/registry.json`; Claude additionally requires machine-local opt-in. Claude Code requires at least `2.1.281` for native root and nested `AGENTS.md` discovery. Keep new rollout within the pilot until native capability checks pass.
+- Historical retired-client cleanup is an explicit destructive migration, excluded from bootstrap and health checks. Never run it to repair current Claude setup.
 - Repo bootstrap entries define behavior such as `personality`, `model_instructions_file`, `developer_instructions`, `project_root_markers`, and `features`. Model, reasoning effort, profile, and Fast/service tier remain client-owned.
 - A repo's identity prompt is declared once as `model_instructions_file`; it reaches Codex through the generated repo config.
-- MCP schema version 3 assigns each definition to `repos: "all"` or an explicit array of managed repository paths. Empty arrays leave a definition unassigned. Output lives only in repo `.codex/config.toml`.
+- MCP schema version 3 assigns each definition to `repos: "all"` or an explicit array of managed repository paths. Empty arrays leave a definition unassigned. Enabled clients render native repo `.codex/config.toml` or `.mcp.json` outputs.
 - Standalone skills use symlinks at `~/.agents/skills/<skill>` or repo `.agents/skills/<skill>`. Keep repo-local skills in their owning repos unless explicitly promoted.
+- Claude links explicitly compatible standalone skills into native `.claude/skills` locations. Native Codex plugin bundles stay with Codex. Claude updates and disablement touch only renderer-owned paths or keys; preserve user settings, credentials, sessions, and `settings.local.json`.
 - Keep `unmanaged_repo_local_skills` and `unmanaged_repo_local_plugins` in their existing registries. An existing repo must contain every declared local skill; fix stale entries rather than hiding errors. Do not add mapping manifests.
 - Keep global skills/plugins a minimal default kit. Native plugins use global/manual enablement; their repo scope is not reliable. If a bundled MCP needs one-repo scope, promote that MCP into the standalone MCP registry.
 - Do not decompose native plugins into standalone skills/MCPs without an explicit need. A rendered plugin entry is distinct from an installed package: bootstrap installs missing enabled packages, and runtime drift checks verify availability.
@@ -53,6 +57,7 @@ Shared bootstrap/check support exact repository paths, such as `--repo ~/GitHub/
 ## Hooks and Validation
 
 - Optional repo lifecycle scripts live at `scripts/hooks/session_start.py`, `scripts/hooks/user_prompt_submit.py`, and `scripts/hooks/finalize_codex_thread.py`. Follow `docs/references/repo-lifecycle-hook-adapter.md` for their contracts.
+- Claude supports the first two events; automatic Git finalization remains Codex-specific until cross-client change attribution is proven.
 - Managed repos use `core.hooksPath` pointing at this repo's `hooks/git/`. Commit-time validation delegates to repo `scripts/check-fast.sh` when present. Keep it local, deterministic, and quick; slower checks belong in `scripts/check-full.sh`.
 - Skill/plugin registry changes require their sync/check in the same change.
 - MCP, bootstrap, or preview registry changes require shared bootstrap/check and inspection of affected Codex output.

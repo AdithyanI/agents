@@ -16,6 +16,7 @@ GIT_ROOT_TIMEOUT_SEC = 5
 MAX_CONTEXT_TOKENS = 30000
 APPROX_CHARS_PER_TOKEN = 4
 MAX_CONTEXT_CHARS = MAX_CONTEXT_TOKENS * APPROX_CHARS_PER_TOKEN
+CLAUDE_CONTEXT_EVENTS = {"SessionStart", "UserPromptSubmit"}
 
 
 @dataclass(frozen=True)
@@ -31,7 +32,8 @@ class RepoHookSpec:
 
 def parse_args(spec: RepoHookSpec) -> argparse.Namespace:
     parser = argparse.ArgumentParser(description=spec.description)
-    parser.add_argument("--runtime", choices=("codex",), required=True)
+    runtimes = ("codex", "claude") if spec.event in CLAUDE_CONTEXT_EVENTS else ("codex",)
+    parser.add_argument("--runtime", choices=runtimes, required=True)
     parser.add_argument(
         "--no-input",
         action="store_true",
@@ -145,7 +147,9 @@ def run_repo_hook(
             print(f"{spec.label}: failed to run {script}: {exc}", file=sys.stderr)
         return 0
 
-    if result.stdout:
+    # Claude can honor valid JSON even on nonzero exits. Do not turn partial
+    # context from a failed repo hook into a successful structured response.
+    if result.stdout and (runtime != "claude" or result.returncode == 0):
         if spec.forward_stdout_raw:
             sys.stdout.write(result.stdout)
         elif spec.forward_stdout_as_context:
@@ -159,6 +163,13 @@ def run_repo_hook(
 def run_lifecycle_hook(spec: RepoHookSpec) -> int:
     args = parse_args(spec)
     payload = read_payload(debug=args.debug, label=spec.label)
+    if args.runtime == "claude":
+        # Both supported Claude events provide these fields. Never dispatch a
+        # different event or resolve an absent/malformed cwd against this process.
+        if payload is None or payload.get("hook_event_name") != spec.event:
+            return 0
+        if not isinstance(payload.get("cwd"), str) or not payload["cwd"].strip():
+            return 0
     if (
         spec.ignore_mismatched_event_name
         and (payload or {}).get("hook_event_name") not in {None, spec.event}

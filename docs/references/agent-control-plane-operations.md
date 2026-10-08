@@ -1,6 +1,6 @@
 # Agent Control-Plane Operations
 
-This repo manages Codex configuration, skills, plugins, MCPs, lifecycle hooks, local previews, and the read-only dashboard. Canonical source lives in `~/GitHub/agents`; `~/.agents/skills` and `~/.codex` are runtime locations.
+This repo manages shared guidance, skills, MCPs, lifecycle hooks, and native client configuration. Canonical source lives in `~/GitHub/agents`; `~/.agents/skills`, `~/.codex`, and `~/.claude` are runtime locations. `repos/registry.json` gives repositories stable IDs and explicitly enables each client. Claude is initially enabled only for the `agents` pilot.
 
 ## Apply and validate
 
@@ -12,7 +12,7 @@ cd ~/GitHub/agents
 ./scripts/test-control-plane.sh
 ```
 
-Bootstrap reconciles skill links, native plugins, Codex previews, local Git hooks, and the Codex runtime. It also removes obsolete setup left by retired development clients. Check validates these outputs, repository hygiene, runtime drift, and hermetic regressions.
+Bootstrap reconciles skill links, native plugins, Codex previews, local Git hooks, and enabled client outputs. Check validates these outputs, repository hygiene, runtime drift, and hermetic regressions. Historical client retirement is excluded from both commands.
 
 For one repository, use an exact path with shared bootstrap/check:
 
@@ -23,7 +23,7 @@ For one repository, use an exact path with shared bootstrap/check:
 
 Sparse machines are normal. Registry entries absent locally are skipped; existing non-Git folders at managed paths warn because they may be broken placeholders. Machine-enrollment checks use `~/GitHub/agents` by default; override with `AGENTS_MANAGED_REPO_CHECK_ROOT` for another canonical checkout.
 
-`codex/config/repo-bootstrap.json` declares exact `auto_enrollment_exclusions`
+`repos/registry.json` declares exact `auto_enrollment_exclusions`
 for retained recovery checkouts. The Git sync enrollment step preserves these
 directories and their history without adding them back to `repos`; it does not
 remove an existing enrollment. `~/GitHub/modal_functions` is excluded because
@@ -34,18 +34,40 @@ WIN owns its active implementation and release.
 | Command or source | Contract |
 | --- | --- |
 | `scripts/auto-apply-agent-control-planes.sh --apply` | Reconcile runtime-relevant changes since a machine-local Git revision stamp; use full bootstrap for first sync or shared-input changes |
-| `scripts/enroll-managed-repos.sh --apply` | Add direct child Git repos under `~/GitHub` to `codex/config/repo-bootstrap.json` |
+| `scripts/enroll-managed-repos.sh --apply` | Add direct child Git repos under `~/GitHub` to `repos/registry.json`; new entries enable Codex and leave Claude disabled |
 | `scripts/sync-skills-registry.sh` | Render global and repo skill links from `skills/registry.json` |
 | `scripts/sync-plugins-registry.sh` | Validate native plugin entries; Codex config sync renders their runtime state |
 | `scripts/sync-codex-plugin-installs.py` | Install enabled missing native plugin packages |
 | `scripts/sync-codex-previews.py` | Render preview environments from `dev-servers/registry.json` |
 | `scripts/sync-managed-git-hooks.sh --apply` | Set managed repo `core.hooksPath` to this repo's `hooks/git` |
 | `codex/scripts/bootstrap-machine-codex.sh --apply` | Apply Codex config, global guidance, repo MCPs/hooks, terminal integration, and thread maintenance |
+| `claude/scripts/sync-claude.py --apply` | Reconcile owned Claude guidance, portable skills, project MCP, and selected hooks; `--check` reports drift and default is `--dry-run` |
 | `scripts/audit-agent-runtime-drift.py --plain` | Read-only machine-health report for plugin and Codex runtime drift |
+
+## Claude pilot
+
+Each machine opts in explicitly with `python3 claude/scripts/sync-claude.py --apply --enable`.
+The private opt-in and output ownership records live under
+`~/.local/state/agents-control-plane/claude/`; normal sync skips machines that
+have not opted in. `--apply --disable` removes only renderer-owned outputs and
+keys, while retaining user data. Local opt-in does not enable other machines.
+
+Claude Code must be at least `2.1.281`. Root and nested `AGENTS.md` discovery uses
+the client's built-in support; no project instruction mirror is generated.
+The renderer preserves instruction-selection preferences and permission settings.
+After upgrading, use a fresh Claude session and verify `/context`, `/skills`, and
+`/mcp`; the first session after an older version upgrade may not load the AGENTS
+plugin yet. See [Claude instruction discovery](https://code.claude.com/docs/en/memory#agentsmd).
+
+Only standalone skills explicitly including `claude` in their registry `clients`
+are shared; omitted `clients` keeps existing Codex scope. Native plugins retain
+their native owner. Conflicting handwritten outputs or edited managed entries
+stop reconciliation before writes. Output updates use a lock, recovery journal,
+and private backups. No credentials, sessions, or `settings.local.json` are managed.
 
 Only `skills/registry.json` is tracked in the top-level `skills/` folder. User-scope links are neither staged nor registered with Stop, even if their runtime folder is inside an old checkout. Repo-scoped generated changes are registered with the active Codex Stop transaction for checked publication.
 
-MCP schema version 3 uses neutral definitions and a `repos` scope per server. `"all"` selects all managed repositories, an explicit array selects those paths, and `[]` leaves a definition unassigned. The only generated MCP surface is repo `.codex/config.toml`.
+MCP schema version 3 uses neutral definitions and a `repos` scope per server. `"all"` selects all managed repositories, an explicit array selects those paths, and `[]` leaves a definition unassigned. Each enabled client renders the assignment: Codex uses repo `.codex/config.toml`; Claude uses project `.mcp.json` while preserving unrelated server entries.
 
 The `xcode` preset scopes Apple's native `/usr/bin/xcrun mcpbridge` to Snipwit.
 It follows the developer directory selected by `xcode-select`, so upgrading Xcode
@@ -80,7 +102,7 @@ Managed OpenSSH aliases live in `~/.ssh/config`. The scripts repo owns the SSH a
 
 ## Retired-client migration
 
-Claude, Copilot, their VS Code agent defaults, and the Antigravity experiment have no active renderers or optional enable flags. `scripts/retire-agent-clients.py` removes dedicated per-repo client setup and recognized historical global outputs. Bootstrap runs it so another machine cannot retain old hooks or jobs after syncing this change.
+`scripts/retire-agent-clients.py` retains the historical Codex-only removal migration for deliberate recovery work. It is never called by bootstrap, reconciliation, or health checks. Its `--apply` removes matching Claude setup, including restored setup and project-local permissions; do not use it on a coexistence installation.
 
 The migration supports `--dry-run`, `--apply`, and `--check`, plus exact `--repo` filters. It backs up changed regular files under `~/.local/state/agents-control-plane/retired-client-backups` before removing owned setup. It preserves application binaries, credentials, conversations, real skill source directories, unknown MCP entries, and unrelated preferences. Dedicated repo client instructions/permissions and retired editor integration preferences are removed, including manual additions. It retires owned launchers and the old Claude finalizer/archiver and Copilot pruner jobs. Recovery of tracked source is through Git history; local configuration recovery uses those private backups.
 

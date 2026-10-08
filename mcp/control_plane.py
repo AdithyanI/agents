@@ -108,7 +108,7 @@ def load_mcp_catalog_data(data: Any, repo_entries: Any) -> McpCatalog:
             selected = list(dict.fromkeys(repo.strip() for repo in scope))
             unknown = [repo for repo in selected if repo not in assignments]
             if unknown:
-                raise McpRegistryError(f"presets.{name}.repos references repos missing from repo-bootstrap.json: {', '.join(unknown)}")
+                raise McpRegistryError(f"presets.{name}.repos references repos missing from repos/registry.json: {', '.join(unknown)}")
         definitions[name] = definition
         scopes[name] = "all" if scope == "all" else selected
         for repo in selected:

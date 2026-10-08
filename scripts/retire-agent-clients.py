@@ -1,9 +1,12 @@
 #!/usr/bin/env python3
-"""Retire generated non-Codex setup; this is a migration, not a client renderer.
+"""Explicit historical migration to remove generated non-Codex setup.
 
 Ownership constants intentionally survive deletion of the retired renderers and
 overlays. Private histories, credentials, skill sources, and unknown settings are
-never cleanup targets. Bootstrap may run this repeatedly on either machine.
+never cleanup targets. This destructive migration is opt-in: --apply removes or
+rewrites matching Claude and other client setup, including restored configuration.
+It must never run as part of normal bootstrap, reconciliation, or health checks.
+The default dry-run reports paths; --apply makes private backups before changes.
 """
 from __future__ import annotations
 
@@ -29,6 +32,7 @@ ROOT = Path(__file__).resolve().parent.parent
 if str(ROOT) not in sys.path:
     sys.path.insert(0, str(ROOT))
 from hooks.scripts.stop import register_current_codex_transaction_paths  # noqa: E402
+from repos.repo_registry import client_config, load_registry  # noqa: E402
 
 CLAUDE_ALLOW = {
     "Agent", "Bash", "Edit", "Glob", "Grep", "LS", "MultiEdit", "NotebookEdit",
@@ -564,21 +568,20 @@ class Retirement:
 def main(argv: list[str] | None = None) -> int:
     parser = argparse.ArgumentParser(description=__doc__)
     mode = parser.add_mutually_exclusive_group()
-    mode.add_argument("--apply", action="store_true", help="Back up and retire owned setup.")
+    mode.add_argument("--apply", action="store_true", help="Destructively remove matching historical setup after making private backups; includes restored Claude setup.")
     mode.add_argument("--check", action="store_true", help="Exit 1 while owned setup remains; never write.")
     mode.add_argument("--dry-run", action="store_true", help="Report planned paths without writing (default).")
     parser.add_argument("--home", default=str(Path.home()), help="Target home; non-account homes disable launchctl.")
     parser.add_argument("--github-root", help="Target GitHub root (default: HOME/GitHub).")
-    parser.add_argument("--repo-registry", default=str(ROOT / "codex/config/repo-bootstrap.json"))
+    parser.add_argument("--repo-registry", default=str(ROOT / "repos/registry.json"))
     parser.add_argument("--repo", action="append", default=[], help="Exact managed repo path; repeatable. Global cleanup still runs.")
     args = parser.parse_args(argv)
     try:
         home = Path(args.home).expanduser().resolve()
         github_root = (expand_path(args.github_root, home) if args.github_root else home / "GitHub").resolve()
         registry = expand_path(args.repo_registry, home)
-        entries = parse_json(registry.read_text(encoding="utf-8"), registry).get("repos")
-        if not isinstance(entries, list):
-            raise ValueError(f"Missing repos array: {registry}")
+        repo_registry = load_registry(registry, home=home)
+        entries = [{"path": entry["path"], **client_config(repo_registry, entry, "codex")} for entry in repo_registry["repos"]]
         repos = []
         for entry in entries:
             if not isinstance(entry, dict) or not isinstance(entry.get("path"), str) or not entry["path"]:

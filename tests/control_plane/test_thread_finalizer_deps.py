@@ -221,6 +221,9 @@ fi
                 calls = log.read_text().splitlines()
                 self.assertEqual(1, calls.count(f"install-finalize-stale-codex-threads-launchagent.sh|{mode}"))
                 self.assertFalse(any("install-thread-finalizer-deps.sh" in call for call in calls))
+                trust_calls = [call for call in calls if call.startswith("sync-trusted-projects.sh|")]
+                self.assertEqual(len(trust_calls), 1)
+                self.assertNotIn("--root", trust_calls[0], "bootstrap must honor explicit registry client enablement")
         log.unlink()
         result = run_command([str(bootstrap), "--apply"], env={
             "LOG_FILE": str(log), "FIXTURE_DEPS_FAIL": "1",

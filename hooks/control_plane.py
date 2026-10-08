@@ -7,12 +7,13 @@ from pathlib import Path
 from typing import Any
 
 
-VALID_RUNTIMES = {"codex"}
+VALID_RUNTIMES = {"codex", "claude"}
 VALID_SCOPES = {"global", "repo"}
 ALL_REPOS = "*"
 EVENT_RUNTIME_SUPPORT = {
-    "SessionStart": {"codex"},
-    "UserPromptSubmit": {"codex"},
+    "SessionStart": {"codex", "claude"},
+    "UserPromptSubmit": {"codex", "claude"},
+    # Claude turn attribution must be proven before enabling Git publication.
     "Stop": {"codex"},
 }
 VALID_EVENTS = set(EVENT_RUNTIME_SUPPORT)
@@ -188,6 +189,11 @@ def _managed_hooks_for_runtime(
             continue
         runtimes = hook.get("runtimes", [])
         if runtime in runtimes:
+            event = hook.get("event")
+            if runtime not in EVENT_RUNTIME_SUPPORT.get(event, set()):
+                raise HookRegistryError(
+                    f"event `{event}` is not supported for runtime `{runtime}`"
+                )
             selected.append(hook)
     return selected
 

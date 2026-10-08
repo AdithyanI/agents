@@ -86,17 +86,20 @@ fi
 
 [[ -x "$SYNC_SKILLS_SCRIPT" ]] || die "Missing executable: $SYNC_SKILLS_SCRIPT"
 [[ -x "$SYNC_PLUGINS_SCRIPT" ]] || die "Missing executable: $SYNC_PLUGINS_SCRIPT"
-[[ -x "$SYNC_CODEX_PLUGIN_INSTALLS_SCRIPT" ]] || die "Missing executable: $SYNC_CODEX_PLUGIN_INSTALLS_SCRIPT"
 [[ -x "$SYNC_GIT_HOOKS_SCRIPT" ]] || die "Missing executable: $SYNC_GIT_HOOKS_SCRIPT"
-[[ -x "$CODEX_BOOTSTRAP_SCRIPT" ]] || die "Missing executable: $CODEX_BOOTSTRAP_SCRIPT"
+CODEX_EXECUTABLE="$(python3 "${ROOT_DIR}/codex/runtime.py")"
+if [[ -n "$CODEX_EXECUTABLE" ]]; then
+  export CODEX_BIN="$CODEX_EXECUTABLE"
+  [[ -x "$SYNC_CODEX_PLUGIN_INSTALLS_SCRIPT" ]] || die "Missing executable: $SYNC_CODEX_PLUGIN_INSTALLS_SCRIPT"
+  [[ -x "$CODEX_BOOTSTRAP_SCRIPT" ]] || die "Missing executable: $CODEX_BOOTSTRAP_SCRIPT"
+else
+  log "SKIP: Codex executable unavailable; Codex runtime, plugins, and previews are not applied."
+fi
+
 REPO_ARGS=()
 for repo in "${REPO_FILTERS[@]}"; do
   REPO_ARGS+=(--repo "$repo")
 done
-
-retire_cmd=(python3 "${SCRIPT_DIR}/retire-agent-clients.py" "$MODE_FLAG" --github-root "$GITHUB_ROOT" "${REPO_ARGS[@]}")
-log "+ ${retire_cmd[*]}"
-"${retire_cmd[@]}"
 
 sync_skills_cmd=(
   "$SYNC_SKILLS_SCRIPT"
@@ -113,17 +116,20 @@ sync_plugins_cmd=(
 log "+ ${sync_plugins_cmd[*]}"
 "${sync_plugins_cmd[@]}"
 
-sync_codex_plugin_installs_cmd=(
-  "$SYNC_CODEX_PLUGIN_INSTALLS_SCRIPT"
-  "${SYNC_ARGS[@]}"
-  --no-input
-)
-log "+ ${sync_codex_plugin_installs_cmd[*]}"
-"${sync_codex_plugin_installs_cmd[@]}"
+if [[ -n "$CODEX_EXECUTABLE" ]]; then
+  sync_codex_plugin_installs_cmd=(
+    "$SYNC_CODEX_PLUGIN_INSTALLS_SCRIPT"
+    "${SYNC_ARGS[@]}"
+    --no-input
+    --codex-bin "$CODEX_EXECUTABLE"
+  )
+  log "+ ${sync_codex_plugin_installs_cmd[*]}"
+  "${sync_codex_plugin_installs_cmd[@]}"
 
-preview_cmd=(python3 "${SCRIPT_DIR}/sync-codex-previews.py" "$MODE_FLAG" --github-root "$GITHUB_ROOT" "${REPO_ARGS[@]}")
-log "+ ${preview_cmd[*]}"
-"${preview_cmd[@]}"
+  preview_cmd=(python3 "${SCRIPT_DIR}/sync-codex-previews.py" "$MODE_FLAG" --github-root "$GITHUB_ROOT" "${REPO_ARGS[@]}")
+  log "+ ${preview_cmd[*]}"
+  "${preview_cmd[@]}"
+fi
 
 sync_git_hooks_cmd=(
   "$SYNC_GIT_HOOKS_SCRIPT"
@@ -133,11 +139,17 @@ sync_git_hooks_cmd=(
 log "+ ${sync_git_hooks_cmd[*]}"
 "${sync_git_hooks_cmd[@]}"
 
-codex_cmd=(
-  "$CODEX_BOOTSTRAP_SCRIPT"
-  "$MODE_FLAG"
-  --github-root "$GITHUB_ROOT"
-  "${REPO_ARGS[@]}"
-)
-log "+ ${codex_cmd[*]}"
-"${codex_cmd[@]}"
+if [[ -n "$CODEX_EXECUTABLE" ]]; then
+  codex_cmd=(
+    "$CODEX_BOOTSTRAP_SCRIPT"
+    "$MODE_FLAG"
+    --github-root "$GITHUB_ROOT"
+    "${REPO_ARGS[@]}"
+  )
+  log "+ ${codex_cmd[*]}"
+  "${codex_cmd[@]}"
+fi
+
+claude_cmd=(python3 "${ROOT_DIR}/claude/scripts/sync-claude.py" "$MODE_FLAG" --github-root "$GITHUB_ROOT" "${REPO_ARGS[@]}")
+log "+ ${claude_cmd[*]}"
+"${claude_cmd[@]}"

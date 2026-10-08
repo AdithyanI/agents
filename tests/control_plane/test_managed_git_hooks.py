@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 from tests.control_plane.support import (
+    repository_registry,
     REPO_ROOT,
     TempDirTestCase,
     init_git_repo,
@@ -13,18 +14,18 @@ from tests.control_plane.support import (
 class ManagedGitHooksTests(TempDirTestCase):
     def test_sync_managed_git_hooks_sets_local_core_hooks_path(self) -> None:
         repo = init_git_repo(self.temp_path / "repo")
-        registry = self.temp_path / "repo-bootstrap.json"
+        registry = self.temp_path / "repository-registry.json"
         hooks_path = REPO_ROOT / "hooks/git"
         write_json(
             registry,
-            {
+            repository_registry({
                 "defaults": {},
                 "repos": [
                     {
                         "path": str(repo),
                     }
                 ],
-            },
+            }),
         )
 
         dry_run = run_command(
@@ -71,18 +72,18 @@ class ManagedGitHooksTests(TempDirTestCase):
 
     def test_sync_managed_git_hooks_runs_under_macos_system_bash(self) -> None:
         repo = init_git_repo(self.temp_path / "repo")
-        registry = self.temp_path / "repo-bootstrap.json"
+        registry = self.temp_path / "repository-registry.json"
         hooks_path = REPO_ROOT / "hooks/git"
         write_json(
             registry,
-            {
+            repository_registry({
                 "defaults": {},
                 "repos": [
                     {
                         "path": str(repo),
                     }
                 ],
-            },
+            }),
         )
 
         result = run_command(

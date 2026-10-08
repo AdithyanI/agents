@@ -33,6 +33,7 @@ Use `owned` for local skills that should be centrally maintained:
 ```json
 {
   "skill": "<skill-name>",
+  "clients": ["codex"],
   "origin": "owned",
   "scope": "repo",
   "repos": ["target-repo"],
@@ -42,6 +43,12 @@ Use `owned` for local skills that should be centrally maintained:
 ```
 
 Use `scope: global` with `repos: []` only for the small default kit.
+
+Standalone skills default to Codex when `clients` is omitted. Add `claude` only
+after checking that the skill's instructions and tools work in Claude Code;
+the Claude renderer also requires the target repository's Claude client to be
+enabled. Preserve the existing scope and repo assignment. Native plugin skills
+remain with Codex and are not automatically translated into Claude skills.
 
 ## Managed External Registry Entry
 

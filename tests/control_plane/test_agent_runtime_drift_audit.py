@@ -1,6 +1,8 @@
 from __future__ import annotations
 
 import json
+import os
+from unittest.mock import patch
 
 from tests.control_plane.support import (
     REPO_ROOT,
@@ -16,6 +18,10 @@ from tests.control_plane.support import (
 class AgentRuntimeDriftAuditTests(TempDirTestCase):
     def setUp(self) -> None:
         super().setUp()
+        self.codex_bin = write_executable(self.temp_path / "fixture-codex", "#!/bin/sh\nexit 0\n")
+        override = patch.dict(os.environ, {"CODEX_BIN": str(self.codex_bin)})
+        override.start()
+        self.addCleanup(override.stop)
         self.agents_repo = make_control_plane_root(self.temp_path)
         # These fixtures own their plugin policy; machine registry changes must
         # not introduce new required packages into otherwise hermetic audits.
@@ -95,6 +101,25 @@ class AgentRuntimeDriftAuditTests(TempDirTestCase):
         payload = json.loads(result.stdout)
         self.assertEqual(payload["status"], "ok")
         self.assertEqual(payload["data"]["summary"]["errors"], 0)
+
+    def test_claude_check_reports_drift_without_applying(self) -> None:
+        home = self.temp_path / "home"
+        self._write_live_codex_config(home)
+        self._write_required_plugins(home)
+        write_text(self.agents_repo / "claude/scripts/sync-claude.py", """import sys
+assert sys.argv[1:] == ['--check', '--home', %r]
+print('PENDING: Claude output differs')
+raise SystemExit(1)
+""" % str(home.resolve()))
+        result = self._run_audit([
+            str(REPO_ROOT / "scripts/audit-agent-runtime-drift.py"),
+            "--json", "--skip-control-plane-check", "--home", str(home),
+        ], check=False)
+        self.assertEqual(result.returncode, 1)
+        checks = json.loads(result.stdout)["data"]["checks"]
+        claude = next(check for check in checks if check["name"] == "claude_runtime")
+        self.assertEqual(claude["error_code"], "E_CLAUDE_RUNTIME_DRIFT")
+        self.assertIn("PENDING", claude["details"]["output_tail"])
 
     def test_audit_runs_control_plane_check_when_not_skipped(self) -> None:
         home = self.temp_path / "home"
@@ -255,3 +280,19 @@ JSON
         checks = {check["name"]: check for check in payload["data"]["checks"]}
         self.assertEqual(checks["managed_plugin_repair"]["status"], "ok")
         self.assertEqual(checks["codex_required_plugins"]["status"], "ok")
+
+    def test_absent_codex_skips_native_plugin_requirements_and_still_checks_claude(self) -> None:
+        home = self.temp_path / "home"
+        marker = self.temp_path / "claude-checked"
+        write_text(self.agents_repo / "claude/scripts/sync-claude.py",
+                   "from pathlib import Path\nPath(%r).write_text('checked')\n" % str(marker))
+        result = self._run_audit([
+            str(REPO_ROOT / "scripts/audit-agent-runtime-drift.py"), "--json",
+            "--skip-control-plane-check", "--home", str(home),
+        ], env={"CODEX_BIN": str(self.temp_path / "absent-codex")})
+        checks = {check["name"]: check for check in json.loads(result.stdout)["data"]["checks"]}
+        self.assertEqual(checks["codex_plugin_inventory"]["status"], "skipped")
+        self.assertEqual(checks["codex_required_plugins"]["status"], "skipped")
+        self.assertEqual(checks["claude_runtime"]["status"], "ok")
+        self.assertEqual(marker.read_text(), "checked")
+        self.assertFalse((home / ".codex").exists())

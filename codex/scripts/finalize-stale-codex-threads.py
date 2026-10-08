@@ -26,7 +26,9 @@ DEFAULT_PAGE_LIMIT = 100
 DEFAULT_MAX_REPORT = 80
 MAX_ERROR_CHARS = 12_000
 ROOT_DIR = Path(__file__).resolve().parents[2]
-DEFAULT_REGISTRY = ROOT_DIR / "codex" / "config" / "repo-bootstrap.json"
+sys.path.insert(0, str(ROOT_DIR))
+from repos.repo_registry import load_registry as load_repo_registry, enabled_repositories
+DEFAULT_REGISTRY = ROOT_DIR / "repos" / "registry.json"
 DEFAULT_LOCK = Path.home() / ".local" / "state" / "codex-control-plane" / "finalize-stale-codex-threads.lock"
 DEFAULT_FINALIZER_COMMAND = ROOT_DIR / "codex" / "scripts" / "finalize-codex-thread.py"
 
@@ -79,13 +81,7 @@ def expand_path(raw: str) -> str:
 
 
 def load_registry_repos(registry: Path) -> list[str]:
-    data = json.loads(registry.read_text(encoding="utf-8"))
-    if isinstance(data, dict):
-        entries = data.get("repos")
-    else:
-        entries = data
-    if not isinstance(entries, list):
-        raise ValueError(f"expected repo registry with a repos list: {registry}")
+    entries = enabled_repositories(load_repo_registry(registry), "codex")
 
     repos: list[str] = []
     seen: set[str] = set()

@@ -13,6 +13,8 @@ from hooks.control_plane import (
     HookRegistryError,
     load_hooks_registry,
     render_codex_hooks,
+    render_runtime_hooks,
+    validate_hooks_registry_data,
 )
 from hooks.scripts.codex_turn_changes import CodexTurnChanges
 from tests.control_plane.support import (
@@ -144,6 +146,163 @@ class HooksControlPlaneTests(TempDirTestCase):
 
         with self.assertRaises(HookRegistryError):
             load_hooks_registry(registry_path)
+
+    def test_registry_renders_claude_context_hooks_without_changing_codex(self) -> None:
+        registry = load_hooks_registry(REPO_ROOT / "hooks/registry.json")
+        codex_before = {
+            repo: json.dumps(render_codex_hooks(registry, repo_name=repo), sort_keys=True)
+            for repo in (None, "agents", "adi", "angie")
+        }
+        # New runtime support alone must not enable a Claude hook anywhere.
+        for repo in codex_before:
+            self.assertEqual(render_runtime_hooks(registry, "claude", repo_name=repo), {"hooks": {}})
+
+        for event in ("SessionStart", "UserPromptSubmit"):
+            hook = {
+                "id": "claude-" + event,
+                "event": event,
+                "scope": "repo",
+                "repos": ["agents"],
+                "runtimes": ["claude"],
+                "command": "python3 hook.py --runtime {runtime} --event {event}",
+                "timeout": 5,
+            }
+            if event == "SessionStart":
+                hook["matchers"] = {"claude": "startup|resume|clear|compact"}
+            registry["managed_hooks"].append(hook)
+        validate_hooks_registry_data(registry, label="fixture")
+
+        rendered = render_runtime_hooks(registry, "claude", repo_name="agents")
+        self.assertEqual(rendered, {"hooks": {
+            "SessionStart": [{
+                "matcher": "startup|resume|clear|compact",
+                "hooks": [{"type": "command", "timeout": 5,
+                           "command": "python3 hook.py --runtime claude --event SessionStart"}],
+            }],
+            "UserPromptSubmit": [{
+                "hooks": [{"type": "command", "timeout": 5,
+                           "command": "python3 hook.py --runtime claude --event UserPromptSubmit"}],
+            }],
+        }})
+        self.assertEqual(render_runtime_hooks(registry, "claude"), {"hooks": {}})
+        self.assertEqual(render_runtime_hooks(registry, "claude", repo_name="adi"), {"hooks": {}})
+        for repo, original in codex_before.items():
+            self.assertEqual(json.dumps(render_codex_hooks(registry, repo_name=repo), sort_keys=True), original)
+
+    def test_registry_and_renderer_reject_claude_stop(self) -> None:
+        registry = {"version": 1, "managed_hooks": [{
+            "id": "unsafe-stop",
+            "event": "Stop",
+            "scope": "global",
+            "runtimes": ["claude"],
+            "command": "python3 stop.py --runtime {runtime}",
+            "timeout": 5,
+        }]}
+        with self.assertRaisesRegex(HookRegistryError, "Stop.*not supported.*claude"):
+            validate_hooks_registry_data(registry, label="fixture")
+        # Protect direct callers that have not loaded the registry from disk.
+        with self.assertRaisesRegex(HookRegistryError, "Stop.*not supported.*claude"):
+            render_runtime_hooks(registry, "claude")
+
+    def test_claude_context_hooks_preserve_payload_and_normalize_common_fields(self) -> None:
+        repo = init_git_repo(self.temp_path / "repo")
+        nested = repo / "nested"
+        nested.mkdir()
+        for event, script in (("SessionStart", "session_start.py"),
+                              ("UserPromptSubmit", "user_prompt_submit.py")):
+            with self.subTest(event=event):
+                write_text(repo / "scripts/hooks" / script, "\n".join([
+                    "import json, os, sys",
+                    "payload = json.load(sys.stdin)",
+                    "print(json.dumps({'payload': payload, 'cwd': os.getcwd(),",
+                    "  'env': {key: os.environ[key] for key in (",
+                    "    'AGENT_HOOK_RUNTIME', 'AGENT_HOOK_EVENT',",
+                    "    'AGENT_REPO_ROOT', 'AGENT_HOOK_SCHEMA_VERSION')}}))",
+                    "",
+                ]))
+                payload = {
+                    "session_id": "claude-session",
+                    "transcript_path": str(self.temp_path / "transcript.jsonl"),
+                    "cwd": str(nested),
+                    "permission_mode": "default",
+                    "hook_event_name": event,
+                    "session_title": "Pilot",
+                    "future_field": {"preserve": [True, None, "value"]},
+                }
+                if event == "SessionStart":
+                    payload.update(source="resume", model="claude-opus-4-6")
+                else:
+                    payload.update(prompt="Inspect this\n<pasted_content>text</pasted_content>",
+                                   prompt_id="claude-prompt")
+                result = subprocess.run(
+                    [sys.executable, str(REPO_ROOT / "hooks/scripts" / script),
+                     "--runtime", "claude"],
+                    input=json.dumps(payload), capture_output=True, text=True, check=False,
+                )
+                self.assertEqual(result.returncode, 0, result.stderr)
+                self.assertEqual(result.stderr, "")
+                output = json.loads(result.stdout)["hookSpecificOutput"]
+                self.assertEqual(output["hookEventName"], event)
+                observed = json.loads(output["additionalContext"])
+                normalized = observed["payload"]
+                self.assertEqual(normalized["raw_payload"], payload)
+                self.assertEqual(normalized["runtime"], "claude")
+                self.assertEqual(normalized["hook_event_name"], event)
+                self.assertEqual(normalized["source_thread_id"], "claude-session")
+                self.assertEqual(normalized["session_id"], "claude-session")
+                # A Claude prompt_id is preserved, not guessed to be a turn id.
+                self.assertIsNone(normalized["source_turn_id"])
+                self.assertIsNone(normalized["turn_id"])
+                self.assertEqual(normalized["prompt"], payload.get("prompt"))
+                self.assertEqual(normalized["source"], payload.get("source"))
+                self.assertEqual(normalized["model"], payload.get("model"))
+                self.assertEqual(normalized["transcript_path"], payload["transcript_path"])
+                self.assertEqual(normalized["transcript_format"], "unknown")
+                self.assertEqual(normalized["cwd"], str(nested))
+                self.assertEqual(normalized["repo_root"], str(repo.resolve()))
+                self.assertEqual(observed["cwd"], str(repo.resolve()))
+                self.assertEqual(observed["env"], {
+                    "AGENT_HOOK_RUNTIME": "claude", "AGENT_HOOK_EVENT": event,
+                    "AGENT_REPO_ROOT": str(repo.resolve()), "AGENT_HOOK_SCHEMA_VERSION": "1.0",
+                })
+
+    def test_claude_context_hooks_skip_invalid_payloads_and_missing_repo_scripts(self) -> None:
+        repo = init_git_repo(self.temp_path / "repo")
+        for event, script in (("SessionStart", "session_start.py"),
+                              ("UserPromptSubmit", "user_prompt_submit.py")):
+            runner = [sys.executable, str(REPO_ROOT / "hooks/scripts" / script),
+                      "--runtime", "claude"]
+            payload = {"hook_event_name": event, "cwd": str(repo)}
+            result = subprocess.run(runner, input=json.dumps(payload), capture_output=True, text=True)
+            self.assertEqual((result.returncode, result.stdout, result.stderr), (0, "", ""))
+            write_text(repo / "scripts/hooks" / script, "raise RuntimeError('must not dispatch')\n")
+            for raw in ("", "{broken", "[]", "{}",
+                        json.dumps({"hook_event_name": "Stop", "cwd": str(repo)}),
+                        json.dumps({"hook_event_name": event}),
+                        json.dumps({"hook_event_name": event, "cwd": [str(repo)]})):
+                with self.subTest(event=event, raw=raw):
+                    result = subprocess.run(runner, cwd=repo, input=raw, capture_output=True, text=True)
+                    self.assertEqual((result.returncode, result.stdout, result.stderr), (0, "", ""))
+
+    def test_claude_hook_failures_preserve_exit_status_and_stderr(self) -> None:
+        repo = init_git_repo(self.temp_path / "repo")
+        for event, script in (("SessionStart", "session_start.py"),
+                              ("UserPromptSubmit", "user_prompt_submit.py")):
+            for exit_code in (2, 7):
+                with self.subTest(event=event, exit_code=exit_code):
+                    write_text(repo / "scripts/hooks" / script,
+                               "import sys\nprint('partial context')\n"
+                               "print('repo hook failed', file=sys.stderr)\n"
+                               f"raise SystemExit({exit_code})\n")
+                    result = subprocess.run(
+                        [sys.executable, str(REPO_ROOT / "hooks/scripts" / script),
+                         "--runtime", "claude"],
+                        input=json.dumps({"hook_event_name": event, "cwd": str(repo)}),
+                        capture_output=True, text=True, check=False,
+                    )
+                    self.assertEqual(result.returncode, exit_code)
+                    self.assertEqual(result.stderr, "repo hook failed\n")
+                    self.assertEqual(result.stdout, "")
 
     def test_registry_rejects_matchers_for_events_without_matchers(self) -> None:
         registry_path = self.temp_path / "hooks/registry.json"
@@ -677,9 +836,10 @@ class HooksControlPlaneTests(TempDirTestCase):
 
         self.assertFalse(module.has_tracking_upstream(str(repo)))
 
-    def test_hook_runners_reject_retired_runtimes(self) -> None:
+    def test_hook_runners_reject_retired_and_unsupported_runtimes(self) -> None:
         for script in ("session_start.py", "user_prompt_submit.py", "stop.py"):
-            for runtime in ("claude", "copilot", "antigravity"):
+            runtimes = ("claude", "copilot", "antigravity") if script == "stop.py" else ("copilot", "antigravity")
+            for runtime in runtimes:
                 with self.subTest(script=script, runtime=runtime):
                     result = subprocess.run(
                         [sys.executable, str(REPO_ROOT / "hooks/scripts" / script),

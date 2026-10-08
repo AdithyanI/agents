@@ -20,6 +20,7 @@ _AGENTS_ROOT = Path(__file__).resolve().parent.parent
 if str(_AGENTS_ROOT) not in sys.path:
     sys.path.insert(0, str(_AGENTS_ROOT))
 
+from repos.repo_registry import client_registry, validate_registry
 from mcp.control_plane import load_mcp_catalog_data  # noqa: E402
 
 SCHEMA_VERSION = "2.0"
@@ -35,7 +36,7 @@ REGISTRY_SOURCES = {
     "plugins": "plugins/registry.json",
     "mcp": "mcp/config/presets.json",
     "hooks": "hooks/registry.json",
-    "repos": "codex/config/repo-bootstrap.json",
+    "repos": "repos/registry.json",
     "dev_servers": "dev-servers/registry.json",
     "codex_global": "codex/config/global.config.toml",
     "global_guidance": "config/global.agents.md",
@@ -78,7 +79,7 @@ def build_capability_board(counts: dict[str, Any]) -> list[dict[str, Any]]:
         {
             "key": "runtime", "name": "Runtime config",
             "desc": "Per-repo behavior and exposure",
-            "source": "codex/config/repo-bootstrap.json", "count": counts.get("repos"),
+            "source": "repos/registry.json", "count": counts.get("repos"),
             "status": "stable", "note": ".codex/config.toml",
         },
         {
@@ -516,14 +517,24 @@ def build_control_plane_data(root: Path) -> dict[str, Any]:
     repo_bootstrap = load_json(root / REGISTRY_SOURCES["repos"], warnings)
     dev_servers_registry = load_json(root / REGISTRY_SOURCES["dev_servers"], warnings)
 
+    neutral_registry = repo_bootstrap
+    identities: dict[str, dict[str, Any]] = {}
+    try:
+        validate_registry(neutral_registry)
+        repo_bootstrap = client_registry(neutral_registry, "codex", enabled_only=False)
+        identities = {entry["path"]: entry for entry in neutral_registry["repos"]}
+    except ValueError as exc:
+        warnings.append({"severity": "error", "code": "invalid_repo_registry", "message": str(exc), "source": REGISTRY_SOURCES["repos"]})
+        repo_bootstrap = {"repos": []}
     repo_entries = repo_bootstrap.get("repos", [])
+
     if not isinstance(repo_entries, list):
         repo_entries = []
         warnings.append(
             {
                 "severity": "error",
                 "code": "invalid_repos_shape",
-                "message": "codex/config/repo-bootstrap.json repos must be a list.",
+                "message": "repos/registry.json repos must be a list.",
                 "source": REGISTRY_SOURCES["repos"],
             }
         )
@@ -565,6 +576,8 @@ def build_control_plane_data(root: Path) -> dict[str, Any]:
             details={
                 "path": path,
                 "absolute_path": str(expanded_path),
+                "repository_id": identities[path]["id"],
+                "clients": identities[path]["clients"],
                 "exists": exists,
                 "personality": entry.get("personality"),
                 "features": entry.get("features") if isinstance(entry.get("features"), dict) else {},

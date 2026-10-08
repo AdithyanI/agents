@@ -61,6 +61,26 @@ def write_json(path: Path, value: Any) -> Path:
     return path
 
 
+def repository_registry(codex: dict[str, Any]) -> dict[str, Any]:
+    """Build a neutral registry from concise Codex config fixture declarations."""
+    return {
+        "version": 1,
+        "defaults": {"codex": codex.get("defaults", {}), "claude": {}},
+        "auto_enrollment_exclusions": codex.get("auto_enrollment_exclusions", []),
+        "repos": [
+            {
+                "id": f"repo-{index}",
+                "path": entry["path"],
+                "clients": {
+                    "codex": {"enabled": True, "config": {key: value for key, value in entry.items() if key != "path"}},
+                    "claude": {"enabled": False},
+                },
+            }
+            for index, entry in enumerate(codex.get("repos", []))
+        ],
+    }
+
+
 def read_json(path: Path) -> Any:
     return json.loads(path.read_text(encoding="utf-8"))
 
@@ -111,6 +131,9 @@ def make_control_plane_root(base_dir: Path) -> Path:
         "mcp/control_plane.py",
         "hooks/registry.json",
         "plugins/derived.py",
+        "repos/repo_registry.py",
+        "codex/runtime.py",
+        "hooks/scripts/stop_feedback_turn.py",
     ):
         copy_repo_file(relative_path, root)
     (root / "codex/config").mkdir(parents=True, exist_ok=True)

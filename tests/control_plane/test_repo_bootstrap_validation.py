@@ -2,7 +2,10 @@ from __future__ import annotations
 
 import re
 
+from repos.repo_registry import client_registry
+
 from tests.control_plane.support import (
+    repository_registry,
     REPO_ROOT,
     TempDirTestCase,
     default_mcp_registry,
@@ -17,7 +20,7 @@ from tests.control_plane.support import (
 
 class RepoBootstrapRegistryValidationTests(TempDirTestCase):
     def test_canonical_registry_leaves_thread_selection_to_the_client(self) -> None:
-        registry = read_json(REPO_ROOT / "codex/config/repo-bootstrap.json")
+        registry = client_registry(read_json(REPO_ROOT / "repos/registry.json"), "codex")
         global_config = (REPO_ROOT / "codex/config/global.config.toml").read_text(
             encoding="utf-8"
         )
@@ -75,14 +78,14 @@ class RepoBootstrapRegistryValidationTests(TempDirTestCase):
         for key, value in cases.items():
             with self.subTest(key=key):
                 write_json(
-                    root / "codex/config/repo-bootstrap.json",
-                    {"defaults": {}, "repos": [{"path": str(repo), key: value}]},
+                    root / "repos/registry.json",
+                    repository_registry({"defaults": {}, "repos": [{"path": str(repo), key: value}]}),
                 )
                 result = run_command(
                     [
                         "python3",
                         str(REPO_ROOT / "codex/scripts/sync-repo-bootstrap-registry.py"),
-                        str(root / "codex/config/repo-bootstrap.json"),
+                        str(root / "repos/registry.json"),
                         "--mcp-registry",
                         str(root / "mcp/config/presets.json"),
                     ],
@@ -93,17 +96,17 @@ class RepoBootstrapRegistryValidationTests(TempDirTestCase):
                 self.assertIn("client-owned thread selection", result.stderr)
 
         write_json(
-            root / "codex/config/repo-bootstrap.json",
-            {
+            root / "repos/registry.json",
+            repository_registry({
                 "defaults": {"features": {"fast_mode": True}},
                 "repos": [{"path": str(repo)}],
-            },
+            }),
         )
         result = run_command(
             [
                 "python3",
                 str(REPO_ROOT / "codex/scripts/sync-repo-bootstrap-registry.py"),
-                str(root / "codex/config/repo-bootstrap.json"),
+                str(root / "repos/registry.json"),
                 "--mcp-registry",
                 str(root / "mcp/config/presets.json"),
             ],
@@ -120,12 +123,12 @@ class RepoBootstrapRegistryValidationTests(TempDirTestCase):
         write_json(root / "mcp/config/presets.json", default_mcp_registry())
         for key in ("enabled_clients", "model_instructions_clients"):
             with self.subTest(key=key):
-                write_json(root / "codex/config/repo-bootstrap.json", {
+                write_json(root / "repos/registry.json", repository_registry({
                     "defaults": {}, "repos": [{"path": str(repo), key: ["codex"]}],
-                })
+                }))
                 result = run_command([
                     "python3", str(REPO_ROOT / "codex/scripts/sync-repo-bootstrap-registry.py"),
-                    str(root / "codex/config/repo-bootstrap.json"), "--mcp-registry",
+                    str(root / "repos/registry.json"), "--mcp-registry",
                     str(root / "mcp/config/presets.json"),
                 ], env={"HOME": str(home)}, check=False)
                 self.assertNotEqual(result.returncode, 0)
@@ -171,15 +174,15 @@ class RepoBootstrapRegistryValidationTests(TempDirTestCase):
             },
         )
         write_json(
-            root / "codex/config/repo-bootstrap.json",
-            {
+            root / "repos/registry.json",
+            repository_registry({
                 "defaults": {"personality": "friendly"},
                 "repos": [
                     {
                         "path": str(adi),
                     }
                 ],
-            },
+            }),
         )
         write_json(root / "mcp/config/presets.json", default_mcp_registry())
 
@@ -187,7 +190,7 @@ class RepoBootstrapRegistryValidationTests(TempDirTestCase):
             [
                 "python3",
                 str(REPO_ROOT / "codex/scripts/sync-repo-bootstrap-registry.py"),
-                str(root / "codex/config/repo-bootstrap.json"),
+                str(root / "repos/registry.json"),
                 "--mcp-registry",
                 str(root / "mcp/config/presets.json"),
             ],
@@ -231,15 +234,15 @@ class RepoBootstrapRegistryValidationTests(TempDirTestCase):
             },
         )
         write_json(
-            root / "codex/config/repo-bootstrap.json",
-            {
+            root / "repos/registry.json",
+            repository_registry({
                 "defaults": {"personality": "friendly"},
                 "repos": [
                     {
                         "path": str(adi),
                     }
                 ],
-            },
+            }),
         )
         write_json(root / "mcp/config/presets.json", default_mcp_registry())
 
@@ -247,7 +250,7 @@ class RepoBootstrapRegistryValidationTests(TempDirTestCase):
             [
                 "python3",
                 str(REPO_ROOT / "codex/scripts/sync-repo-bootstrap-registry.py"),
-                str(root / "codex/config/repo-bootstrap.json"),
+                str(root / "repos/registry.json"),
                 "--mcp-registry",
                 str(root / "mcp/config/presets.json"),
             ],

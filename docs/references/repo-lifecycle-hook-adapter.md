@@ -1,16 +1,16 @@
 # Repo Lifecycle Hook Adapter
 
-Use this page when adding repo-specific behavior to Codex lifecycle hooks or
-explicit thread finalization.
+Use this page when adding repo-specific behavior to Codex or Claude Code context
+hooks, or explicit Codex thread finalization.
 
-The shared `~/GitHub/agents` control plane owns Codex integration and dispatch. Each
-repository owns what it wants to do when a supported lifecycle event or explicit
-thread finalization arrives.
+The shared `~/GitHub/agents` control plane owns client integration and dispatch.
+Each repository owns what it wants to do when a supported lifecycle event or
+explicit thread finalization arrives.
 
 ## Shape
 
 ```text
-Native Codex runtime event
+Native Codex or Claude context event (SessionStart / UserPromptSubmit)
   -> shared ~/GitHub/agents hook script
   -> hooks/scripts/hook_runtime.py
   -> normalized JSON adapter payload
@@ -29,7 +29,7 @@ Explicit thread finalization
 Put repo policy in the repo. Keep the shared control plane boring.
 
 - Shared `~/GitHub/agents` layer:
-  - receives supported Codex hook payloads or explicit finalizer invocations
+  - receives supported runtime hook payloads or explicit Codex finalizer invocations
   - runs event-specific entrypoints such as `session_start.py`
   - keeps common dispatch plumbing in `hooks/scripts/hook_runtime.py`
   - resolves the Git repo root when a runtime hook provides `cwd`
@@ -46,8 +46,11 @@ Put repo policy in the repo. Keep the shared control plane boring.
 
 Lifecycle events are not enabled just because a script exists. The shared
 [`hooks/registry.json`](/Users/dobby/GitHub/agents/hooks/registry.json) decides which
-managed repos receive which native Codex events, and the repo script only runs
-when the event is assigned to that repo.
+managed repos receive which native events for each runtime, and the repo script
+only runs when the event is assigned to that repo and runtime. Claude support is
+available in the renderer and dispatcher; no Claude hooks are currently enabled
+in the registry. Static repo guidance belongs in `AGENTS.md`, which both clients
+read; add a hook only for useful dynamic context.
 
 Create these files only when a repo needs them:
 
@@ -63,17 +66,22 @@ All repo lifecycle hooks are Python. Do not add shell compatibility shims.
 
 `SessionStart`
 
-- Native Codex hook event.
-- Runs when Codex starts or resumes a session.
+- Native Codex and Claude hook event.
+- Runs when a client starts or resumes a session, subject to its registry matcher.
 - Stdout can become startup context.
 - Good for loading compact repo-local orientation.
 
 `UserPromptSubmit`
 
-- Native Codex hook event.
+- Native Codex and Claude hook event.
 - Runs before a user prompt is processed.
 - Stdout can become additional prompt context.
 - Good for very small, current-time or current-state context.
+
+The Claude adapter supports only these two context events. Their native input
+and `hookSpecificOutput.additionalContext` response follow the
+[Claude hooks reference](https://code.claude.com/docs/en/hooks). Repo scripts print
+plain context; the shared dispatcher wraps it in event-specific JSON.
 
 `FinalizeCodexThread`
 
@@ -92,6 +100,8 @@ All repo lifecycle hooks are Python. Do not add shell compatibility shims.
 `Stop`
 
 - Native Codex hook event, rendered as the shared global turn-end commit gate.
+- Claude Stop remains unsupported by the registry and dispatcher. Claude turn
+  attribution and Git delivery require separate validation before activation.
 - For Codex, it reads exact `fileChange` paths from the parent and recursively
   discovered descendant subagent turns, finalizes every affected repository as one persisted
   transaction, and routes aggregate failures back to the source task.
@@ -220,6 +230,8 @@ details are preserved under `raw_payload`.
   "runtime": "codex",
   "cwd": "/Users/dobby/GitHub/example/services/api",
   "repo_root": "/Users/dobby/GitHub/example",
+  "source_thread_id": "optional",
+  "source_turn_id": "optional",
   "session_id": "optional",
   "turn_id": "optional",
   "model": "optional",
@@ -240,16 +252,33 @@ Important fields:
 - `schema_version`: current adapter contract version. Today this is `1.0`.
 - `hook_event_name`: `SessionStart` or `UserPromptSubmit` for native runtime
   hooks.
-- `runtime`: `codex`.
-- `cwd`: where the Codex session was running.
+- `runtime`: `codex` or `claude`.
+- `cwd`: where the client session was running.
 - `repo_root`: resolved Git top-level directory.
-- `session_id`: present when Codex provides one.
-- `transcript_path`: present when Codex exposes a transcript file.
-- `transcript_format`: format label for `transcript_path`.
+- `source_thread_id`: supplied thread identity, falling back to session identity.
+  Interpret it together with `runtime`; a Claude session is not a Codex thread.
+- `source_turn_id`: supplied turn identity when available. A Claude `prompt_id`
+  stays under `raw_payload`; the adapter does not infer a turn identifier from it.
+- `session_id`: present when the client provides one.
+- `transcript_path`: present when the client exposes a transcript file.
+- `transcript_format`: explicit format label, or `unknown` when a path is supplied
+  without one. The adapter does not parse or infer attribution from transcripts.
 - `raw_payload`: original runtime-specific input.
 
 Prefer top-level normalized fields in repo hooks. Read `raw_payload` only when a
 runtime-specific detail is genuinely needed.
+
+Claude requires a JSON object with the matching `hook_event_name` and a nonempty
+string `cwd`. Invalid input exits silently without dispatching a repo hook.
+Optional native fields, including `permission_mode`, `prompt_id`, and future
+fields, remain intact under `raw_payload`.
+
+On success, Claude receives bounded context through `hookSpecificOutput` with
+the matching `hookEventName`. On repo-hook failure, the dispatcher suppresses
+partial stdout and preserves stderr and the exit code. This keeps structured
+context from masking a native failure. Claude treats exit `2` from
+`UserPromptSubmit` as a blocked prompt; a context hook should use it only when
+that is the intended repo policy.
 
 ## Finalization Payload Contract
 
@@ -286,7 +315,7 @@ Repo hooks also receive:
 
 ```text
 AGENT_HOOK_EVENT=SessionStart | UserPromptSubmit | FinalizeCodexThread
-AGENT_HOOK_RUNTIME=codex        # native runtime hooks only
+AGENT_HOOK_RUNTIME=codex | claude        # native runtime hooks only
 AGENT_REPO_ROOT=/absolute/repo/root
 AGENT_HOOK_SCHEMA_VERSION=1.0
 ```
@@ -348,7 +377,7 @@ if __name__ == "__main__":
 ```
 
 For `session_start.py` and `user_prompt_submit.py`, stdout may become model
-context for Codex. Print only concise context that should be shown to the agent.
+context for either client. Print only concise context that should be shown to the agent.
 
 For `finalize_codex_thread.py`, stdout is consumed by
 `finalize-codex-thread.py` as the final-turn instruction. Print no debug text to
@@ -372,6 +401,11 @@ printf '{"hook_event_name":"SessionStart","cwd":"%s","session_id":"test-session"
   | python3 ~/GitHub/agents/hooks/scripts/session_start.py --runtime codex
 ```
 
+Use `--runtime claude` with the same native test payload to exercise the Claude
+adapter. This direct invocation does not enable a hook in Claude settings; actual
+delivery must also be checked in a Claude session once a registry assignment is
+enabled.
+
 Run explicit finalization:
 
 ```bash
@@ -386,7 +420,8 @@ Run explicit finalization:
 Expected behavior:
 
 - Missing repo hook: exits `0`, no output.
-- `SessionStart` / `UserPromptSubmit`: stdout may be wrapped and forwarded for Codex.
+- `SessionStart` / `UserPromptSubmit`: stdout is wrapped and forwarded as context;
+  Claude forwards it only on successful repo-hook completion.
 - `FinalizeCodexThread`: stdout/stderr are consumed by
   `finalize-codex-thread.py`; non-zero exit blocks archive.
 

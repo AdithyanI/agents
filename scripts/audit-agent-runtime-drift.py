@@ -18,6 +18,12 @@ except ModuleNotFoundError:  # pragma: no cover
     import tomli as tomllib  # type: ignore
 
 
+ROOT = Path(__file__).resolve().parent.parent
+if str(ROOT) not in sys.path:
+    sys.path.insert(0, str(ROOT))
+from codex.runtime import available_codex_executable
+
+
 SCHEMA_VERSION = "1.0"
 COMMAND = "audit-agent-runtime-drift"
 APP_MANAGED_PLUGIN_IDS = {
@@ -406,12 +412,40 @@ def audit_required_codex_plugins(agents_repo: Path, home: Path) -> dict[str, Any
     )
 
 
+def audit_claude_runtime(agents_repo: Path, home: Path, timeout_sec: int) -> dict[str, Any]:
+    script = agents_repo / "claude/scripts/sync-claude.py"
+    if not script.is_file():
+        return check_result("claude_runtime", "skipped", "Claude renderer is not present in this checkout")
+    try:
+        result = subprocess.run(
+            [sys.executable, str(script), "--check", "--home", str(home)],
+            cwd=agents_repo, capture_output=True, text=True, timeout=timeout_sec, check=False,
+        )
+    except (OSError, subprocess.TimeoutExpired) as exc:
+        return check_result(
+            "claude_runtime", "error", f"Claude runtime check could not complete: {exc}",
+            error_code="E_CLAUDE_CHECK_FAILED",
+            hint="Run claude/scripts/sync-claude.py --check to inspect the failure.",
+        )
+    output = tail_text("\n".join(part for part in (result.stdout, result.stderr) if part))
+    if result.returncode:
+        return check_result(
+            "claude_runtime", "error", "Claude runtime needs reconciliation",
+            details={"output_tail": output}, error_code="E_CLAUDE_RUNTIME_DRIFT",
+            hint="Inspect claude/scripts/sync-claude.py --dry-run, then apply after resolving any ownership conflict.",
+        )
+    return check_result("claude_runtime", "ok", "Claude runtime check passed", details={"output_tail": output})
+
+
 def run_runtime_drift_checks(args: argparse.Namespace, agents_repo: Path, home: Path) -> list[dict[str, Any]]:
-    return [
-        run_control_plane_check(agents_repo, args.timeout_sec, skip=args.skip_control_plane_check),
-        audit_codex_plugins(agents_repo, home),
-        audit_required_codex_plugins(agents_repo, home),
-    ]
+    checks = [run_control_plane_check(agents_repo, args.timeout_sec, skip=args.skip_control_plane_check)]
+    if available_codex_executable():
+        checks.extend([audit_codex_plugins(agents_repo, home), audit_required_codex_plugins(agents_repo, home)])
+    else:
+        checks.extend(check_result(name, "skipped", "Codex executable unavailable; runtime is optional on this machine")
+                      for name in ("codex_plugin_inventory", "codex_required_plugins"))
+    checks.append(audit_claude_runtime(agents_repo, home, args.timeout_sec))
+    return checks
 
 
 def has_required_plugin_drift(checks: list[dict[str, Any]]) -> bool:

@@ -1,0 +1,412 @@
+{
+  "version": 1,
+  "defaults": {
+    "codex": {},
+    "claude": {}
+  },
+  "auto_enrollment_exclusions": [
+    "~/GitHub/modal_functions"
+  ],
+  "repos": [
+    {
+      "id": "github",
+      "path": "~/GitHub/.github",
+      "clients": {
+        "codex": {
+          "enabled": true,
+          "config": {}
+        },
+        "claude": {
+          "enabled": false
+        }
+      }
+    },
+    {
+      "id": "adi",
+      "path": "~/GitHub/adi",
+      "clients": {
+        "codex": {
+          "enabled": true,
+          "config": {
+            "personality": "pragmatic",
+            "model_instructions_file": "../dobby/constitution.md",
+            "developer_instructions": "Tool use:\n- Use tools proactively when they materially improve grounding, correctness, leverage, or continuity.\n- For file and text search, prefer `rg` and `rg --files`.\n- For simple file inspection, prefer standard shell tools such as `sed`, `head`, `tail`, `cat`, and `nl`.\n- Do not use Python for simple file viewing, searching, or trivial text transformations when shell tools or direct edits would suffice.\n- Group related reads together. Parallelize independent retrieval when it reduces latency and does not create confusion.\n\nProgress updates:\n- Before grouped tool calls or substantial work, send a short commentary update describing what you are about to do.\n- While working, send brief progress updates at meaningful transitions, not for every trivial read.\n- Keep commentary concise, practical, and non-performative.\n\nPlanning:\n- Use `update_plan` for non-trivial multi-step tasks.\n- Keep plan steps short and concrete.\n- Keep the plan current as work progresses.\n- Do not create ceremonial plans for simple requests.\n",
+            "project_root_markers": []
+          }
+        },
+        "claude": {
+          "enabled": false
+        }
+      }
+    },
+    {
+      "id": "adi-design",
+      "path": "~/GitHub/adi-design",
+      "clients": {
+        "codex": {
+          "enabled": true,
+          "config": {}
+        },
+        "claude": {
+          "enabled": false
+        }
+      }
+    },
+    {
+      "id": "adithyan-ai-videos",
+      "path": "~/GitHub/adithyan-ai-videos",
+      "clients": {
+        "codex": {
+          "enabled": true,
+          "config": {}
+        },
+        "claude": {
+          "enabled": false
+        }
+      }
+    },
+    {
+      "id": "agents",
+      "path": "~/GitHub/agents",
+      "clients": {
+        "codex": {
+          "enabled": true,
+          "config": {}
+        },
+        "claude": {
+          "enabled": true
+        }
+      }
+    },
+    {
+      "id": "aip-cognitive-revolution",
+      "path": "~/GitHub/aip-cognitive-revolution",
+      "clients": {
+        "codex": {
+          "enabled": true,
+          "config": {}
+        },
+        "claude": {
+          "enabled": false
+        }
+      }
+    },
+    {
+      "id": "aipodcasting",
+      "path": "~/GitHub/aipodcasting",
+      "clients": {
+        "codex": {
+          "enabled": true,
+          "config": {}
+        },
+        "claude": {
+          "enabled": false
+        }
+      }
+    },
+    {
+      "id": "aipodcasting-website",
+      "path": "~/GitHub/aipodcasting-website",
+      "clients": {
+        "codex": {
+          "enabled": true,
+          "config": {}
+        },
+        "claude": {
+          "enabled": false
+        }
+      }
+    },
+    {
+      "id": "angie",
+      "path": "~/GitHub/angie",
+      "clients": {
+        "codex": {
+          "enabled": true,
+          "config": {
+            "personality": "friendly",
+            "model_instructions_file": "../dobby/constitution.md",
+            "project_root_markers": [],
+            "developer_instructions": "Tool use:\n- Use tools proactively when they materially improve grounding, correctness, leverage, or continuity.\n- For file and text search, prefer `rg` and `rg --files`.\n- For simple file inspection, prefer standard shell tools such as `sed`, `head`, `tail`, `cat`, and `nl`.\n- Do not use Python for simple file viewing, searching, or trivial text transformations when shell tools or direct edits would suffice.\n- Group related reads together. Parallelize independent retrieval when it reduces latency and does not create confusion.\n\nProgress updates:\n- Before grouped tool calls or substantial work, send a short commentary update describing what you are about to do.\n- While working, send brief progress updates at meaningful transitions, not for every trivial read.\n- Keep commentary concise, practical, and non-performative.\n\nPlanning:\n- Use `update_plan` for non-trivial multi-step tasks.\n- Keep plan steps short and concrete.\n- Keep the plan current as work progresses.\n- Do not create ceremonial plans for simple requests.\n"
+          }
+        },
+        "claude": {
+          "enabled": false
+        }
+      }
+    },
+    {
+      "id": "blog-personal",
+      "path": "~/GitHub/blog-personal",
+      "clients": {
+        "codex": {
+          "enabled": true,
+          "config": {}
+        },
+        "claude": {
+          "enabled": false
+        }
+      }
+    },
+    {
+      "id": "codexclaw",
+      "path": "~/GitHub/codexclaw",
+      "clients": {
+        "codex": {
+          "enabled": true,
+          "config": {}
+        },
+        "claude": {
+          "enabled": false
+        }
+      }
+    },
+    {
+      "id": "dobby-engine",
+      "path": "~/GitHub/dobby-engine",
+      "clients": {
+        "codex": {
+          "enabled": true,
+          "config": {}
+        },
+        "claude": {
+          "enabled": false
+        }
+      }
+    },
+    {
+      "id": "dobby-gateway",
+      "path": "~/GitHub/dobby-gateway",
+      "clients": {
+        "codex": {
+          "enabled": true,
+          "config": {}
+        },
+        "claude": {
+          "enabled": false
+        }
+      }
+    },
+    {
+      "id": "dobby-ios",
+      "path": "~/GitHub/dobby-ios",
+      "clients": {
+        "codex": {
+          "enabled": true,
+          "config": {}
+        },
+        "claude": {
+          "enabled": false
+        }
+      }
+    },
+    {
+      "id": "documents",
+      "path": "~/GitHub/documents",
+      "clients": {
+        "codex": {
+          "enabled": true,
+          "config": {}
+        },
+        "claude": {
+          "enabled": false
+        }
+      }
+    },
+    {
+      "id": "focus",
+      "path": "~/GitHub/focus",
+      "clients": {
+        "codex": {
+          "enabled": true,
+          "config": {}
+        },
+        "claude": {
+          "enabled": false
+        }
+      }
+    },
+    {
+      "id": "frontier-lab-intelligence",
+      "path": "~/GitHub/frontier-lab-intelligence",
+      "clients": {
+        "codex": {
+          "enabled": true,
+          "config": {}
+        },
+        "claude": {
+          "enabled": false
+        }
+      }
+    },
+    {
+      "id": "futureoflife-podcast",
+      "path": "~/GitHub/futureoflife-podcast",
+      "clients": {
+        "codex": {
+          "enabled": true,
+          "config": {}
+        },
+        "claude": {
+          "enabled": false
+        }
+      }
+    },
+    {
+      "id": "home-automation",
+      "path": "~/GitHub/home-automation",
+      "clients": {
+        "codex": {
+          "enabled": true,
+          "config": {}
+        },
+        "claude": {
+          "enabled": false
+        }
+      }
+    },
+    {
+      "id": "litellm",
+      "path": "~/GitHub/litellm",
+      "clients": {
+        "codex": {
+          "enabled": true,
+          "config": {}
+        },
+        "claude": {
+          "enabled": false
+        }
+      }
+    },
+    {
+      "id": "local-transcription",
+      "path": "~/GitHub/local-transcription",
+      "clients": {
+        "codex": {
+          "enabled": true,
+          "config": {}
+        },
+        "claude": {
+          "enabled": false
+        }
+      }
+    },
+    {
+      "id": "meeting-capture",
+      "path": "~/GitHub/meeting-capture",
+      "clients": {
+        "codex": {
+          "enabled": true,
+          "config": {}
+        },
+        "claude": {
+          "enabled": false
+        }
+      }
+    },
+    {
+      "id": "photo-search",
+      "path": "~/GitHub/photo-search",
+      "clients": {
+        "codex": {
+          "enabled": true,
+          "config": {}
+        },
+        "claude": {
+          "enabled": false
+        }
+      }
+    },
+    {
+      "id": "platform-ops",
+      "path": "~/GitHub/platform-ops",
+      "clients": {
+        "codex": {
+          "enabled": true,
+          "config": {}
+        },
+        "claude": {
+          "enabled": false
+        }
+      }
+    },
+    {
+      "id": "scripts",
+      "path": "~/GitHub/scripts",
+      "clients": {
+        "codex": {
+          "enabled": true,
+          "config": {}
+        },
+        "claude": {
+          "enabled": false
+        }
+      }
+    },
+    {
+      "id": "snipwit",
+      "path": "~/GitHub/snipwit",
+      "clients": {
+        "codex": {
+          "enabled": true,
+          "config": {}
+        },
+        "claude": {
+          "enabled": false
+        }
+      }
+    },
+    {
+      "id": "stadia-macos-controller",
+      "path": "~/GitHub/stadia-macos-controller",
+      "clients": {
+        "codex": {
+          "enabled": true,
+          "config": {}
+        },
+        "claude": {
+          "enabled": false
+        }
+      }
+    },
+    {
+      "id": "thoughtforms-life",
+      "path": "~/GitHub/thoughtforms-life",
+      "clients": {
+        "codex": {
+          "enabled": true,
+          "config": {}
+        },
+        "claude": {
+          "enabled": false
+        }
+      }
+    },
+    {
+      "id": "trenopoulospraxis",
+      "path": "~/GitHub/trenopoulospraxis",
+      "clients": {
+        "codex": {
+          "enabled": true,
+          "config": {}
+        },
+        "claude": {
+          "enabled": false
+        }
+      }
+    },
+    {
+      "id": "win",
+      "path": "~/GitHub/win",
+      "clients": {
+        "codex": {
+          "enabled": true,
+          "config": {}
+        },
+        "claude": {
+          "enabled": false
+        }
+      }
+    }
+  ]
+}

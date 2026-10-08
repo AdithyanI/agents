@@ -46,7 +46,7 @@ A managed repository is agent-native when a fresh supported client can:
 - work in a sparse checkout or on another enrolled machine without treating the
   current `~/GitHub` directory listing as canonical truth.
 
-## Current State
+## Audited Baseline — October 7, 2026
 
 - `~/GitHub/agents` at `ad4702e4` is the documented canonical source checkout.
 - `~/.agents` is still a separate clean Git checkout at `6accc7ca`, with a
@@ -171,28 +171,36 @@ A managed repository is agent-native when a fresh supported client can:
 | complete | Recover both historical coexistence designs and the retirement rationale | Git history through `d216ee40`, `a9bb8c7c`, and `bad2bb6b` |
 | complete | Audit current canonical sources and live Codex/Claude runtime state | `resources/architecture-audit.md` |
 | complete | Check current official Claude Code surfaces relevant to the design | Official docs links in the audit |
-| in_progress | Review the target architecture and implementation boundaries with Adi | This tracker |
-| pending | Implement Milestone 1 safety and authority changes | Not yet authorized in this documentation pass |
+| complete | Receive implementation authorization | October 8: Adi asked Codex to do the shared work and leave native acceptance for a Claude Code session |
+| complete | Stop automatic retirement of Claude setup | Normal bootstrap/check no longer invoke the explicit historical removal migration; preservation regressions pass |
+| complete | Resolve the duplicate source checkout on this Mac | Archived to `~/.local/state/agents-control-plane/legacy-source/20261008T093508Z`; `~/.agents` now contains runtime skill links only; launcher/link references and three cleaner LaunchAgents reconciled |
+| complete | Establish native AGENTS.md version floor | `claude/config/policy.json` requires 2.1.281; this Mac upgraded to 2.1.286 |
+| complete | Introduce neutral repository identity and client selection | `repos/registry.json`; Codex projection exactly equals previous source; Claude enabled only for `agents` |
+| complete | Add safe Claude context-hook adapters | SessionStart/UserPromptSubmit tests pass; Claude Stop rejected; no unnecessary live hooks enabled |
+| in_progress | Render and verify the agents pilot | Ownership-aware guidance, compatible standalone skills, MCP and selected-hook reconciliation; runtime apply and integrated verification in progress |
+| pending | Native Claude acceptance and wider rollout | A fresh Claude Code session verifies actual instruction/skill/MCP discovery and a real task before other repos or the second machine are enabled |
 
-## Decisions To Review Before Implementation
+## Current Implementation Decisions
 
-- Minimum Claude Code version: upgrade to at least `2.1.277` and use native
-  `AGENTS.md` discovery, or maintain a temporary generated `CLAUDE.md` import
-  bridge for older installations. The clean target is the version floor.
-- Claude permission posture: preserve normal client defaults or restore a
-  managed permissive/bypass profile. This is client policy, not shared intent.
-- Initial rollout: `agents` only is the recommended pilot; `adi` should follow
+- Minimum Claude Code version: `2.1.281`, using native root/nested `AGENTS.md`
+  discovery. No generated project `CLAUDE.md` bridge.
+- Claude permission posture: preserve current user settings; no managed bypass
+  profile, provider, model, or credential changes.
+- Initial rollout: `agents` only; `adi` should follow
   after identity-prompt behavior and cross-client Git attribution are proven.
-- Whether custom subagents belong in the first restoration. They are useful but
-  not required for guidance/skills/MCP parity.
-- Whether any Claude Desktop, Cowork, or cloud-session behavior belongs in this
-  project. The initial target should be local Claude Code unless expanded.
+- Custom subagents and native plugins are optional later extensions.
+- Initial target is local Claude Code. Desktop, Cowork, and cloud-session
+  behavior require separate acceptance.
 - Which observed harness failures should seed the later improvement loop. Avoid
   designing a generic framework before side-by-side use supplies evidence.
 
 ## Resume Point
 
-Review the architecture audit and the decisions above. Once accepted, begin
-Milestone 1 only: remove Claude from the active retirement path, resolve the
-duplicate source checkout, establish version policy, and capture a byte-for-byte
-Codex baseline before adding new Claude outputs.
+Finish integrated pilot verification, record exact evidence and a Claude Code handoff.
+The project remains active until native acceptance and rollout criteria are met.
+
+Machine recovery evidence lives in the legacy archive's `migration-record.json`
+and `karabiner-before.json`. Two skill links in the non-Git `whos-in-your-head`
+remnant (`claude-api`, `azure-webapp-deploy`) were already dangling before this
+migration; the archive preserves their references but contains no missing source
+to recover. This does not affect the managed pilot.

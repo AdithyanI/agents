@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 from tests.control_plane.support import (
+    repository_registry,
     REPO_ROOT,
     TempDirTestCase,
     default_mcp_registry,
@@ -21,15 +22,15 @@ class CodexControlPlaneCheckTests(TempDirTestCase):
         adi = init_git_repo(github_root / "adi")
 
         write_json(
-            root / "codex/config/repo-bootstrap.json",
-            {
+            root / "repos/registry.json",
+            repository_registry({
                 "defaults": {"personality": "friendly"},
                 "repos": [
                     {
                         "path": str(adi),
                     }
                 ],
-            },
+            }),
         )
         mcp_registry = default_mcp_registry()
         mcp_registry["presets"]["cloudflare-docs"]["repos"] = [str(adi)]
@@ -50,7 +51,7 @@ class CodexControlPlaneCheckTests(TempDirTestCase):
             "--global-config",
             str(home / ".codex/config.toml"),
             "--registry",
-            str(root / "codex/config/repo-bootstrap.json"),
+            str(root / "repos/registry.json"),
             "--mcp-registry",
             str(root / "mcp/config/presets.json"),
             "--hooks-registry",
@@ -67,7 +68,7 @@ class CodexControlPlaneCheckTests(TempDirTestCase):
                 str(REPO_ROOT / "codex/scripts/sync-repo-codex-configs.sh"),
                 "--apply",
                 "--registry",
-                str(root / "codex/config/repo-bootstrap.json"),
+                str(root / "repos/registry.json"),
                 "--mcp-registry",
                 str(root / "mcp/config/presets.json"),
                 "--hooks-registry",
@@ -282,15 +283,15 @@ class CodexControlPlaneCheckTests(TempDirTestCase):
     def test_paired_custom_provider_is_still_rejected_in_repo_defaults(self) -> None:
         root, home, adi = self._make_codex_repo_fixture()
         write_json(
-            root / "codex/config/repo-bootstrap.json",
-            {
+            root / "repos/registry.json",
+            repository_registry({
                 "defaults": {
                     "model": "gpt-6-astra",
                     "model_provider": "azure",
                     "model_providers": {"azure": {"name": "Azure"}},
                 },
                 "repos": [{"path": str(adi)}],
-            },
+            }),
         )
         result = run_command(
             self._check_command(root, home, adi), env={"HOME": str(home)}, check=False

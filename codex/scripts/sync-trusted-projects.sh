@@ -8,7 +8,7 @@ ROOTS=()
 GLOBAL_CONFIG="${HOME}/.codex/config.toml"
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 CONTROL_PLANE_DIR="$(cd "$SCRIPT_DIR/.." && pwd)"
-REGISTRY_FILE="${CONTROL_PLANE_DIR}/config/repo-bootstrap.json"
+REGISTRY_FILE="${CONTROL_PLANE_DIR}/../repos/registry.json"
 ROOTS_EXPLICIT=0
 
 usage() {
@@ -302,9 +302,9 @@ collect_all_repo_roots() {
 }
 
 collect_registry_repos() {
-  [[ -f "$REGISTRY_FILE" ]] || return 0
+  [[ -f "$REGISTRY_FILE" ]] || die "Missing registry file: $REGISTRY_FILE"
 
-  python3 - "$REGISTRY_FILE" <<'PY'
+  PYTHONPATH="${CONTROL_PLANE_DIR}/..${PYTHONPATH:+:${PYTHONPATH}}" python3 - "$REGISTRY_FILE" <<'PY'
 from __future__ import annotations
 
 import json
@@ -313,7 +313,10 @@ import sys
 from pathlib import Path
 
 registry = Path(sys.argv[1]).expanduser().resolve()
-data = json.loads(registry.read_text(encoding="utf-8"))
+from repos.repo_registry import load_registry, client_registry
+neutral = load_registry(registry)
+data = client_registry(neutral, "codex", enabled_only=False)
+enabled_paths = {entry["path"] for entry in neutral["repos"] if entry["clients"]["codex"]["enabled"]}
 repos = data.get("repos", [])
 if not isinstance(repos, list):
     raise TypeError("repos must be an array")
@@ -337,7 +340,7 @@ for item in repos:
             print(f"WARNING: skipping non-git repo path: {path}", file=sys.stderr)
         continue
     if repo_root:
-        trust = item.get("codex_trust", True)
+        trust = item["path"] in enabled_paths and item.get("codex_trust", data["defaults"].get("codex_trust", True))
         if not isinstance(trust, bool):
             raise TypeError("repo.codex_trust must be a boolean when present")
         state = "trusted" if trust else "untrusted"
@@ -413,6 +416,7 @@ TRUSTED_REPO_ROOTS=()
 UNTRUSTED_REPO_ROOTS=()
 
 if (( ROOTS_EXPLICIT == 0 )); then
+  registry_repos="$(collect_registry_repos)"
   while IFS=$'\t' read -r state repo; do
     if [[ -z "$repo" ]]; then
       continue
@@ -422,7 +426,7 @@ if (( ROOTS_EXPLICIT == 0 )); then
     else
       TRUSTED_REPO_ROOTS+=("$repo")
     fi
-  done < <(collect_registry_repos)
+  done <<< "$registry_repos"
 fi
 
 if (( ROOTS_EXPLICIT == 1 )); then
@@ -433,7 +437,7 @@ if (( ROOTS_EXPLICIT == 1 )); then
   done < <(collect_all_repo_roots)
 fi
 
-if (( ${#TRUSTED_REPO_ROOTS[@]} == 0 && ${#UNTRUSTED_REPO_ROOTS[@]} == 0 )); then
+if (( ROOTS_EXPLICIT == 1 && ${#TRUSTED_REPO_ROOTS[@]} == 0 && ${#UNTRUSTED_REPO_ROOTS[@]} == 0 )); then
   ROOTS=("${HOME}/GitHub")
   while IFS= read -r repo; do
     if [[ -n "$repo" ]]; then
@@ -442,7 +446,7 @@ if (( ${#TRUSTED_REPO_ROOTS[@]} == 0 && ${#UNTRUSTED_REPO_ROOTS[@]} == 0 )); the
   done < <(collect_all_repo_roots)
 fi
 
-if (( ${#TRUSTED_REPO_ROOTS[@]} == 0 && ${#UNTRUSTED_REPO_ROOTS[@]} == 0 )); then
+if (( ROOTS_EXPLICIT == 1 && ${#TRUSTED_REPO_ROOTS[@]} == 0 && ${#UNTRUSTED_REPO_ROOTS[@]} == 0 )); then
   die "No Git repos discovered under the configured root set."
 fi
 

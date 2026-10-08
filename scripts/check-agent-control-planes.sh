@@ -24,7 +24,7 @@ usage() {
   cat <<USAGE
 Usage: $(basename "$0") [options]
 
-Validate repo hygiene, shared registries, Codex rendered state, and tests.
+Validate repo hygiene, shared registries, client rendered state, and tests.
 
 Options:
   --repo <path>    Limit repo-local validation to an exact repo path (repeatable)
@@ -69,9 +69,16 @@ fi
 [[ -x "$CHECK_PLUGINS_SCRIPT" ]] || die "Missing executable: $CHECK_PLUGINS_SCRIPT"
 [[ -x "$CHECK_HYGIENE_SCRIPT" ]] || die "Missing executable: $CHECK_HYGIENE_SCRIPT"
 [[ -x "$CHECK_GIT_HOOKS_SCRIPT" ]] || die "Missing executable: $CHECK_GIT_HOOKS_SCRIPT"
-[[ -x "$CHECK_CODEX_SCRIPT" ]] || die "Missing executable: $CHECK_CODEX_SCRIPT"
 [[ -x "$AUDIT_RUNTIME_DRIFT_SCRIPT" ]] || die "Missing executable: $AUDIT_RUNTIME_DRIFT_SCRIPT"
 [[ -x "$TEST_CONTROL_PLANE_SCRIPT" ]] || die "Missing executable: $TEST_CONTROL_PLANE_SCRIPT"
+
+CODEX_EXECUTABLE="$(python3 "${MACHINE_CONTROL_ROOT}/codex/runtime.py")"
+if [[ -n "$CODEX_EXECUTABLE" ]]; then
+  export CODEX_BIN="$CODEX_EXECUTABLE"
+  [[ -x "$CHECK_CODEX_SCRIPT" ]] || die "Missing executable: $CHECK_CODEX_SCRIPT"
+else
+  log "SKIP: Codex executable unavailable; Codex runtime and preview checks are not required."
+fi
 
 REPO_ARGS=()
 if (( ${#REPO_FILTERS[@]} > 0 )); then
@@ -92,13 +99,11 @@ plugins_cmd=("$CHECK_PLUGINS_SCRIPT")
 log "+ ${plugins_cmd[*]}"
 "${plugins_cmd[@]}"
 
-retire_cmd=(python3 "${MACHINE_CONTROL_ROOT}/scripts/retire-agent-clients.py" --check "${REPO_ARGS[@]}")
-log "+ ${retire_cmd[*]}"
-"${retire_cmd[@]}"
-
-preview_cmd=(python3 "${MACHINE_CONTROL_ROOT}/scripts/sync-codex-previews.py" --check "${REPO_ARGS[@]}")
-log "+ ${preview_cmd[*]}"
-"${preview_cmd[@]}"
+if [[ -n "$CODEX_EXECUTABLE" ]]; then
+  preview_cmd=(python3 "${MACHINE_CONTROL_ROOT}/scripts/sync-codex-previews.py" --check "${REPO_ARGS[@]}")
+  log "+ ${preview_cmd[*]}"
+  "${preview_cmd[@]}"
+fi
 
 git_hooks_cmd=(
   "$CHECK_GIT_HOOKS_SCRIPT"
@@ -116,17 +121,23 @@ log "+ ${git_hooks_cmd[*]}"
   "${git_hooks_cmd[@]}"
 )
 
-codex_cmd=(
-  "$CHECK_CODEX_SCRIPT"
-)
-if (( ${#REPO_ARGS[@]} > 0 )); then
-  codex_cmd+=("${REPO_ARGS[@]}")
+if [[ -n "$CODEX_EXECUTABLE" ]]; then
+  codex_cmd=(
+    "$CHECK_CODEX_SCRIPT"
+  )
+  if (( ${#REPO_ARGS[@]} > 0 )); then
+    codex_cmd+=("${REPO_ARGS[@]}")
+  fi
+  log "+ ${codex_cmd[*]}"
+  (
+    cd "$MACHINE_CONTROL_ROOT"
+    "${codex_cmd[@]}"
+  )
 fi
-log "+ ${codex_cmd[*]}"
-(
-  cd "$MACHINE_CONTROL_ROOT"
-  "${codex_cmd[@]}"
-)
+
+claude_cmd=(python3 "${MACHINE_CONTROL_ROOT}/claude/scripts/sync-claude.py" --check "${REPO_ARGS[@]}")
+log "+ ${claude_cmd[*]}"
+"${claude_cmd[@]}"
 
 runtime_drift_cmd=(
   "$AUDIT_RUNTIME_DRIFT_SCRIPT"

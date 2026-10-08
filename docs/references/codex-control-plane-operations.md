@@ -40,7 +40,7 @@ Use [Codex Control Plane Ownership](/Users/dobby/GitHub/agents/docs/references/c
 - Enroll top-level GitHub repos into the managed repo bootstrap registry:
   - [`enroll-managed-repos.sh`](/Users/dobby/GitHub/agents/scripts/enroll-managed-repos.sh)
   - `~/GitHub/agents/scripts/enroll-managed-repos.sh --apply --github-root ~/GitHub`
-  - this scans only direct child Git repos under the GitHub root and adds missing minimal entries to [`repo-bootstrap.json`](/Users/dobby/GitHub/agents/codex/config/repo-bootstrap.json)
+  - this scans only direct child Git repos under the GitHub root and adds stable IDs and explicit Codex-enabled/Claude-disabled entries to [`repos/registry.json`](/Users/dobby/GitHub/agents/repos/registry.json)
 - Validate shared skills, plugins, repo-local hook files, and Codex rendered runtime state:
   - [`check-agent-control-planes.sh`](/Users/dobby/GitHub/agents/scripts/check-agent-control-planes.sh)
   - `~/GitHub/agents/scripts/check-agent-control-planes.sh`
@@ -123,7 +123,7 @@ Use [Codex Control Plane Ownership](/Users/dobby/GitHub/agents/docs/references/c
 - The autonomous `autofix` profile selects `gpt-5.6-sol` at medium effort. When the account model catalog changes, update the canonical profile, run `codex/scripts/sync-config.sh --apply`, and verify a non-mutating `codex exec --profile autofix` request with hooks disabled before relying on unattended remediation. A profile that parses and renders successfully can still name a model rejected by the account provider.
 - Keep Fast controls available, but do not set a top-level `service_tier`; Fast is an explicit client/thread choice rather than a managed default. Do not add separate desktop-only service-tier keys unless Codex has a verified compact-safe desktop service-tier path.
 - `~/.codex/hooks.json` is rendered from `hooks/registry.json` for global Codex hooks. The managed `Stop` hook renders there; repo-specific lifecycle hooks such as `SessionStart` and `UserPromptSubmit` render into repo `.codex/hooks.json`.
-- `com.<user>.codex-thread-finalizer` is loaded as a LaunchAgent and runs [`finalize-stale-codex-threads.py`](/Users/dobby/GitHub/agents/codex/scripts/finalize-stale-codex-threads.py) every hour against managed repo paths from [`repo-bootstrap.json`](/Users/dobby/GitHub/agents/codex/config/repo-bootstrap.json).
+- `com.<user>.codex-thread-finalizer` is loaded as a LaunchAgent and runs [`finalize-stale-codex-threads.py`](/Users/dobby/GitHub/agents/codex/scripts/finalize-stale-codex-threads.py) every hour against Codex-enabled repo paths from [`repos/registry.json`](/Users/dobby/GitHub/agents/repos/registry.json).
 - `~/.codex/config.toml` contains no Git conflict markers
 - `~/.codex/vendor_imports/skills` is a valid Git checkout:
   - `git -C ~/.codex/vendor_imports/skills rev-parse --show-toplevel`
@@ -163,21 +163,21 @@ Use [Codex Control Plane Ownership](/Users/dobby/GitHub/agents/docs/references/c
   - writes `.codex/hooks.json` for all managed repos with only the hooks assigned to that repo
   - prunes stale managed repo-local `.codex/agents/*.toml` files left by older control-plane versions
   - skips no-op rewrites instead of dirtying the git repos unnecessarily
-  - keeps the repo list and repo-level behavior assignments in [`repo-bootstrap.json`](/Users/dobby/GitHub/agents/codex/config/repo-bootstrap.json); model, effort, and service tier remain client-owned
+  - keeps the repo list and repo-level behavior assignments in [`repos/registry.json`](/Users/dobby/GitHub/agents/repos/registry.json); model, effort, and service tier remain client-owned
   - resolves repository scopes from the MCP registry in [`mcp/config/presets.json`](/Users/dobby/GitHub/agents/mcp/config/presets.json)
 - [`sync-managed-git-hooks.sh`](/Users/dobby/GitHub/agents/scripts/sync-managed-git-hooks.sh)
-  - applies local-only `core.hooksPath` for every managed repo in [`repo-bootstrap.json`](/Users/dobby/GitHub/agents/codex/config/repo-bootstrap.json)
+  - applies local-only `core.hooksPath` for every repo with an enabled client in [`repos/registry.json`](/Users/dobby/GitHub/agents/repos/registry.json)
   - points Git at [`hooks/git/pre-commit`](/Users/dobby/GitHub/agents/hooks/git/pre-commit)
   - does not edit repo worktree files and does not affect GitHub Actions
 - [`check-codex-control-plane.sh`](/Users/dobby/GitHub/agents/codex/scripts/check-codex-control-plane.sh)
-  - validates canonical `global.config.toml`, `repo-bootstrap.json`, and `mcp/config/presets.json`
+  - validates canonical `global.config.toml`, `repos/registry.json`, and `mcp/config/presets.json`
   - validates [`bundled-skills-policy.json`](/Users/dobby/GitHub/agents/codex/config/bundled-skills-policy.json) and fails if a local OpenAI-bundled Codex skill exists under `~/.codex/skills/.system` or `~/.codex/skills/codex-primary-runtime` without being classified as `allowed` or `disabled`
   - validates that the live global Codex config disables each skill classified as `disabled`
   - validates [`hooks/registry.json`](/Users/dobby/GitHub/agents/hooks/registry.json), rendered global `~/.codex/hooks.json`, and rendered repo-local `.codex/hooks.json` files when hooks are enabled
   - fails if managed agent role declarations reappear in canonical or generated Codex config
   - runs `sync-repo-codex-configs.sh --check`, so stale or hand-edited repo-local `.codex/config.toml`, `.codex/hooks.json`, and older managed `.codex/agents/*.toml` files fail validation
 - [`sync-repo-bootstrap-registry.sh`](/Users/dobby/GitHub/agents/codex/scripts/sync-repo-bootstrap-registry.sh)
-  - validates [`repo-bootstrap.json`](/Users/dobby/GitHub/agents/codex/config/repo-bootstrap.json)
+  - validates [`repos/registry.json`](/Users/dobby/GitHub/agents/repos/registry.json)
   - validates MCP definitions and repository scopes from [`mcp/config/presets.json`](/Users/dobby/GitHub/agents/mcp/config/presets.json)
   - rejects unknown repositories, invalid transport definitions, and retired client selectors
 - [`bootstrap-machine-codex.sh`](/Users/dobby/GitHub/agents/codex/scripts/bootstrap-machine-codex.sh)
@@ -189,7 +189,7 @@ Use [Codex Control Plane Ownership](/Users/dobby/GitHub/agents/docs/references/c
   - runs control-plane validation at the end and fails if the rendered state is inconsistent
 - [`finalize-stale-codex-threads.py`](/Users/dobby/GitHub/agents/codex/scripts/finalize-stale-codex-threads.py)
   - starts a short-lived Codex app-server JSONL client, uses `thread/list` for eligibility, then invokes [`finalize-codex-thread.py`](/Users/dobby/GitHub/agents/codex/scripts/finalize-codex-thread.py) for each stale thread
-  - reads managed repo paths from [`repo-bootstrap.json`](/Users/dobby/GitHub/agents/codex/config/repo-bootstrap.json) unless `--repo` filters are supplied; it lists stale active threads globally, then keeps only threads whose `cwd` is inside a managed checkout, shares that checkout's Git common directory, or has the same normalized Git origin URL, so linked and already-removed Codex worktrees are included without widening cleanup to unrelated repositories
+  - reads Codex-enabled repo paths from [`repos/registry.json`](/Users/dobby/GitHub/agents/repos/registry.json) unless `--repo` filters are supplied; it lists stale active threads globally, then keeps only threads whose `cwd` is inside a managed checkout, shares that checkout's Git common directory, or has the same normalized Git origin URL, so linked and already-removed Codex worktrees are included without widening cleanup to unrelated repositories
   - finalizes only non-archived threads whose `updatedAt` is older than the configured threshold; default is 24 hours
   - does not try to detect what the Desktop app currently has loaded; the safety boundary is the last-activity cutoff
   - isolates per-thread finalizer failures: a locked or broken thread is reported with `skipped_reason=finalizer_failed`, remaining candidates are still processed, and the command exits `4` with `error.code=PartialFinalizeFailure` so runtime health checks retain a failure signal
@@ -247,7 +247,7 @@ Use [Codex Control Plane Ownership](/Users/dobby/GitHub/agents/docs/references/c
 
 ## Shared Registry Fields
 
-- [`repo-bootstrap.json`](/Users/dobby/GitHub/agents/codex/config/repo-bootstrap.json) currently controls these per-repo fields:
+- [`repos/registry.json`](/Users/dobby/GitHub/agents/repos/registry.json) stores these Codex fields under each repo’s `clients.codex.config`:
   - `codex_trust`
   - `personality`
   - `model_instructions_file`
@@ -257,7 +257,7 @@ Use [Codex Control Plane Ownership](/Users/dobby/GitHub/agents/docs/references/c
 - Shared MCP definitions and all repository scopes live separately in [`mcp/config/presets.json`](/Users/dobby/GitHub/agents/mcp/config/presets.json).
 - Shared lifecycle hook definitions live separately in [`hooks/registry.json`](/Users/dobby/GitHub/agents/hooks/registry.json).
 - Native Codex plugin scope and state lives separately in [`plugins/registry.json`](/Users/dobby/GitHub/agents/plugins/registry.json).
-- The global defaults block supplies fallback values for allowed repo behavior. It must not contain model, effort, profile, Fast/service-tier, or related thread-selection keys.
+- The `defaults.codex` block supplies fallback values for allowed Codex repo behavior. It must not contain model, effort, profile, Fast/service-tier, or related thread-selection keys.
 
 ## Automatic Cross-Machine Apply
 
@@ -265,7 +265,7 @@ Use [Codex Control Plane Ownership](/Users/dobby/GitHub/agents/docs/references/c
 - Machine-facing multi-surface apply now lives in [`auto-apply-agent-control-planes.sh`](/Users/dobby/GitHub/agents/scripts/auto-apply-agent-control-planes.sh), which calls the Codex and shared repo-local entrypoints as needed after `~/GitHub/agents` sync.
 - When shared skill inputs change, that wrapper also reruns the Codex bootstrap so machine-side dependencies for managed skills such as `pdf` stay converged.
 - That same wrapper validates the plugin registry and reapplies Codex config when plugin state changes.
-- When `hooks/registry.json` or `codex/config/repo-bootstrap.json` changes, that wrapper syncs global Codex hooks and repo-local Codex hooks in managed repos.
+- When `hooks/registry.json` or `repos/registry.json` changes, that wrapper syncs global Codex hooks and repo-local Codex hooks in managed repos.
 - Codex-specific post-sync apply logic still lives in [`auto-apply-codex-control-plane.sh`](/Users/dobby/GitHub/agents/codex/scripts/auto-apply-codex-control-plane.sh) as an optional lower-level Codex-only reconcile helper.
 - Practical flow:
   1. one machine pushes a change in `~/GitHub/agents`

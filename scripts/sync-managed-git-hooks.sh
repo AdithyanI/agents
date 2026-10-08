@@ -9,7 +9,7 @@ REPO_FILTERS=()
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 ROOT_DIR="$(cd "${SCRIPT_DIR}/.." && pwd)"
-DEFAULT_REGISTRY_FILE="${ROOT_DIR}/codex/config/repo-bootstrap.json"
+DEFAULT_REGISTRY_FILE="${ROOT_DIR}/repos/registry.json"
 DEFAULT_HOOKS_PATH="${ROOT_DIR}/hooks/git"
 
 usage() {
@@ -25,7 +25,7 @@ Options:
   --dry-run              Show intended changes only (default)
   --check                Fail if managed repos do not point at the shared hook path
   --registry <path>      Override repo bootstrap registry
-                         (default: codex/config/repo-bootstrap.json)
+                         (default: repos/registry.json)
   --hooks-path <path>    Override shared Git hooks directory
                          (default: hooks/git)
   --repo <path>          Limit sync/check to an exact repo path (repeatable)
@@ -101,13 +101,8 @@ HOOKS_PATH="$(python3 -c 'from pathlib import Path; import sys; print(Path(sys.a
 [[ -d "$HOOKS_PATH" ]] || die "Missing shared hooks directory: $HOOKS_PATH"
 [[ -x "$HOOKS_PATH/pre-commit" ]] || die "Missing executable shared pre-commit hook: $HOOKS_PATH/pre-commit"
 
-REPOS=()
-while IFS= read -r repo; do
-  if [[ -n "$repo" ]]; then
-    REPOS+=("$repo")
-  fi
-done < <(
-  python3 - "$REGISTRY_FILE" ${REPO_FILTERS[@]+"${REPO_FILTERS[@]}"} <<'PY'
+registry_repos="$(
+  PYTHONPATH="$ROOT_DIR${PYTHONPATH:+:${PYTHONPATH}}" python3 - "$REGISTRY_FILE" ${REPO_FILTERS[@]+"${REPO_FILTERS[@]}"} <<'PY'
 from __future__ import annotations
 
 import json
@@ -116,8 +111,9 @@ from pathlib import Path
 
 registry = Path(sys.argv[1]).expanduser().resolve()
 filters = {str(Path(value).expanduser().resolve()) for value in sys.argv[2:]}
-data = json.loads(registry.read_text(encoding="utf-8"))
-repos = data.get("repos", [])
+from repos.repo_registry import load_registry, enabled_repositories
+data = load_registry(registry)
+repos = enabled_repositories(data)
 if not isinstance(repos, list):
     raise SystemExit(f"{registry}: repos must be an array")
 
@@ -132,7 +128,14 @@ for item in repos:
         continue
     print(path)
 PY
-)
+)"
+
+REPOS=()
+while IFS= read -r repo; do
+  if [[ -n "$repo" ]]; then
+    REPOS+=("$repo")
+  fi
+done <<< "$registry_repos"
 
 if (( ${#REPO_FILTERS[@]} > 0 && ${#REPOS[@]} == 0 )); then
   die "No managed repos matched the requested --repo filters"

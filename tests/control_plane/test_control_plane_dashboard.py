@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+from tests.control_plane.support import repository_registry
+
 import json
 import plistlib
 import sys
@@ -127,8 +129,8 @@ class ControlPlaneDashboardDataTests(TempDirTestCase):
             },
         )
         write_json(
-            root / "codex/config/repo-bootstrap.json",
-            {
+            root / "repos/registry.json",
+            repository_registry({
                 "defaults": {},
                 "repos": [
                     {
@@ -138,7 +140,7 @@ class ControlPlaneDashboardDataTests(TempDirTestCase):
                         "path": str(dobby_ios),
                     },
                 ],
-            },
+            }),
         )
         write_json(root / "dev-servers/registry.json", {"repos": []})
         write_text(
@@ -310,8 +312,8 @@ class ControlPlaneDashboardDataTests(TempDirTestCase):
     def test_data_warns_for_missing_managed_repo_path(self) -> None:
         self.write_minimal_control_plane()
         write_json(
-            self.temp_path / "codex/config/repo-bootstrap.json",
-            {
+            self.temp_path / "repos/registry.json",
+            repository_registry({
                 "defaults": {},
                 "repos": [
                     {
@@ -321,7 +323,7 @@ class ControlPlaneDashboardDataTests(TempDirTestCase):
                         "path": str(self.temp_path / "GitHub/deleted-repo"),
                     },
                 ],
-            },
+            }),
         )
 
         result = run_command(

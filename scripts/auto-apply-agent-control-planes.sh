@@ -11,6 +11,7 @@ SYNC_SKILLS_SCRIPT=""
 SYNC_PLUGINS_SCRIPT=""
 SYNC_GIT_HOOKS_SCRIPT=""
 CODEX_BOOTSTRAP_SCRIPT=""
+CLAUDE_SYNC_SCRIPT=""
 
 usage() {
   cat <<USAGE
@@ -87,13 +88,13 @@ SYNC_SKILLS_SCRIPT="${AGENTS_REPO}/scripts/sync-skills-registry.sh"
 SYNC_PLUGINS_SCRIPT="${AGENTS_REPO}/scripts/sync-plugins-registry.sh"
 SYNC_GIT_HOOKS_SCRIPT="${AGENTS_REPO}/scripts/sync-managed-git-hooks.sh"
 CODEX_BOOTSTRAP_SCRIPT="${AGENTS_REPO}/codex/scripts/bootstrap-machine-codex.sh"
+CLAUDE_SYNC_SCRIPT="${AGENTS_REPO}/claude/scripts/sync-claude.py"
 
 [[ -d "$AGENTS_REPO/.git" ]] || die "Missing agents control-plane git repo: $AGENTS_REPO"
 [[ -x "$ROOT_BOOTSTRAP_SCRIPT" ]] || die "Missing executable: $ROOT_BOOTSTRAP_SCRIPT"
 [[ -x "$SYNC_SKILLS_SCRIPT" ]] || die "Missing executable: $SYNC_SKILLS_SCRIPT"
 [[ -x "$SYNC_PLUGINS_SCRIPT" ]] || die "Missing executable: $SYNC_PLUGINS_SCRIPT"
 [[ -x "$SYNC_GIT_HOOKS_SCRIPT" ]] || die "Missing executable: $SYNC_GIT_HOOKS_SCRIPT"
-[[ -x "$CODEX_BOOTSTRAP_SCRIPT" ]] || die "Missing executable: $CODEX_BOOTSTRAP_SCRIPT"
 
 current_sha="$(git -C "$AGENTS_REPO" rev-parse HEAD)"
 last_sha=""
@@ -131,6 +132,8 @@ while IFS= read -r path; do
 done < <(
   git -C "$AGENTS_REPO" diff --name-only "$last_sha" "$current_sha" -- \
     codex \
+    claude \
+    repos \
     config \
     hooks \
     mcp \
@@ -150,6 +153,7 @@ fi
 skills_changed=0
 plugins_changed=0
 codex_changed=0
+claude_changed=0
 hooks_changed=0
 git_hooks_changed=0
 root_bootstrap_changed=0
@@ -162,13 +166,21 @@ for path in "${changed_paths[@]}"; do
     scripts/bootstrap-machine-agent-control-planes.sh)
       root_bootstrap_changed=1
       ;;
-    scripts/sync-codex-previews.py|scripts/run-agent-preview-server.py|scripts/retire-agent-clients.py)
+    scripts/sync-codex-previews.py|scripts/run-agent-preview-server.py)
       root_bootstrap_changed=1
       ;;
   esac
   case "$path" in
     config/*)
       root_bootstrap_changed=1
+      ;;
+  esac
+  case "$path" in
+    claude/*)
+      claude_changed=1
+      ;;
+    repos/*)
+      repo_registry_changed=1
       ;;
   esac
   case "$path" in
@@ -182,7 +194,7 @@ for path in "${changed_paths[@]}"; do
       ;;
   esac
   case "$path" in
-    skills/*|skills-source/*)
+    skills/*|skills-source/*|scripts/sync-skills-registry.py|scripts/sync-skills-registry.sh)
       skills_changed=1
       ;;
   esac
@@ -206,7 +218,7 @@ for path in "${changed_paths[@]}"; do
       dev_servers_changed=1
       ;;
   esac
-  if [[ "$path" == "codex/config/repo-bootstrap.json" ]]; then
+  if [[ "$path" == "repos/registry.json" ]]; then
     repo_registry_changed=1
   fi
 done
@@ -216,6 +228,7 @@ need_sync_plugins=0
 need_sync_git_hooks=0
 need_root_bootstrap=0
 need_bootstrap_codex=0
+need_sync_claude=0
 
 if (( root_bootstrap_changed == 1 || dev_servers_changed == 1 || shared_mcp_changed == 1 || repo_registry_changed == 1 )); then
   need_root_bootstrap=1
@@ -231,6 +244,9 @@ if (( git_hooks_changed == 1 || repo_registry_changed == 1 )); then
 fi
 if (( skills_changed == 1 || plugins_changed == 1 || codex_changed == 1 || hooks_changed == 1 || shared_mcp_changed == 1 )); then
   need_bootstrap_codex=1
+fi
+if (( claude_changed == 1 || skills_changed == 1 || hooks_changed == 1 )); then
+  need_sync_claude=1
 fi
 
 actions=()
@@ -248,6 +264,9 @@ else
   fi
   if (( need_bootstrap_codex == 1 )); then
     actions+=("bootstrap_codex")
+  fi
+  if (( need_sync_claude == 1 )); then
+    actions+=("sync_claude")
   fi
 fi
 
@@ -281,7 +300,17 @@ for action in "${actions[@]}"; do
       cmd=("$SYNC_GIT_HOOKS_SCRIPT" "$MODE")
       ;;
     bootstrap_codex)
+      CODEX_EXECUTABLE="$(python3 "${AGENTS_REPO}/codex/runtime.py")"
+      if [[ -z "$CODEX_EXECUTABLE" ]]; then
+        log "SKIP: Codex executable unavailable; Codex bootstrap is not required."
+        continue
+      fi
+      export CODEX_BIN="$CODEX_EXECUTABLE"
+      [[ -x "$CODEX_BOOTSTRAP_SCRIPT" ]] || die "Missing executable: $CODEX_BOOTSTRAP_SCRIPT"
       cmd=("$CODEX_BOOTSTRAP_SCRIPT" "$MODE" --github-root "$GITHUB_ROOT")
+      ;;
+    sync_claude)
+      cmd=(python3 "$CLAUDE_SYNC_SCRIPT" "$MODE" --github-root "$GITHUB_ROOT")
       ;;
     *)
       die "Unknown reconcile action: $action"

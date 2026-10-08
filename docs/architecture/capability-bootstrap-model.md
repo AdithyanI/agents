@@ -10,7 +10,7 @@ Agent delegation is intentionally not modeled here. Codex can still spawn subage
 flowchart TD
     P[plugins/registry.json]
     A[skills/registry.json]
-    B[codex/config/repo-bootstrap.json]
+    B[repos/registry.json]
     C[mcp/config/presets.json]
     PS[sync-plugins-registry.sh]
     E[sync-skills-registry.sh]
@@ -42,6 +42,29 @@ flowchart TD
     D --> K
 ```
 
+## Repository Identity
+
+`repos/registry.json` is the client-neutral enrollment authority. Its version 1
+schema gives every repository a stable `id`, a checkout `path`, and explicit
+`clients.codex.enabled` and `clients.claude.enabled` booleans. Each client's
+behavior lives in its own `config` object; `defaults.codex` and `defaults.claude`
+supply that client's defaults. Models, effort, provider selection, authentication,
+and private overrides remain native runtime state.
+
+`repos/repo_registry.py` validates this schema and supplies the native projection
+used by Codex renderers. Shared Git-hook installation selects any enabled client;
+Codex config, hook trust, and stale-thread finalization select Codex explicitly.
+New automatically enrolled repositories enable Codex and leave Claude disabled.
+The `agents` repository is the initial Claude pilot.
+
+Capability assignments still use their established repository names or paths in
+the skills, MCP, hooks, and preview registries. Converting those references to
+stable repository IDs and presenting effective capabilities for each client in
+the dashboard remain separate rollout work. Changing a checkout path therefore
+also requires updating its existing capability assignments. Disabling Codex stops
+new config rendering and revokes managed trust; cleanup of its previously generated
+files is not yet an ownership-aware uninstall operation.
+
 ## Codex Plugins
 
 Source of truth:
@@ -63,9 +86,9 @@ Skills are standalone agent guidance. They can be global, repo-scoped, unmanaged
 Source of truth:
 
 - MCP definitions and repository scopes in `mcp/config/presets.json`
-- managed repo inventory in `codex/config/repo-bootstrap.json`
+- managed repo inventory in `repos/registry.json`
 
-MCPs are standalone endpoints and transports. Schema version 3 gives each definition a `repos` scope: `"all"`, explicit managed repository paths, or `[]` for an unassigned definition. Selected endpoints render only to repo `.codex/config.toml`. There is no client matrix or cross-client configuration merge.
+MCPs are standalone endpoints and transports. Schema version 3 gives each definition a `repos` scope: `"all"`, explicit managed repository paths, or `[]` for an unassigned definition. Each client renderer selects the enrolled repositories enabled for that client and translates these neutral definitions into its native MCP surface. The MCP registry itself keeps one repository assignment model.
 
 If a plugin contains an MCP internally, that remains plugin-owned unless explicitly promoted into this registry.
 
@@ -74,7 +97,7 @@ If a plugin contains an MCP internally, that remains plugin-owned unless explici
 - Keep Codex plugin scope and state in `plugins/registry.json`.
 - Keep skill content in `skills-source/`.
 - Keep MCP definitions and all MCP target assignments in `mcp/config/presets.json`.
-- Keep repo inventory and allowed repo behavior defaults in `codex/config/repo-bootstrap.json`; keep model, effort, profile, and service-tier selection client-owned.
+- Keep repo inventory and allowed repo behavior defaults in `repos/registry.json`; keep model, effort, profile, and service-tier selection client-owned.
 - Do not automatically project plugin package contents into skills or MCPs.
 - When a plugin capability must be reliable in one repo without enabling the native plugin globally, explicitly link its bundled skills through `skills/registry.json` `managed_plugin_skills` and promote any needed MCP server into `mcp/config/presets.json`.
 
