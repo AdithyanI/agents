@@ -147,15 +147,21 @@ class HooksControlPlaneTests(TempDirTestCase):
         with self.assertRaises(HookRegistryError):
             load_hooks_registry(registry_path)
 
-    def test_registry_renders_claude_context_hooks_without_changing_codex(self) -> None:
+    def test_registry_renders_claude_hooks_without_changing_codex(self) -> None:
         registry = load_hooks_registry(REPO_ROOT / "hooks/registry.json")
         codex_before = {
             repo: json.dumps(render_codex_hooks(registry, repo_name=repo), sort_keys=True)
             for repo in (None, "agents", "adi", "angie")
         }
-        # New runtime support alone must not enable a Claude hook anywhere.
-        for repo in codex_before:
-            self.assertEqual(render_runtime_hooks(registry, "claude", repo_name=repo), {"hooks": {}})
+        # Claude finalization is repo-scoped; the Claude renderer writes repo hooks
+        # only into Claude-enabled repositories and never into user settings.
+        finalization = render_runtime_hooks(registry, "claude", repo_name="agents")
+        self.assertEqual(sorted(finalization["hooks"]), ["PostToolUse", "Stop"])
+        self.assertEqual(
+            finalization["hooks"]["PostToolUse"][0]["matcher"],
+            "Edit|MultiEdit|Write|NotebookEdit|Bash",
+        )
+        self.assertEqual(render_runtime_hooks(registry, "claude"), {"hooks": {}})
 
         for event in ("SessionStart", "UserPromptSubmit"):
             hook = {
@@ -173,7 +179,7 @@ class HooksControlPlaneTests(TempDirTestCase):
         validate_hooks_registry_data(registry, label="fixture")
 
         rendered = render_runtime_hooks(registry, "claude", repo_name="agents")
-        self.assertEqual(rendered, {"hooks": {
+        self.assertEqual({key: rendered["hooks"][key] for key in ("SessionStart", "UserPromptSubmit")}, {
             "SessionStart": [{
                 "matcher": "startup|resume|clear|compact",
                 "hooks": [{"type": "command", "timeout": 5,
@@ -183,26 +189,26 @@ class HooksControlPlaneTests(TempDirTestCase):
                 "hooks": [{"type": "command", "timeout": 5,
                            "command": "python3 hook.py --runtime claude --event UserPromptSubmit"}],
             }],
-        }})
+        })
         self.assertEqual(render_runtime_hooks(registry, "claude"), {"hooks": {}})
-        self.assertEqual(render_runtime_hooks(registry, "claude", repo_name="adi"), {"hooks": {}})
+        self.assertEqual(render_runtime_hooks(registry, "claude", repo_name="adi"), finalization)
         for repo, original in codex_before.items():
             self.assertEqual(json.dumps(render_codex_hooks(registry, repo_name=repo), sort_keys=True), original)
 
-    def test_registry_and_renderer_reject_claude_stop(self) -> None:
+    def test_registry_and_renderer_reject_codex_post_tool_use(self) -> None:
         registry = {"version": 1, "managed_hooks": [{
-            "id": "unsafe-stop",
-            "event": "Stop",
+            "id": "codex-tool-use",
+            "event": "PostToolUse",
             "scope": "global",
-            "runtimes": ["claude"],
-            "command": "python3 stop.py --runtime {runtime}",
+            "runtimes": ["codex"],
+            "command": "python3 tool.py --runtime {runtime}",
             "timeout": 5,
         }]}
-        with self.assertRaisesRegex(HookRegistryError, "Stop.*not supported.*claude"):
+        with self.assertRaisesRegex(HookRegistryError, "PostToolUse.*not supported.*codex"):
             validate_hooks_registry_data(registry, label="fixture")
         # Protect direct callers that have not loaded the registry from disk.
-        with self.assertRaisesRegex(HookRegistryError, "Stop.*not supported.*claude"):
-            render_runtime_hooks(registry, "claude")
+        with self.assertRaisesRegex(HookRegistryError, "PostToolUse.*not supported.*codex"):
+            render_runtime_hooks(registry, "codex")
 
     def test_claude_context_hooks_preserve_payload_and_normalize_common_fields(self) -> None:
         repo = init_git_repo(self.temp_path / "repo")
@@ -837,8 +843,8 @@ class HooksControlPlaneTests(TempDirTestCase):
         self.assertFalse(module.has_tracking_upstream(str(repo)))
 
     def test_hook_runners_reject_retired_and_unsupported_runtimes(self) -> None:
-        for script in ("session_start.py", "user_prompt_submit.py", "stop.py"):
-            runtimes = ("claude", "copilot", "antigravity") if script == "stop.py" else ("copilot", "antigravity")
+        for script in ("session_start.py", "user_prompt_submit.py", "stop.py", "claude_tool_use.py"):
+            runtimes = ("codex", "copilot") if script == "claude_tool_use.py" else ("copilot", "antigravity")
             for runtime in runtimes:
                 with self.subTest(script=script, runtime=runtime):
                     result = subprocess.run(

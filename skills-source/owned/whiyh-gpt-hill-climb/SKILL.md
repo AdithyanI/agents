@@ -6,7 +6,7 @@ description: "Monitor, analyze, and improve the Who's In Your Head GPT/default g
 # WIYH GPT Hill Climb
 
 Use this skill for the repeatable improvement loop around the live game at
-`/Users/dobby/GitHub/whos-in-your-head`.
+`~/GitHub/whos-in-your-head`.
 
 The product target is concrete: make model turns fast, cheap, and correct.
 Optimize only the GPT product paths: `gpt-chat-latest` as the default and the
@@ -245,11 +245,11 @@ Keep reports compact and operator-friendly:
 For a recurring report-only check, use a prompt like:
 
 ```text
-Use $whiyh-gpt-hill-climb in report-only mode. In /Users/dobby/GitHub/whos-in-your-head, review the last 60 minutes of GPT/default game telemetry and compare with the last 2 hours when the sample is noisy, including misses, dropoffs, latency, cache/token efficiency, model errors, and share signals when available. Focus optimization on `gpt-chat-latest` and the fast GPT option `gpt-5.4-mini`: make turns cheaper and faster where possible without hurting correctness. Summarize what changed, identify the most likely reason for any failures, and recommend at most one next action. Do not edit code.
+Use $whiyh-gpt-hill-climb in report-only mode. In ~/GitHub/whos-in-your-head, review the last 60 minutes of GPT/default game telemetry and compare with the last 2 hours when the sample is noisy, including misses, dropoffs, latency, cache/token efficiency, model errors, and share signals when available. Focus optimization on `gpt-chat-latest` and the fast GPT option `gpt-5.4-mini`: make turns cheaper and faster where possible without hurting correctness. Summarize what changed, identify the most likely reason for any failures, and recommend at most one next action. Do not edit code.
 ```
 
 For the same-thread hill-climb loop, use improvement mode:
 
 ```text
-Use $whiyh-gpt-hill-climb in improvement mode. In /Users/dobby/GitHub/whos-in-your-head, review recent GPT/default game telemetry, then improve the product when there is a concrete repeated failure, route/model error, duplicate stale turn, or clear cost/latency waste worth fixing. Optimize accuracy first, then speed and cost without hurting correctness. Work on a short-lived `codex/*` branch, make one focused prompt/mechanics/routing/client/telemetry/docs change, validate with targeted tests plus `scripts/check-fast.sh`, return the validated patch to `main` for the normal hook/deploy path, and delete the short-lived branch. If the data is healthy or too noisy, report only.
+Use $whiyh-gpt-hill-climb in improvement mode. In ~/GitHub/whos-in-your-head, review recent GPT/default game telemetry, then improve the product when there is a concrete repeated failure, route/model error, duplicate stale turn, or clear cost/latency waste worth fixing. Optimize accuracy first, then speed and cost without hurting correctness. Work on a short-lived `codex/*` branch, make one focused prompt/mechanics/routing/client/telemetry/docs change, validate with targeted tests plus `scripts/check-fast.sh`, return the validated patch to `main` for the normal hook/deploy path, and delete the short-lived branch. If the data is healthy or too noisy, report only.
 ```

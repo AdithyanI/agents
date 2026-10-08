@@ -28,6 +28,37 @@
       ],
       "scope": "global",
       "timeout": 900
+    },
+    {
+      "command": "python3 \"$HOME/GitHub/agents/hooks/scripts/claude_tool_use.py\" --runtime {runtime}",
+      "enabled": true,
+      "event": "PostToolUse",
+      "id": "claude-turn-attribution",
+      "matchers": {
+        "claude": "Edit|MultiEdit|Write|NotebookEdit|Bash"
+      },
+      "repos": [
+        "*"
+      ],
+      "runtimes": [
+        "claude"
+      ],
+      "scope": "repo",
+      "timeout": 10
+    },
+    {
+      "command": "python3 \"$HOME/GitHub/agents/hooks/scripts/stop.py\" --runtime {runtime}",
+      "enabled": true,
+      "event": "Stop",
+      "id": "claude-stop",
+      "repos": [
+        "*"
+      ],
+      "runtimes": [
+        "claude"
+      ],
+      "scope": "repo",
+      "timeout": 900
     }
   ],
   "version": 1

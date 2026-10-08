@@ -20,6 +20,7 @@ from pathlib import Path
 from typing import Any, Iterable, Iterator
 
 try:
+    from hooks.scripts.codex_shell_paths import command_repository_paths
     from hooks.scripts.codex_turn_changes import (
         CodexOwnerThreadUnavailableError,
         CodexShellDiscoveryError,
@@ -27,6 +28,7 @@ try:
         collect_codex_turn_changes,
     )
 except ModuleNotFoundError:  # Direct script execution adds this directory to sys.path.
+    from codex_shell_paths import command_repository_paths
     from codex_turn_changes import (
         CodexOwnerThreadUnavailableError,
         CodexShellDiscoveryError,
@@ -35,7 +37,7 @@ except ModuleNotFoundError:  # Direct script execution adds this directory to sy
     )
 
 
-VALID_RUNTIMES = {"codex"}
+VALID_RUNTIMES = {"codex", "claude"}
 
 GIT_STATUS_TIMEOUT_SEC = 60
 GIT_ADD_TIMEOUT_SEC = 120
@@ -1128,34 +1130,125 @@ def process_codex_repositories(
         repositories,
         repositories_from_shell_paths(getattr(changes, "shell_paths", ())),
     )
-    primary_root = repo_root(cwd)
-    if primary_root:
-        primary_root = str(Path(primary_root).resolve())
-        if primary_root not in repositories:
-            primary_changes, primary_status_ok = worktree_changed_paths(primary_root)
-            primary_unpushed = unpushed_head(primary_root)
-            if not primary_status_ok:
-                return maybe_continue(
-                    payload,
-                    state_failure_reason(primary_root, "could not inspect the primary repository status"),
-                    cwd=primary_root,
-                )
-            if primary_changes or primary_unpushed:
-                primary = repositories.setdefault(
-                    primary_root,
-                    RepoFinalization(root=primary_root),
-                )
-                primary.paths.update(primary_changes)
-                if primary_unpushed and not primary.commit:
-                    primary.commit = primary_unpushed
-                if primary.commit and not primary_changes:
-                    primary.phase = "committed"
+    unreadable = add_primary_repository(cwd, repositories)
+    if unreadable:
+        return maybe_continue(
+            payload,
+            state_failure_reason(unreadable, "could not inspect the primary repository status"),
+            cwd=unreadable,
+        )
     if not repositories:
         log("codex", f"skip no-attributed-files thread={thread_id}")
         save_codex_transaction(thread_id, {}, clear_discovery=True)
         return None
 
     return finalize_codex_repositories(cwd, payload, thread_id, repositories)
+
+
+def add_primary_repository(cwd: str, repositories: dict[str, RepoFinalization]) -> str | None:
+    """Include the starting repository's outstanding work; return it if unreadable."""
+    primary_root = repo_root(cwd)
+    if not primary_root:
+        return None
+    primary_root = str(Path(primary_root).resolve())
+    if primary_root in repositories:
+        return None
+    primary_changes, primary_status_ok = worktree_changed_paths(primary_root)
+    primary_unpushed = unpushed_head(primary_root)
+    if not primary_status_ok:
+        return primary_root
+    if primary_changes or primary_unpushed:
+        primary = repositories.setdefault(
+            primary_root,
+            RepoFinalization(root=primary_root),
+        )
+        primary.paths.update(primary_changes)
+        if primary_unpushed and not primary.commit:
+            primary.commit = primary_unpushed
+        if primary.commit and not primary_changes:
+            primary.phase = "committed"
+    return None
+
+
+CLAUDE_FILE_TOOLS = {"Edit", "MultiEdit", "Write", "NotebookEdit"}
+
+
+@contextmanager
+def locked_transaction(thread_id: str) -> Iterator[None]:
+    """Serialize read-merge-write of one transaction across concurrent tool hooks."""
+    lock_path = codex_transaction_path(thread_id).with_suffix(".lock")
+    lock_path.parent.mkdir(parents=True, exist_ok=True)
+    with lock_path.open("a") as stream:
+        fcntl.flock(stream, fcntl.LOCK_EX)
+        yield
+
+
+def register_claude_tool_use(payload: dict[str, Any]) -> dict[str, RepoFinalization]:
+    """Record repositories a Claude tool call may have changed for the session's Stop.
+
+    File tools contribute exact paths. Bash contributes its cwd and literal paths
+    as repository candidates, matching Codex shell discovery.
+    """
+    session_id = str(payload.get("session_id") or "").strip()
+    cwd = payload.get("cwd")
+    tool_input = payload.get("tool_input")
+    if not session_id or not isinstance(cwd, str) or not isinstance(tool_input, dict):
+        return {}
+    tool = payload.get("tool_name")
+    discovered: dict[str, RepoFinalization] = {}
+    if tool in CLAUDE_FILE_TOOLS:
+        raw = tool_input.get("file_path") or tool_input.get("notebook_path")
+        if isinstance(raw, str) and raw.strip():
+            path = Path(raw).expanduser()
+            if not path.is_absolute():
+                path = Path(cwd) / path
+            discovered = repositories_from_paths((os.path.normpath(path),))
+    elif tool == "Bash" and isinstance(tool_input.get("command"), str):
+        shell_paths = command_repository_paths({"items": [{
+            "type": "commandExecution",
+            "status": "completed",
+            "cwd": cwd,
+            "command": tool_input["command"],
+        }]})
+        discovered = repositories_from_shell_paths(tuple(sorted(shell_paths)))
+    if not discovered:
+        return {}
+    with locked_transaction(session_id):
+        pending = load_codex_transaction(session_id)
+        save_codex_transaction(session_id, merge_codex_transactions(pending, discovered))
+    return discovered
+
+
+def process_claude_repositories(
+    cwd: str,
+    payload: dict[str, Any],
+) -> dict[str, Any] | None:
+    """Finalize repositories recorded by Claude tool hooks plus the starting repository.
+
+    Claude Stop fires only for the main conversation; subagent tool calls share
+    its session_id, so their registrations are already in this transaction.
+    """
+    session_id = str(payload.get("session_id") or "").strip()
+    if not session_id:
+        log("claude", "skip repository-discovery reason=missing-session-id")
+        return warning(
+            "Claude Stop payload is missing session_id; no repositories were finalized. "
+            "Commit and push this turn's work manually if it is complete."
+        )
+    with locked_transaction(session_id):
+        repositories = load_codex_transaction(session_id)
+    unreadable = add_primary_repository(cwd, repositories)
+    if unreadable:
+        return maybe_continue(
+            payload,
+            state_failure_reason(unreadable, "could not inspect the primary repository status"),
+            cwd=unreadable,
+        )
+    if not repositories:
+        log("claude", f"skip no-attributed-files session={session_id}")
+        save_codex_transaction(session_id, {}, clear_discovery=True)
+        return None
+    return finalize_codex_repositories(cwd, payload, session_id, repositories, runtime="claude")
 
 
 def finalize_codex_primary_repository(
@@ -1198,6 +1291,7 @@ def finalize_codex_repositories(
     *,
     deferred_repositories: dict[str, RepoFinalization] | None = None,
     discovery_complete: bool = True,
+    runtime: str = "codex",
 ) -> dict[str, Any] | None:
     """Check, commit, and push selected repositories, preserving out-of-scope work."""
     def save_progress() -> None:
@@ -1218,7 +1312,16 @@ def finalize_codex_repositories(
             and git_metadata_definitely_missing(item.root)
         ):
             repositories.pop(item.root)
-            log("codex", f"skip inert-git-candidate repo={item.root}")
+            log(runtime, f"skip inert-git-candidate repo={item.root}")
+        elif (
+            not item.commit
+            and not os.path.lexists(item.root)
+            and Path(item.root).parent.is_dir()
+        ):
+            # A deleted scratch repository has nothing left to publish. An
+            # absent parent (unmounted volume) still blocks below.
+            repositories.pop(item.root)
+            log(runtime, f"skip deleted-repository repo={item.root}")
 
     attributed_path_count = sum(len(item.paths) for item in repositories.values())
     if len(repositories) > MAX_CODEX_REPOSITORIES:
@@ -1479,7 +1582,7 @@ def finalize_codex_repositories(
                 validated_trees = pass_trees
                 break
             log(
-                "codex",
+                runtime,
                 f"restage check-time-edits thread={thread_id} pass={pass_index + 1} "
                 f"retrying_failed_checks={len(check_failures)}",
             )
@@ -1577,7 +1680,7 @@ def finalize_codex_repositories(
             current_head = head_commit(root)
             if item.commit != current_head:
                 log(
-                    "codex",
+                    runtime,
                     f"adopt rewritten-head repo={root} pending={item.commit or '<missing>'} "
                     f"current={current_head or '<missing>'}",
                 )
@@ -1598,10 +1701,10 @@ def finalize_codex_repositories(
                 )
                 failures.append(reason)
                 break
-            notify_local_production("codex", root, item.commit)
+            notify_local_production(runtime, root, item.commit)
             repositories.pop(root, None)
             save_progress()
-            log("codex", f"ok turn-repo-pushed thread={thread_id} repo={root} commit={item.commit}")
+            log(runtime, f"ok turn-repo-pushed thread={thread_id} repo={root} commit={item.commit}")
 
         if failures:
             return maybe_continue(
@@ -1621,8 +1724,9 @@ def main() -> int:
         return 0
     cwd = str(payload.get("cwd") or os.getcwd())
 
+    process = process_claude_repositories if args.runtime == "claude" else process_codex_repositories
     try:
-        output = process_codex_repositories(cwd, payload)
+        output = process(cwd, payload)
     except subprocess.TimeoutExpired as exc:
         cmd = " ".join(exc.cmd) if isinstance(exc.cmd, (list, tuple)) else str(exc.cmd)
         timeout = exc.timeout if exc.timeout is not None else "unknown"

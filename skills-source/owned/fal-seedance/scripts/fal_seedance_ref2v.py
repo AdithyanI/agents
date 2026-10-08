@@ -56,10 +56,10 @@ VALID_ASPECT_RATIOS = {"auto", "21:9", "16:9", "4:3", "1:1", "3:4", "9:16"}
 VALID_LIFECYCLES = {"never", "immediate", "1h", "1d", "7d", "30d", "1y"}
 DOCTOR_CHECK_FILENAME = "fal-seedance-doctor.txt"
 SECRET_SYNC_HINT = (
-    "Sync it with: /Users/dobby/GitHub/scripts/sync/materialize-machine-secrets.sh "
+    "Sync it with: ~/GitHub/scripts/sync/materialize-machine-secrets.sh "
     "--apply --integration fal"
 )
-MAPPING_FILE = "/Users/dobby/GitHub/scripts/sync/machine-secrets/fal.env.map"
+MAPPING_FILE = os.path.expanduser("~/GitHub/scripts/sync/machine-secrets/fal.env.map")
 
 
 def now_iso() -> str:
@@ -125,7 +125,7 @@ def read_secret_env_file(secret_env_file: str | Path) -> dict[str, Any]:
         "E_AUTH_MISSING",
         f"FAL_KEY was not found in {path}",
         exit_code=3,
-        hint="Confirm /Users/dobby/GitHub/scripts/sync/machine-secrets/fal.env.map maps FAL_KEY=fal--api-key, then re-run the machine-secret sync.",
+        hint=f"Confirm {MAPPING_FILE} maps FAL_KEY=fal--api-key, then re-run the machine-secret sync.",
     )
 
 

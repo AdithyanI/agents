@@ -1,7 +1,7 @@
 # Agents Skill Control-Plane Lifecycle
 
 Use this reference for exact paths, registry entries, and commands in
-`/Users/dobby/GitHub/agents`.
+`~/GitHub/agents`.
 
 ## Contents
 
@@ -17,14 +17,14 @@ Use this reference for exact paths, registry entries, and commands in
 
 ## Paths
 
-- Control-plane repo: `/Users/dobby/GitHub/agents`
+- Control-plane repo: `~/GitHub/agents`
 - Managed owned skills: `skills-source/owned/<skill>`
 - Managed external skills: `skills-source/external/<skill>`
 - Registry: `skills/registry.json`
 - Global runtime links: `~/.agents/skills/<skill>`
 - Repo-local skill location: `<repo>/.agents/skills/<skill>`
-- Repo targets in managed `repos`: repo names under `/Users/dobby/GitHub` or
-  explicit repo roots such as `/Users/dobby/GitHub/agents`
+- Repo targets in managed `repos`: repo names under `~/GitHub` or
+  explicit repo roots such as `~/GitHub/agents`
 
 ## Managed Owned Registry Entry
 
@@ -68,7 +68,7 @@ Use `external` for upstream skills that should remain refreshable:
 Import or refresh external source after changing the entry:
 
 ```bash
-cd /Users/dobby/GitHub/agents
+cd ~/GitHub/agents
 ./scripts/refresh-external-skills.sh --apply --skill <skill-name>
 ```
 
@@ -77,7 +77,7 @@ cd /Users/dobby/GitHub/agents
 For a `skills.sh` URL or upstream reference, prefer:
 
 ```bash
-cd /Users/dobby/GitHub/agents
+cd ~/GitHub/agents
 ./scripts/bootstrap-skill.sh <skills.sh-url-or-upstream-ref> --repo <repo> --apply
 ```
 
@@ -138,7 +138,7 @@ Run bootstrap/check after the registry edit.
 After any `skills/registry.json` change:
 
 ```bash
-cd /Users/dobby/GitHub/agents
+cd ~/GitHub/agents
 ./scripts/bootstrap-machine-agent-control-planes.sh --apply
 ./scripts/check-fast.sh
 ```
@@ -146,7 +146,7 @@ cd /Users/dobby/GitHub/agents
 For intentional repo-scoped troubleshooting:
 
 ```bash
-cd /Users/dobby/GitHub/agents
+cd ~/GitHub/agents
 ./scripts/bootstrap-machine-agent-control-planes.sh --apply --repo <repo-root>
 ./scripts/check-agent-control-planes.sh --repo <repo-root>
 ```

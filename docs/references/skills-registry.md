@@ -1,6 +1,6 @@
 # Skills Registry Reference
 
-Canonical source of truth: [`skills/registry.json`](/Users/dobby/GitHub/agents/skills/registry.json)
+Canonical source of truth: [`skills/registry.json`](../../skills/registry.json)
 
 ## 1) What Lives Where
 

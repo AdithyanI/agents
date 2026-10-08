@@ -18,7 +18,7 @@ Use this skill when a task involves fal.ai Seedance, reference-to-video, image-t
   - Switch from Seedance to Kling when Seedance shows chroma-noise on smooth/cream backgrounds.
 - Default resolution: `1080p` (Seedance only). Drop to `720p` or `480p` for cheaper canaries on the full endpoint, or use the fast endpoint (capped at 720p).
 - Secret lane: machine-local shared integration `fal`
-- Secret mapping: `/Users/dobby/GitHub/scripts/sync/machine-secrets/fal.env.map`
+- Secret mapping: `~/GitHub/scripts/sync/machine-secrets/fal.env.map`
 - Generated secret file: `~/.secrets/fal/env`
 - CLI: `python3 .agents/skills/fal-seedance/scripts/fal_seedance_ref2v.py` (Python, uses the official `fal-client` PyPI SDK)
 - Client contract: `.agents/skills/fal-seedance/references/client.md`

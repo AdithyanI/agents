@@ -103,5 +103,5 @@ If a plugin contains an MCP internally, that remains plugin-owned unless explici
 
 ## Related Docs
 
-- [Codex Control Plane](/Users/dobby/GitHub/agents/docs/architecture/codex-control-plane.md)
-- [Control Plane Dashboard](/Users/dobby/GitHub/agents/docs/references/control-plane-dashboard.md)
+- [Codex Control Plane](codex-control-plane.md)
+- [Control Plane Dashboard](../references/control-plane-dashboard.md)

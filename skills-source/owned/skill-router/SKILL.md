@@ -1,6 +1,6 @@
 ---
 name: skill-router
-description: Deprecated. Skill routing has been absorbed by `skill-creator`. Use `skill-creator` for deciding `owned`, `external`, `repo-local`, or `dormant` placement; creating, adopting, promoting, importing, validating, registering, and distributing skills through `/Users/dobby/GitHub/agents`.
+description: Deprecated. Skill routing has been absorbed by `skill-creator`. Use `skill-creator` for deciding `owned`, `external`, `repo-local`, or `dormant` placement; creating, adopting, promoting, importing, validating, registering, and distributing skills through `~/GitHub/agents`.
 ---
 
 # Skill Router

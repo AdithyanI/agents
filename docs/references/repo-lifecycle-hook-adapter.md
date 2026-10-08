@@ -45,7 +45,7 @@ Put repo policy in the repo. Keep the shared control plane boring.
 ## Repo Hook Locations
 
 Lifecycle events are not enabled just because a script exists. The shared
-[`hooks/registry.json`](/Users/dobby/GitHub/agents/hooks/registry.json) decides which
+[`hooks/registry.json`](../../hooks/registry.json) decides which
 managed repos receive which native events for each runtime, and the repo script
 only runs when the event is assigned to that repo and runtime. Claude support is
 available in the renderer and dispatcher; no Claude hooks are currently enabled
@@ -100,8 +100,13 @@ plain context; the shared dispatcher wraps it in event-specific JSON.
 `Stop`
 
 - Native Codex hook event, rendered as the shared global turn-end commit gate.
-- Claude Stop remains unsupported by the registry and dispatcher. Claude turn
-  attribution and Git delivery require separate validation before activation.
+- For Claude, `claude-stop` and `claude-turn-attribution` are repo-scoped (`*`)
+  and render only into Claude-enabled repositories. Claude exposes no turn
+  record to query, so the PostToolUse adapter registers each Edit/Write/Notebook
+  path and each Bash cwd and literal path into the session transaction as it
+  happens; Stop finalizes those repositories plus the starting repository.
+  Subagent tool calls share the parent session_id. A missed registration only
+  narrows discovery to the starting repository.
 - For Codex, it reads exact `fileChange` paths from the parent and recursively
   discovered descendant subagent turns, finalizes every affected repository as one persisted
   transaction, and routes aggregate failures back to the source task.

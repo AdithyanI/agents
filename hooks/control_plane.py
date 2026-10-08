@@ -13,11 +13,12 @@ ALL_REPOS = "*"
 EVENT_RUNTIME_SUPPORT = {
     "SessionStart": {"codex", "claude"},
     "UserPromptSubmit": {"codex", "claude"},
-    # Claude turn attribution must be proven before enabling Git publication.
-    "Stop": {"codex"},
+    "Stop": {"codex", "claude"},
+    # Claude attributes repositories per tool call; Codex reads its App Server turns.
+    "PostToolUse": {"claude"},
 }
 VALID_EVENTS = set(EVENT_RUNTIME_SUPPORT)
-EVENTS_WITH_MATCHERS = {"SessionStart"}
+EVENTS_WITH_MATCHERS = {"SessionStart", "PostToolUse"}
 
 
 class HookRegistryError(RuntimeError):
