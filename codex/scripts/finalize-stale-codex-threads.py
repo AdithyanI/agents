@@ -28,6 +28,7 @@ MAX_ERROR_CHARS = 12_000
 ROOT_DIR = Path(__file__).resolve().parents[2]
 sys.path.insert(0, str(ROOT_DIR))
 from repos.repo_registry import load_registry as load_repo_registry, enabled_repositories
+from hooks.scripts.stop_feedback_turn import resolve_codex_executable
 DEFAULT_REGISTRY = ROOT_DIR / "repos" / "registry.json"
 DEFAULT_LOCK = Path.home() / ".local" / "state" / "codex-control-plane" / "finalize-stale-codex-threads.lock"
 DEFAULT_FINALIZER_COMMAND = ROOT_DIR / "codex" / "scripts" / "finalize-codex-thread.py"
@@ -223,7 +224,8 @@ class AppServerClient:
 
     def start(self) -> None:
         self.proc = subprocess.Popen(
-            ["codex", "app-server"],
+            # launchd PATH omits ~/bin; use the desktop-aware resolver like other App Server clients.
+            [resolve_codex_executable(), "app-server"],
             stdin=subprocess.PIPE,
             stdout=subprocess.PIPE,
             stderr=subprocess.PIPE,

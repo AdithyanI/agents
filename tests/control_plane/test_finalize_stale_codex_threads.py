@@ -98,6 +98,21 @@ class FakeAppServerFactory:
 
 
 class FinalizeStaleCodexThreadsTests(TempDirTestCase):
+    def test_app_server_uses_desktop_aware_executable(self) -> None:
+        # launchd PATH omits ~/bin, so a bare "codex" failed every hourly run.
+        module = load_stale_finalizer_module()
+        launched: list[list[str]] = []
+
+        def refuse(args, **_kwargs):  # noqa: ANN001, ANN202
+            launched.append(args)
+            raise FileNotFoundError(args[0])
+
+        with patch.object(module, "resolve_codex_executable", return_value="/Apps/ChatGPT/codex"), \
+                patch.object(module.subprocess, "Popen", side_effect=refuse):
+            with self.assertRaises(FileNotFoundError):
+                module.AppServerClient(1.0).start()
+        self.assertEqual(launched, [["/Apps/ChatGPT/codex", "app-server"]])
+
     def test_candidate_selection_uses_updated_at_cutoff(self) -> None:
         module = load_stale_finalizer_module()
         client = FakeAppServerClient(
