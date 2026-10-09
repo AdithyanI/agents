@@ -162,8 +162,14 @@ class HooksControlPlaneTests(TempDirTestCase):
             "Edit|MultiEdit|Write|NotebookEdit|Bash",
         )
         self.assertIn("stop.py\" --runtime claude", finalization["hooks"]["Stop"][0]["hooks"][0]["command"])
-        for repo in ("agents", "adi", "angie"):
-            self.assertEqual(render_runtime_hooks(registry, "claude", repo_name=repo), {"hooks": {}})
+        self.assertEqual(render_runtime_hooks(registry, "claude", repo_name="agents"), {"hooks": {}})
+        dobby = {"hooks": {"SessionStart": [{
+            "matcher": "startup|clear|compact",
+            "hooks": [{"type": "command", "timeout": 5, "command":
+                       'python3 "$HOME/GitHub/agents/hooks/scripts/session_start.py" --runtime claude'}],
+        }]}}
+        for repo in ("adi", "angie"):
+            self.assertEqual(render_runtime_hooks(registry, "claude", repo_name=repo), dobby)
 
         for event in ("SessionStart", "UserPromptSubmit"):
             hook = {
@@ -193,7 +199,7 @@ class HooksControlPlaneTests(TempDirTestCase):
             }],
         })
         self.assertEqual(render_runtime_hooks(registry, "claude"), finalization)
-        self.assertEqual(render_runtime_hooks(registry, "claude", repo_name="adi"), {"hooks": {}})
+        self.assertEqual(render_runtime_hooks(registry, "claude", repo_name="adi"), dobby)
         for repo, original in codex_before.items():
             self.assertEqual(json.dumps(render_codex_hooks(registry, repo_name=repo), sort_keys=True), original)
 
