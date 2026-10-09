@@ -85,6 +85,20 @@ which now routes to WIN's consolidated `modal_runtime/` and same-repo tooling.
 The legacy checkout is retained for history and recovery, outside active repo
 enrollment and skill distribution. The official upstream skill remains unmodified.
 
+## Apple Xcode And macOS Plugin Skills
+
+Apple's Xcode skills are `local-import` entries exported with
+`xcrun mcpbridge run-agent skills export --output-dir <tmp>` (last refreshed from
+Xcode 27.0, 27A266a). Refresh by exporting again and replacing each
+`skills-source/external/<skill>` folder unmodified under Apple's skill names.
+`swiftui-specialist` and `swiftui-whats-new-27` link into the SwiftUI repos; the
+rest stay dormant until a repo adopts that framework or workflow.
+
+Codex receives the global `build-macos-apps` plugin natively. Claude cannot load
+native plugins, so `liquid-glass` (copied from `build-macos-apps` 0.1.4) is a
+Claude-only Snipwit entry. Its other skills were reviewed and left in the plugin:
+they are generic patterns or assume a Codex Run-button build script.
+
 ## Field Quick Reference
 
 - `skill`: skill folder name.

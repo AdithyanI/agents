@@ -376,12 +376,12 @@
       "upstream_ref": "local-import"
     },
     {
-      "skill": "c-bounds-safety",
+      "skill": "adopt-c-bounds-safety",
       "clients": ["codex", "claude"],
       "origin": "external",
       "scope": "dormant",
       "repos": [],
-      "source_path": "skills-source/external/c-bounds-safety",
+      "source_path": "skills-source/external/adopt-c-bounds-safety",
       "upstream_ref": "local-import"
     },
     {
@@ -408,22 +408,22 @@
     {
       "skill": "swiftui-whats-new-27",
       "clients": ["codex", "claude"],
-      "origin": "owned",
+      "origin": "external",
       "scope": "repo",
       "repos": [
         "meeting-capture",
         "snipwit"
       ],
-      "source_path": "skills-source/owned/swiftui-whats-new-27",
-      "upstream_ref": "-"
+      "source_path": "skills-source/external/swiftui-whats-new-27",
+      "upstream_ref": "local-import"
     },
     {
-      "skill": "test-modernizer",
+      "skill": "modernize-tests",
       "clients": ["codex", "claude"],
       "origin": "external",
       "scope": "dormant",
       "repos": [],
-      "source_path": "skills-source/external/test-modernizer",
+      "source_path": "skills-source/external/modernize-tests",
       "upstream_ref": "local-import"
     },
     {
@@ -487,6 +487,44 @@
       ],
       "source_path": "skills-source/external/swift-concurrency",
       "upstream_ref": "AvdLee/Swift-Concurrency-Agent-Skill:skills/swift-concurrency@2.3.0"
+    },
+    {
+      "skill": "app-intents-specialist",
+      "clients": ["codex", "claude"],
+      "origin": "external",
+      "scope": "dormant",
+      "repos": [],
+      "source_path": "skills-source/external/app-intents-specialist",
+      "upstream_ref": "local-import"
+    },
+    {
+      "skill": "app-intents-whats-new-27",
+      "clients": ["codex", "claude"],
+      "origin": "external",
+      "scope": "dormant",
+      "repos": [],
+      "source_path": "skills-source/external/app-intents-whats-new-27",
+      "upstream_ref": "local-import"
+    },
+    {
+      "skill": "building-document-based-swiftui-applications",
+      "clients": ["codex", "claude"],
+      "origin": "external",
+      "scope": "dormant",
+      "repos": [],
+      "source_path": "skills-source/external/building-document-based-swiftui-applications",
+      "upstream_ref": "local-import"
+    },
+    {
+      "skill": "liquid-glass",
+      "clients": ["claude"],
+      "origin": "external",
+      "scope": "repo",
+      "repos": [
+        "snipwit"
+      ],
+      "source_path": "skills-source/external/liquid-glass",
+      "upstream_ref": "local-import"
     }
   ],
   "unmanaged_repo_local_skills": [
