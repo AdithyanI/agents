@@ -607,6 +607,10 @@
     {
       "repo": "snipwit",
       "skill": "future-of-life-editing"
+    },
+    {
+      "repo": "snipwit",
+      "skill": "cognitive-revolution-editing"
     }
   ],
   "managed_plugin_skills": [
