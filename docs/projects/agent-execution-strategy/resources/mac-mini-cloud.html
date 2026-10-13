@@ -1,0 +1,253 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Mac Mini or Codex Cloud? A guide for our workflow</title>
+<style>
+/* Canonical Adi tokens are embedded here during assembly. */
+/* Adi Design — design tokens (vendored copy).
+ *
+ * SOURCE OF TRUTH: ~/GitHub/adi-design (system/styles.css + system/tokens/*.css),
+ * browsable at https://design.adithyan.io and authored directly in that repo.
+ * This is a flattened VENDORED COPY. system/styles.css is an import manifest;
+ * refresh from its imported system/tokens/*.css files in order when VERSION bumps.
+ *
+ * Color space is oklch throughout. Light is default; dark overrides via
+ * prefers-color-scheme. Reference tokens (var(--accent), --space-lg) — never raw
+ * hex/oklch literals.
+ *
+ * Vendored consumers (keep in step with the canon, not with each other):
+ *   - ~/GitHub/agents dashboard, dobby-dashboard: plain CSS / inline oklch
+ *   - blog-personal, aipodcasting-website: HSL conversion, shadcn names; they
+ *     collapse base+ink into one --primary — use the -ink depth there (the
+ *     lighter fill fails AA as button/link text).
+ *
+ * Product-specific tokens (an app's chart series, a map's phase colors) do NOT
+ * belong here — keep those in a small per-product tokens.local.css layered after.
+ */
+
+/* === fonts === */
+/* Adi Design — webfonts.
+ *
+ * Newsreader (serif, reading + titles) and Inter (sans, all UI chrome).
+ * Mono is the system stack — no webfont needed.
+ *
+ * NOTE: Adi's products self-host these via @fontsource-variable/*. Here they
+ * load from Google Fonts (same families, identical metrics) so the design
+ * system previews and consumer copies work with no binaries to ship. If you
+ * need fully offline/self-hosted fonts, drop the .woff2 files in assets/fonts/
+ * and replace these imports with local @font-face rules.
+ */
+
+@import url("https://fonts.googleapis.com/css2?family=Newsreader:ital,opsz,wght@0,6..72,400..600;1,6..72,400..600&family=Inter:wght@400;450;500;550;600;650&display=swap");
+
+/* === colors === */
+/* Adi Design — color tokens.
+ *
+ * Clean off-white whisper-tinted toward sage. Never warm cream/sand/paper.
+ * One accent (sage). Amber is secondary/contextual; rose is rare.
+ * oklch throughout. Light is default; dark overrides via prefers-color-scheme.
+ *
+ * base = fills, large accents, hairlines, soft bg, state behind dark text.
+ * -ink = AA-safe depth for colored TEXT (links, labels) + white-on-color buttons.
+ *        Use -ink whenever a brand color is small text; base fails 4.5:1 there.
+ */
+
+:root {
+  /* --- Neutrals: clean off-white, whisper-tinted toward the sage hue. --- */
+  --bg: oklch(0.977 0.004 150);
+  --surface: oklch(0.993 0.003 150);
+  --surface-soft: oklch(0.958 0.006 150);
+  --text: oklch(0.27 0.014 152);
+  --muted: oklch(0.47 0.013 152);
+  --faint: oklch(0.6 0.011 152);
+  --line: oklch(0.9 0.006 152);
+  --line-soft: oklch(0.93 0.005 152);
+
+  /* --- Accent: sage. The single accent — action, selection, focus, state.
+   *     Calm and muted so the green never reads harsh, with a little life kept
+   *     in. Reconciled to the master in v1.1.0. --- */
+  --accent: oklch(0.57 0.068 150);
+  --accent-ink: oklch(0.44 0.066 150);
+  --accent-soft: oklch(0.935 0.026 150);
+  --accent-line: oklch(0.79 0.05 150);
+
+  /* --- Secondary: amber. The golden light through the leaves: a warm, true
+   *     gold — present but never a flood. Warm without going honey-heavy or
+   *     orange. Reconciled to the master in v1.1.0. --- */
+  --amber: oklch(0.75 0.108 83);
+  --amber-ink: oklch(0.47 0.085 78);
+  --amber-soft: oklch(0.935 0.05 84);
+  --amber-line: oklch(0.82 0.085 82);
+
+  /* --- Rose (clay): rare emphasis / "needs a look" / failed state. An earthy
+   *     brick red — bark and fallen leaves — so the alert belongs to the forest
+   *     palette instead of reading as a cool clinical pink. --- */
+  --rose: oklch(0.6 0.12 35);
+  --rose-ink: oklch(0.48 0.11 37);
+  --rose-soft: oklch(0.945 0.035 40);
+  --rose-line: oklch(0.85 0.06 38);
+
+  /* Text/icon color on a filled accent or rose button (flips per mode so a
+   * light-on-dark or dark-on-light fill always stays legible). */
+  --on-fill: oklch(0.99 0.002 150);
+
+  /* --- Focus ring. --- */
+  --focus-ring: 2px solid var(--accent);
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    /* Warm-neutral charcoal — not green, not pure black. */
+    --bg: oklch(0.173 0.005 152);
+    --surface: oklch(0.213 0.006 152);
+    --surface-soft: oklch(0.255 0.008 152);
+    --text: oklch(0.93 0.006 150);
+    --muted: oklch(0.71 0.009 150);
+    --faint: oklch(0.56 0.008 150);
+    --line: oklch(0.32 0.007 152);
+    --line-soft: oklch(0.28 0.006 152);
+
+    --accent: oklch(0.78 0.068 150);
+    --accent-ink: oklch(0.85 0.064 150);
+    --accent-soft: oklch(0.3 0.035 150);
+    --accent-line: oklch(0.47 0.05 150);
+
+    --amber: oklch(0.85 0.11 83);
+    --amber-ink: oklch(0.88 0.095 81);
+    --amber-soft: oklch(0.36 0.06 83);
+    --amber-line: oklch(0.57 0.08 82);
+
+    --rose: oklch(0.72 0.11 38);
+    --rose-ink: oklch(0.8 0.1 40);
+    --rose-soft: oklch(0.31 0.04 36);
+    --rose-line: oklch(0.5 0.06 38);
+    --on-fill: oklch(0.2 0.005 152);
+  }
+}
+
+/* === typography === */
+/* Adi Design — typography tokens.
+ *
+ * Three families, hard cap. Newsreader (serif) for reading prose, page titles,
+ * detail headings. Inter (sans) for all UI chrome, labels, metadata, controls.
+ * System mono for code/ids. Hierarchy from scale + weight, never new fonts.
+ * Fixed-rem scale, ~1.18 ratio (not fluid clamp).
+ */
+
+:root {
+  --font-serif: "Newsreader", ui-serif, Georgia, "Times New Roman", serif;
+  --font-sans: "Inter", -apple-system, BlinkMacSystemFont, "SF Pro Text", "Segoe UI", sans-serif;
+  --font-mono: "SF Mono", ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+
+  --font-micro: 0.69rem;
+  --font-xxs: 0.74rem;
+  --font-xs: 0.79rem;
+  --font-sm: 0.85rem;
+  --font-md: 0.92rem;
+  --font-body: 0.95rem;
+  --font-read: 1.04rem;
+  --font-lg: 1.2rem;
+  --font-xl: 1.42rem;
+  --font-page: 1.6rem;
+
+  --leading-tight: 1.2;
+  --leading-copy: 1.55;
+  --leading-read: 1.68;
+
+  --weight-label: 550;
+  --weight-strong: 600;
+}
+
+/* === spacing === */
+/* Adi Design — spacing tokens.
+ *
+ * Spacing rhythm: 4, 8, 12, 18, 28, 44. Vary it for rhythm; don't pad
+ * everything to one value.
+ */
+
+:root {
+  --space-xs: 4px;
+  --space-sm: 8px;
+  --space-md: 12px;
+  --space-lg: 18px;
+  --space-xl: 28px;
+  --space-xxl: 44px;
+}
+
+/* === shape === */
+/* Adi Design — shape tokens.
+ *
+ * Radius: controls 8, cards/panels 14, large reading frames 18, pills round.
+ * Cards never exceed ~16. Flat elevation — hairline borders for structure,
+ * never a 1px border paired with a >=16px drop shadow (the ghost-card tell).
+ */
+
+:root {
+  --radius-sm: 8px;
+  --radius: 14px;
+  --radius-lg: 18px;
+  --radius-pill: 999px;
+}
+
+/* === motion === */
+/* Adi Design — motion + layering tokens.
+ *
+ * Restrained and state-only: hover, selection, overlay enter. Ease out,
+ * no bounce, no elastic. Every animation needs a prefers-reduced-motion path.
+ */
+
+:root {
+  --ease-out: cubic-bezier(0.22, 1, 0.36, 1); /* @kind other */
+  --t-fast: 150ms; /* @kind other */
+  --t-mid: 220ms; /* @kind other */
+
+  --z-sticky: 100; /* @kind other */
+  --z-overlay: 400; /* @kind other */
+}
+
+*{box-sizing:border-box}html{scroll-behavior:smooth;scrollbar-color:var(--line) var(--bg)}body{margin:0;background:var(--bg);color:var(--text);font-family:var(--font-sans);font-size:15px;line-height:1.55}::selection{background:var(--accent-soft);color:var(--text)}a{color:var(--accent-ink);text-underline-offset:4px}button,select{font:inherit;color:inherit}button:focus-visible,select:focus-visible,a:focus-visible,summary:focus-visible{outline:var(--focus-ring);outline-offset:4px}main{max-width:1160px;margin:auto;padding:36px 44px 48px}header{display:flex;justify-content:space-between;align-items:center;gap:16px;padding-bottom:18px;border-bottom:1px solid var(--line);font-size:13px;color:var(--muted)}header strong{color:var(--text);font-weight:550}.print{border:1px solid var(--line);border-radius:8px;padding:7px 13px;background:var(--surface);cursor:pointer}.print:hover{background:var(--surface-soft)}h1,h2,h3{font-family:var(--font-serif);font-weight:450;line-height:1.1;letter-spacing:-.025em;text-wrap:balance}h1{font-size:clamp(36px,5vw,62px);max-width:860px;margin:32px 0 18px}h2{font-size:30px;margin:0 0 12px}h3{font-size:27px;margin:0 0 14px}p{margin:0 0 16px}.lead{font-family:var(--font-serif);font-size:23px;line-height:1.45;max-width:780px;color:var(--muted)}.recommendation{display:flex;align-items:baseline;gap:12px;flex-wrap:wrap;margin-top:24px;padding:17px 20px;background:var(--accent-soft);border:1px solid var(--accent-line);border-radius:12px}.recommendation strong{color:var(--accent-ink)}.recommendation span{font-size:14px}.overview{display:grid;grid-template-columns:1fr 1fr;gap:34px;margin-top:32px}.option{padding-top:20px;border-top:1px solid var(--line)}.option-head{display:flex;align-items:center;gap:12px;margin-bottom:10px}.option-head svg{width:34px;height:34px;flex-shrink:0;stroke:currentColor;fill:none;stroke-width:1.6}.option-head h2{margin:0}.tag{display:inline-block;font-size:12px;font-weight:550;margin-bottom:13px;color:var(--accent-ink)}.option p{color:var(--muted);max-width:49ch}.points{margin:18px 0 0;padding:0;list-style:none}.points li{display:grid;grid-template-columns:50px 1fr;gap:10px;margin:10px 0;font-size:14px}.points b{font-size:12px;color:var(--accent-ink);line-height:1.9}.points .trade b{color:var(--amber-ink)}section{margin-top:46px}.route{border-top:1px solid var(--line);padding-top:28px}.route-head{display:flex;justify-content:space-between;align-items:end;gap:20px}.route-head p{color:var(--muted);margin:0;font-size:14px}.select-wrap{min-width:260px}label{display:block;font-size:12px;font-weight:550;margin-bottom:6px}select{width:100%;border:1px solid var(--line);border-radius:8px;background:var(--surface);padding:10px 32px 10px 12px;cursor:pointer}.flow{display:grid;grid-template-columns:1fr 38px 1.15fr 38px 1fr;align-items:center;margin:26px 0 16px}.node{border:1px solid var(--line);border-radius:12px;padding:19px 18px;min-height:120px;background:var(--surface)}.node span{display:block;font-size:12px;color:var(--muted);margin-bottom:8px}.node strong{font-size:17px;font-weight:550}.node small{display:block;margin-top:7px;font-size:12px;color:var(--muted)}.node.active{background:var(--accent-soft);border-color:var(--accent-line)}.node.active strong{color:var(--accent-ink)}.arrow{display:flex;justify-content:center;color:var(--muted)}.arrow svg{width:26px;height:20px;stroke:currentColor;fill:none;stroke-width:1.4}.explain{display:grid;grid-template-columns:1fr 1fr;gap:26px;font-size:14px}.explain b{display:block;font-size:12px;margin:0 0 5px}.explain p{color:var(--muted);margin:0}.comparison{border-top:1px solid var(--line);padding-top:28px}.table-wrap{overflow-x:auto;margin-top:22px}table{border-collapse:collapse;width:100%;font-size:14px;min-width:640px}th,td{text-align:left;vertical-align:top;padding:15px 16px;border-bottom:1px solid var(--line);width:39%}th{font-weight:550;background:var(--surface-soft)}th:first-child,td:first-child{width:22%;padding-left:0;font-weight:550}thead th:first-child{padding-left:14px}td small{display:block;color:var(--muted);margin-top:4px;font-size:12px;line-height:1.5}.fit{font-size:12px;color:var(--accent-ink);font-weight:550}.caution{font-size:12px;color:var(--amber-ink);font-weight:550}.closing{display:grid;grid-template-columns:1.1fr 1fr;gap:36px;padding-top:28px;border-top:1px solid var(--line)}.closing h3{font-size:27px}.closing p,.closing li{font-size:14px;color:var(--muted)}.closing ol{padding-left:20px;margin:0}.closing li{padding-left:6px;margin-bottom:12px}.closing strong{color:var(--text);font-weight:550}.fine{font-size:12px!important}.sources{margin-top:32px;padding-top:20px;border-top:1px solid var(--line);font-size:12px;color:var(--muted)}summary{cursor:pointer;color:var(--text);font-weight:550;margin-bottom:12px}.sources p{max-width:95ch;margin-top:12px}.sources ul{padding-left:19px}.sources li{margin-bottom:8px}footer{display:flex;justify-content:space-between;gap:20px;border-top:1px solid var(--line);padding-top:18px;margin-top:28px;font-size:12px;color:var(--muted)}.sr-only{position:absolute;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;clip:rect(0,0,0,0);white-space:nowrap;border:0}@media(max-width:760px){main{padding:22px 22px 32px}.overview{gap:24px}.route-head{display:block}.select-wrap{margin-top:20px}h1{font-size:40px}.lead{font-size:21px}.flow{grid-template-columns:1fr 28px 1fr 28px 1fr}.node{padding:14px 11px;min-height:135px}.node strong{font-size:15px}.closing{grid-template-columns:1fr;gap:16px}}@media(max-width:540px){header{font-size:11px;align-items:start}.print{padding:6px 10px;font-size:12px}h1{font-size:37px;margin-top:26px}.overview{grid-template-columns:1fr;gap:26px}.recommendation{gap:5px;padding:15px}.flow{grid-template-columns:1fr;margin:20px 0}.node{min-height:0;padding:15px 18px}.arrow{height:28px;align-items:center}.arrow svg{transform:rotate(90deg)}.explain{grid-template-columns:1fr;gap:14px}section{margin-top:34px}.table-wrap{margin-right:-22px;padding-right:22px}.comparison:after{content:'Swipe the table to compare both columns.';font-size:12px;color:var(--muted);display:block;margin-top:10px}footer{display:block}footer span{display:block;margin:5px 0}}@media(prefers-reduced-motion:reduce){html{scroll-behavior:auto}}@media print{body{background:white;color:#202622;font-size:12px}main{padding:0;max-width:none}.print,.select-wrap{display:none}header{padding-bottom:10px}h1{font-size:36px;margin-top:20px}.lead{font-size:19px}.overview{gap:24px}.option,.route,.closing{break-inside:avoid}section{margin-top:28px}.comparison{break-before:page}table{min-width:0;font-size:11px}th,td{padding:11px 12px}td small{font-size:10px}a{color:inherit}.sources{font-size:10px}footer{margin-top:18px}*{-webkit-print-color-adjust:exact;print-color-adjust:exact}}
+</style>
+</head>
+<body><main>
+<header><strong>Execution choices for our workflow</strong><div>13 October 2026 &nbsp; <button class="print" id="print">Print / save PDF</button></div></header>
+<h1>Keep the Mac Mini central.<br>Give Cloud the right jobs.</h1>
+<p class="lead">Our work depends on a prepared machine: shared repos, skills, hooks, credentials, and real product checks. That makes the Mini the better default today.</p>
+<div class="recommendation"><strong>Recommended: Mac Mini first</strong><span>Add Codex Cloud for isolated tasks that can be checked independently.</span></div>
+<div class="overview">
+<article class="option"><div class="option-head"><svg viewBox="0 0 36 36" aria-hidden="true"><rect x="3" y="7" width="30" height="21" rx="4"/><path d="M4 22h28M8 25h4M26 25h2"/></svg><h2>Our Mac Mini</h2></div><span class="tag">Primary execution environment</span><p>Works inside the setup we already maintain across our Macs.</p><ul class="points"><li><b>Gain</b><span>Existing skills, hooks, tools, and repository context.</span></li><li><b>Gain</b><span>macOS builds, browser checks, and desktop workflows.</span></li><li class="trade"><b>Trade-off</b><span>We own uptime, updates, storage, and recovery.</span></li><li class="trade"><b>Trade-off</b><span>Agents in shared main can collide; CPU and memory are shared.</span></li></ul></article>
+<article class="option"><div class="option-head"><svg viewBox="0 0 36 36" aria-hidden="true"><path d="M10 28h17a6 6 0 0 0 1-12 10 10 0 0 0-19-3 7.5 7.5 0 0 0 1 15Z"/></svg><h2>Codex Cloud</h2></div><span class="tag">Additional capacity for selected tasks</span><p>Runs in a prepared cloud environment with a separate workspace for each task. <a href="#sources">[1]</a></p><ul class="points"><li><b>Gain</b><span>Work continues when our machines are offline.</span></li><li><b>Gain</b><span>Task isolation reduces local contention and accidental overlap.</span></li><li class="trade"><b>Trade-off</b><span>Our machine setup needs deliberate provisioning and verification.</span></li><li class="trade"><b>Trade-off</b><span>Current Cloud guide lists browser and computer use as unsupported. <a href="#sources">[1]</a></span></li></ul></article>
+</div>
+<section class="route" aria-labelledby="route-title"><div class="route-head"><div><h2 id="route-title">Where should this task run?</h2><p>Choose an example from the way we work.</p></div><div class="select-wrap"><label for="scenario">Work to do</label><select id="scenario"><option value="control">Change our agent setup</option><option value="feature">Build a feature across repos</option><option value="mac">Build or verify a macOS app</option><option value="ui">Check a live UI in the browser</option><option value="isolated">Fix an isolated bug or add tests</option><option value="parallel">Run several independent investigations</option><option value="offline">Work while the Mini is unavailable</option></select></div></div>
+<div id="route-result" aria-live="polite" aria-atomic="true"><div class="flow"><div class="node"><span>Request</span><strong id="request">Change skills or hooks</strong><small id="context">Uses the agents control plane</small></div><div class="arrow" aria-hidden="true"><svg viewBox="0 0 28 20"><path d="M2 10h22m-6-6 6 6-6 6"/></svg></div><div class="node active"><span>Run it here</span><strong id="destination">Mac Mini</strong><small id="run-detail">Use the existing checkout and runtime</small></div><div class="arrow" aria-hidden="true"><svg viewBox="0 0 28 20"><path d="M2 10h22m-6-6 6 6-6 6"/></svg></div><div class="node"><span>Finish</span><strong id="finish">Apply and verify on the Mac</strong><small id="finish-detail">Then use our normal delivery workflow</small></div></div><div class="explain"><div><b>Why this fits</b><p id="why">The target is the machine’s actual agent configuration. We can apply the change and inspect the resulting runtime where it will be used.</p></div><div><b>What to watch</b><p id="watch">Other agents share this checkout. Coordinate overlapping edits and avoid changing runtime configuration underneath active work.</p></div></div></div>
+</section>
+<section class="comparison"><h2>The trade-offs that matter to us</h2><p style="color:var(--muted)">Architecture fit matters more here than the location of the compute.</p><div class="table-wrap" role="region" aria-label="Mac Mini and Codex Cloud comparison" tabindex="0"><table><thead><tr><th scope="col">What matters</th><th scope="col">Mac Mini</th><th scope="col">Codex Cloud</th></tr></thead><tbody>
+<tr><th scope="row">Our skills &amp; setup</th><td><span class="fit">Strong fit today</span><small>Canonical agents source renders skills, config, hooks, and MCP settings onto our Macs.</small></td><td><span class="caution">Extra setup</span><small>Repo skills are supported; personal skills are not synced. Verify every required capability. [1]</small></td></tr>
+<tr><th scope="row">Several repos</th><td>Existing neighboring checkouts<small>Fits our current cross-repo workflow and local tools.</small></td><td>Multiple repos can be configured<small>Possible, but shared dependencies and services need preparation. [1]</small></td></tr>
+<tr><th scope="row">Parallel agents</th><td><span class="caution">Shared capacity and files</span><small>Our shared-main policy makes coordination important. This is a workflow choice, not a Mac limitation.</small></td><td><span class="fit">Separate task workspaces</span><small>Reduces interference while working. Conflicting results still need integration. [1]</small></td></tr>
+<tr><th scope="row">Product verification</th><td><span class="fit">Best fit for our full checks</span><small>Use macOS tools and available browser / desktop sessions.</small></td><td>Useful for prepared command-line checks<small>Keep required Mac and interactive product verification on the Mac. [1]</small></td></tr>
+<tr><th scope="row">Availability</th><td>Depends on the host<small>Power, network, sleep, and runtime health are ours to maintain. Remote access requires an available host. [2]</small></td><td><span class="fit">Independent of our machines</span><small>Can continue when our Macs are unavailable; still depends on OpenAI service access and limits. [1]</small></td></tr>
+<tr><th scope="row">State &amp; reproducibility</th><td>Persistent machine state<small>Convenient, but stale dependencies and “works here” assumptions can accumulate.</small></td><td>Published reusable environment<small>Each task retains its own state; default VM-state recovery is up to seven days after a start or resume. Use Git for durable work. [1]</small></td></tr>
+<tr><th scope="row">Credentials &amp; reach</th><td>Existing authorized local access<small>Convenient, with more valuable machine resources in reach if a task goes wrong.</small></td><td>Explicitly configure access<small>Separate variables, network secrets, and network rules. Local credentials do not simply transfer. [1]</small></td></tr>
+<tr><th scope="row">Cost &amp; maintenance</th><td>We already own the hardware<small>Power, maintenance, and finite compute remain. Codex model usage is still separate from owning the Mac.</small></td><td>Less host maintenance; another setup to own<small>Plan capacity and usage limits matter. No measured price or speed advantage is assumed here.</small></td></tr>
+</tbody></table></div></section>
+<section class="closing"><div><h3>How I would use both</h3><ol><li><strong>Keep ongoing work on the Mini.</strong> Especially our agents setup, cross-repo changes, and work requiring the real product environment.</li><li><strong>Pilot Cloud on one contained repository.</strong> Choose a bug fix, test improvement, or code investigation with reproducible checks.</li><li><strong>Bring results back through review and integration.</strong> Run the relevant development-machine checks, then use the repo’s existing delivery workflow.</li></ol></div><div><h3>When I would choose Cloud first</h3><p>When a task starts cleanly from the configured repos, has reliable command-line checks, needs no local desktop state, and benefits from independent execution.</p><p><strong>The reason to expand Cloud use:</strong> verified parity for the tools and checks that task needs, or a real bottleneck on the Mini.</p><p class="fine">This recommendation is about environment fit. It is not a hardware benchmark, a pricing comparison, or a claim that one execution location produces a smarter model.</p></div></section>
+<details class="sources" id="sources"><summary>Evidence, assumptions, and current limits</summary><p>Reviewed 13 October 2026. Official facts come from the current Codex manual. Recommendations and predicted integration costs are architectural judgments based on our repository configuration; no Cloud environment was provisioned or benchmarked for this guide.</p><ul><li><a href="https://learn.chatgpt.com/docs/environments/cloud-environments">[1] OpenAI: Cloud environments</a> — setup, task isolation, skills, network access, VM state, and current limitations. This is the current “Work in → Cloud” experience, not the legacy cloud guide.</li><li><a href="https://learn.chatgpt.com/docs/remote-connections">[2] OpenAI: Remote connections</a> — host resources, dedicated computers, and availability requirements.</li><li>Local evidence: <code>AGENTS.md</code>, <code>docs/architecture/codex-control-plane.md</code>, <code>docs/references/codex-control-plane-ownership.md</code>, <code>hooks/registry.json</code>, and the shared bootstrap script in <code>/Users/adi/GitHub/agents</code>.</li></ul><p>Our lifecycle hook checks, commits, rebases, and pushes on managed machines. Its behavior must be explicitly tested before relying on an equivalent Cloud workflow. Git task isolation is not the same as limiting network or credential access.</p></details>
+<footer><span>Built for Adi’s existing workflow</span><span>Recommendation: preserve the Mini; add Cloud selectively.</span></footer>
+</main>
+<script>
+const scenarios={
+control:{request:'Change skills or hooks',context:'Uses the agents control plane',destination:'Mac Mini',run:'Use the existing checkout and runtime',finish:'Apply and verify on the Mac',finishDetail:'Then use our normal delivery workflow',why:'The target is the machine’s actual agent configuration. We can apply the change and inspect the resulting runtime where it will be used.',watch:'Other agents share this checkout. Coordinate overlapping edits and avoid changing runtime configuration underneath active work.'},
+feature:{request:'Build across repositories',context:'Touches shared contracts or local services',destination:'Mac Mini',run:'Use the neighboring repos and prepared tools',finish:'Check the integrated behavior',finishDetail:'Follow each repo’s delivery contract',why:'Our Macs already carry the linked source, configuration, and machine utilities. That lowers setup friction and makes the whole change easier to verify.',watch:'Cloud can include several repos too. It becomes competitive after dependencies, services, and checks are reproduced there. Shared local edits still need coordination.'},
+mac:{request:'Build or verify a Mac app',context:'Requires the macOS product environment',destination:'Mac Mini',run:'Use the required Apple tools and runtime',finish:'Inspect the running app',finishDetail:'Build, test, and package as required',why:'The final result must work on macOS. The Mini gives us the relevant build and runtime environment for that verification.',watch:'Cloud can help prepare portable source changes, but it does not establish that the macOS product builds or behaves correctly.'},
+ui:{request:'Inspect a live interface',context:'Needs browser state or desktop interaction',destination:'Mac Mini',run:'Use the available browser or desktop tools',finish:'Verify the user flow',finishDetail:'Inspect behavior and the visible result',why:'Our workflow includes visual inspection and interaction. The current Codex Cloud environment guide lists browser and computer use as unsupported.',watch:'Choose a session that actually has the needed browser or desktop access. An SSH-only connection is not automatically equivalent to an interactive Mac session.'},
+isolated:{request:'Fix one contained bug',context:'Repo and reproducible checks are sufficient',destination:'Codex Cloud is a good fit',run:'Use a verified published environment',finish:'Review and integrate on Mac',finishDetail:'Run relevant local checks before delivery',why:'A bounded task can benefit from an isolated workspace and independent compute, especially while the Mini is busy.',watch:'Prepare dependencies and repo guidance first. Do not assume personal skills or our local finalization hooks are present. Avoid duplicating the same active work locally.'},
+parallel:{request:'Investigate independent issues',context:'Each task has a separate question',destination:'Codex Cloud is a good fit',run:'Give each task its own scope and workspace',finish:'Compare and integrate findings',finishDetail:'Resolve overlaps before accepting changes',why:'Separate workspaces reduce shared-checkout interference and move command execution off our single machine.',watch:'Available concurrency and compute depend on the plan. Isolation prevents workspace collisions; it does not make conflicting proposed changes compatible.'},
+offline:{request:'Continue with the Mini offline',context:'The needed files must be in the cloud setup',destination:'Codex Cloud',run:'Start from the configured repositories',finish:'Save results durably',finishDetail:'Review and integrate when the Mac returns',why:'Hosted execution does not rely on our Mini being awake or reachable. It is useful for work that can proceed from the published cloud environment.',watch:'Uncommitted local files, machine credentials, and desktop sessions are not automatically available. A configured cloud task is not a live copy of the Mac.'}
+};
+const fields={request:'request',context:'context',destination:'destination','run-detail':'run',finish:'finish','finish-detail':'finishDetail',why:'why',watch:'watch'};
+document.getElementById('scenario').addEventListener('change',event=>{const item=scenarios[event.target.value];for(const[id,key]of Object.entries(fields))document.getElementById(id).textContent=item[key]});
+document.getElementById('print').addEventListener('click',()=>window.print());
+</script>
+</body></html>
