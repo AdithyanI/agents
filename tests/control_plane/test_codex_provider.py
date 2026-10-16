@@ -191,6 +191,14 @@ class CodexProviderTests(TempDirTestCase):
         self.assertEqual(result.returncode, 0, result.stderr)
         self.assertFalse(self.catalog_path().exists())
 
+        with patch.dict(os.environ, {"HOME": str(self.home)}), patch.object(
+            sys, "argv", ["provider_selection.py", "catalog", str(self.canonical), str(self.config), "--apply"]
+        ), patch.object(provider, "prepare_catalog", wraps=provider.prepare_catalog) as prepare:
+            self.assertEqual(provider.main(), 0)
+        prepare.assert_called_once_with(
+            self.canonical, self.config, apply=True, refresh=False, required=False
+        )
+
     def test_azure_selection_preserves_supported_client_models(self):
         self.assertEqual(self.cli("azure", "--apply").returncode, 0)
         for model in ("gpt-6.1-sol", "gpt-6-sol", "gpt-6-luna", "gpt-5.6-sol"):

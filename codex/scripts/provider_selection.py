@@ -303,7 +303,7 @@ def main() -> int:
             canonical,
             config,
             apply=apply,
-            refresh=apply,
+            refresh=apply and choice == "azure",
             required=choice == "azure",
         )
     elif action == "render":

@@ -87,9 +87,6 @@ needs a resumed scope from Adi.
 - [Control-plane architecture](../../architecture/codex-control-plane.md),
   [capability boundaries](../../architecture/capability-bootstrap-model.md), and
   [runtime ownership](../../references/codex-control-plane-ownership.md).
-- [Existing multi-client control-plane project](../agent-native-multi-client-control-plane/tasks.md).
-  Its cloud/Cowork notes are prior context, not current independent verification
-  of Claude's hosted capabilities. Avoid duplicating that project's rollout work.
 - [Initial visual comparison](resources/mac-mini-cloud.html), preserved from the
   October 13 Codex discussion. It includes task examples and the provisional
   recommendation. HTML and JavaScript syntax checks passed; interactive browser
@@ -106,7 +103,8 @@ needs a resumed scope from Adi.
 
 ## Resume Here
 
-Read this tracker and the related multi-client project, then add Claude Code's
-assessment. The first unresolved question is whether native hosted environments
-can preserve the capabilities and completion workflow we need across both
-clients with enough benefit to justify another environment to maintain.
+Read this tracker and the linked control-plane architecture and ownership docs,
+then add Claude Code's assessment. The first unresolved question is whether
+native hosted environments can preserve the capabilities and completion workflow
+we need across both clients with enough benefit to justify another environment
+to maintain.

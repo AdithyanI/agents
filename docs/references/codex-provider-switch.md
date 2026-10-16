@@ -101,9 +101,10 @@ write failures restore the previous preference. Existing credential distribution
 remains intact. The switch checks Azure provider/credential readiness or the
 subscription login before changing files. Azure also requires complete metadata
 for its five models and materializes the filtered catalog before selecting it.
-Subscription selection does not require a cache or catalog. The `--model` option
-selects one of the configured Azure models as this Mac's default while selecting
-Azure. It does not choose a model in an already running task.
+Subscription selection does not require a cache or catalog. Shared sync can reuse
+complete cached Azure metadata but only refreshes it when Azure is selected.
+The `--model` option selects one of the configured Azure models as this Mac's
+default while selecting Azure. It does not choose a model in an already running task.
 It never rewrites login credentials or conversation history.
 
 This affects local execution on the selected Mac. Opening a remote task on the
