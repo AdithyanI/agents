@@ -7120,6 +7120,10 @@
   //
 
   function startScrollTracking() {
+    // Idempotent: callers overlap (showBar starts tracking, then the agent
+    // pick path starts it again), and a second loop would never be cancelled
+    // because scrollRaf only remembers the latest one (#1002).
+    stopScrollTracking();
     function tick() {
       if (state === 'CONFIGURING' || state === 'GENERATING' || state === 'CYCLING') {
         if (isInsertGeneratingSession()) ensureInsertPlaceholder();
