@@ -44,7 +44,7 @@ Read `references/template-patterns.md` when you need to understand or modify the
 7. Tailored, company-specific versions live in the disposable `tmp/cv/tailored/<company>/`; never commit them into the tracked career root. Run `cv.py clean` when the application is sent.
 8. Never invent experience, skills, tools, certifications, customers, or outcomes.
 9. Compile and visually review before calling the output done.
-10. Before committing the final PDF, run a competitor-awareness grep against the target's rival products and companies. See the "Competitor awareness" section of `<career-root>/tailoring-guide.md` for the current map and the audit checklist.
+10. Before delivering the final PDF, run a competitor-awareness grep against the target's rival products and companies. Never commit the PDF; retain a needed final version in Documents with its stable ID/hash reference. See the "Competitor awareness" section of `<career-root>/tailoring-guide.md` for the current map and the audit checklist.
 
 ## Build and review
 
