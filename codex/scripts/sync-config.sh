@@ -158,7 +158,7 @@ fi
 
 if (( APPLY == 1 )) && [[ "${CODEX_CONFIG_LOCK_HELD:-}" != "$GLOBAL_CONFIG" ]]; then
   cleanup
-  exec python3 "${SCRIPT_DIR}/provider_selection.py" lock "$GLOBAL_CONFIG" bash "$0" "${ORIGINAL_ARGS[@]}"
+  exec python3 "${SCRIPT_DIR}/config_lock.py" "$GLOBAL_CONFIG" bash "$0" "${ORIGINAL_ARGS[@]}"
 fi
 
 if (( SYNC_GLOBAL == 0 )); then
@@ -548,32 +548,14 @@ render_global_config() {
     upsert_section_key "$target_file" "$section" "$key" "$value"
   done < <(extract_openai_bundled_marketplace_entries)
 
-  # Codex turn-end automation now lives in hooks/registry.json -> Stop.
-  remove_top_level_key "$target_file" "notify"
+  # Shared turn-end automation uses hooks/registry.json -> Stop. Native/client
+  # notification callbacks remain app-owned and must survive this sync.
 
   # Codex profiles are standalone ~/.codex/<name>.config.toml overlays. Remove
-  # the retired embedded autofix selector/table so `--profile autofix` works.
-  remove_top_level_key "$target_file" "profile"
+  # retired embedded tables so standalone profiles remain authoritative.
   remove_legacy_embedded_profiles "$target_file"
 
-  # Thread-selection defaults should follow the canonical template; if they are
-  # removed there, prune stale copies from older live configs so client choices
-  # can win when a new thread starts.
-  if ! rg -n '^[[:space:]]*model[[:space:]]*=' "$template_file" >/dev/null 2>&1; then
-    remove_top_level_key "$target_file" "model"
-  fi
-  if ! rg -n '^[[:space:]]*service_tier[[:space:]]*=' "$template_file" >/dev/null 2>&1; then
-    remove_top_level_key "$target_file" "service_tier"
-  fi
-  if ! rg -n '^[[:space:]]*model_provider[[:space:]]*=' "$template_file" >/dev/null 2>&1; then
-    remove_top_level_key "$target_file" "model_provider"
-  fi
-  if ! rg -n '^[[:space:]]*fast_mode[[:space:]]*=' "$template_file" >/dev/null 2>&1; then
-    remove_section_key "$target_file" "features" "fast_mode"
-  fi
-  if ! rg -n '^[[:space:]]*default-service-tier[[:space:]]*=' "$template_file" >/dev/null 2>&1; then
-    remove_section_key "$target_file" "desktop" "default-service-tier"
-  fi
+  # Model, provider, profile, reasoning and Fast preferences remain client-owned.
   # Codex 0.129 renamed the hooks feature flag; prune the older managed key
   # when applying the new canonical template.
   remove_section_key "$target_file" "features" "codex_hooks"
@@ -583,7 +565,6 @@ render_global_config() {
   prune_stale_agent_sections "$target_file" "$template_file"
   prune_stale_app_sections "$target_file" "$template_file"
   prune_stale_plugin_sections "$target_file" "$template_file" "$plugin_registry_file"
-  prune_stale_model_provider_sections "$target_file" "$template_file"
 }
 
 sanitize_machine_specific_entries() {
@@ -1011,60 +992,6 @@ target.write_text("".join(output), encoding="utf-8")
 PY
 }
 
-prune_stale_model_provider_sections() {
-  local target_file="$1"
-  local template_file="$2"
-  python3 - "$target_file" "$template_file" <<'PY'
-from __future__ import annotations
-
-import re
-import sys
-from pathlib import Path
-
-
-target = Path(sys.argv[1])
-template = Path(sys.argv[2])
-
-target_text = target.read_text(encoding="utf-8") if target.exists() else ""
-template_text = template.read_text(encoding="utf-8") if template.exists() else ""
-
-provider_header_re = re.compile(r'^\[model_providers\.([^\]]+)\]\s*$')
-
-allowed_providers: set[str] = set()
-for line in template_text.splitlines():
-    m = provider_header_re.match(line.strip())
-    if m:
-        allowed_providers.add(m.group(1))
-
-lines = target_text.splitlines(keepends=True)
-output: list[str] = []
-i = 0
-while i < len(lines):
-    line = lines[i]
-    stripped = line.strip()
-    if stripped.startswith("[") and stripped.endswith("]"):
-        j = i + 1
-        while j < len(lines):
-            s = lines[j].strip()
-            if s == "[[skills.config]]" or (s.startswith("[") and s.endswith("]")):
-                break
-            j += 1
-        block = lines[i:j]
-        m = provider_header_re.match(stripped)
-        if m and m.group(1) not in allowed_providers:
-            i = j
-            continue
-        output.extend(block)
-        i = j
-        continue
-
-    output.append(line)
-    i += 1
-
-target.write_text("".join(output), encoding="utf-8")
-PY
-}
-
 render_codex_hooks() {
   local registry_file="$1"
   local rendered_hooks_file="$2"
@@ -1176,8 +1103,7 @@ sync_global() {
   local hooks_original="$GLOBAL_HOOKS"
   local hooks_rendered="${TMP_DIR}/hooks.json"
 
-  # Credentials are a prerequisite for installing a provider default. Reconcile
-  # on every apply, including the scheduled --global-only runtime preflight.
+  # Reconcile only explicitly declared native environment mappings, if any.
   local env_mode="--dry-run"
   if (( APPLY == 1 )); then
     env_mode="--apply"
@@ -1199,7 +1125,6 @@ sync_global() {
   prepare_work_file "$original" "$rendered"
   sanitize_machine_specific_entries "$rendered"
   render_global_config "$rendered" "$CANONICAL_GLOBAL_TEMPLATE" "$PLUGIN_REGISTRY"
-  python3 "${SCRIPT_DIR}/provider_selection.py" render "$CANONICAL_DIR" "$original" "$rendered"
   ensure_system_skills_disabled "$rendered" "$BUNDLED_SKILLS_POLICY"
   render_codex_hooks "$HOOKS_REGISTRY" "$hooks_rendered"
 
@@ -1213,7 +1138,6 @@ sync_global() {
   if (( APPLY == 1 )); then
     install_rendered_file "$rendered" "$original"
     install_rendered_file "$hooks_rendered" "$hooks_original"
-    python3 "${SCRIPT_DIR}/provider_selection.py" remember "$CANONICAL_DIR" "$original"
   fi
 
   cleanup_agent_role_dir "Global Agent Roles" "$GLOBAL_AGENTS_DIR"
@@ -1403,17 +1327,6 @@ sync_profile_configs() {
   shopt -u nullglob
 }
 
-cleanup_retired_azure_catalog() {
-  local catalog="$(dirname "$GLOBAL_CONFIG")/model-catalogs/azure-astra.json"
-  [[ -f "$CANONICAL_DIR/azure-astra.config.toml" && -f "$catalog" ]] || return 0
-  # Both global and profile configs have been rendered without this owned artifact.
-  log "Retired Azure protocol catalog: $catalog"
-  if (( APPLY == 1 )); then
-    rm -f "$catalog"
-    log "Removed: $catalog"
-  fi
-}
-
 ensure_enabled_openai_bundled_plugins() {
   PYTHONPATH="$ROOT_DIR" python3 - "$PLUGIN_REGISTRY" "$HOME" <<'PY'
 from __future__ import annotations
@@ -1570,14 +1483,8 @@ if (( HOOKS_ONLY == 1 )); then
 elif (( PLUGINS_ONLY == 1 )); then
   sync_plugins_only
 elif (( SYNC_GLOBAL == 1 )); then
-  catalog_args=()
-  if (( APPLY == 1 )); then
-    catalog_args+=(--apply)
-  fi
-  python3 "${SCRIPT_DIR}/provider_selection.py" catalog "$CANONICAL_DIR" "$GLOBAL_CONFIG" "${catalog_args[@]}"
   sync_global
   sync_profile_configs
-  cleanup_retired_azure_catalog
 fi
 if (( APPLY == 1 && PLUGINS_ONLY == 0 && HOOKS_ONLY == 0 )); then
   ensure_enabled_openai_bundled_plugins

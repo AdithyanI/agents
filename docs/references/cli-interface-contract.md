@@ -17,7 +17,7 @@ Current agent-facing clients:
 - `scripts/bootstrap-skill.sh`
 - `scripts/bootstrap-plugin.sh`
 - `scripts/control-plane-dashboard.py data`
-- `scripts/codex-provider.py status|azure|subscription`
+- `scripts/retire-codex-provider.py --dry-run|--apply --no-input`
 
 Recommended promotion priority:
 

@@ -115,8 +115,6 @@ python3 "${SCRIPT_DIR}/sync-native-env.py" \
   --github-root "$GITHUB_ROOT" \
   --check
 
-python3 "${SCRIPT_DIR}/provider_selection.py" check "$CANONICAL_DIR" "$GLOBAL_CONFIG"
-
 PYTHONPATH="$ROOT_DIR" python3 - "$CANONICAL_DIR" "$GLOBAL_CONFIG" "$GLOBAL_HOOKS" "$GLOBAL_AUTH" "$GLOBAL_MCP_CREDENTIALS" "$REGISTRY_FILE" "$MCP_REGISTRY_FILE" "$HOOKS_REGISTRY_FILE" "$PLUGIN_REGISTRY_FILE" "${REPO_FILTERS[@]}" <<'PY'
 from __future__ import annotations
 
@@ -494,6 +492,9 @@ def validate_feature_flags(config_path: Path, feature_statuses: dict[str, str]) 
 CLIENT_OWNED_THREAD_SELECTION_KEYS = {
     "model",
     "model_auto_compact_token_limit",
+    "model_context_window",
+    "model_catalog_json",
+    "forced_login_method",
     "model_provider",
     "model_reasoning_effort",
     "model_reasoning_summary",
@@ -518,21 +519,6 @@ def client_owned_selection_keys(values: dict) -> list[str]:
 def validate_client_owned_global_selection(config_path: Path) -> None:
     values = load_toml(config_path)
     forbidden = client_owned_selection_keys(values)
-    provider = values.get("model_provider")
-    model = values.get("model")
-    providers = values.get("model_providers")
-    if (
-        isinstance(provider, str)
-        and provider.strip()
-        and provider != "openai"
-        and isinstance(model, str)
-        and model.strip()
-        and isinstance(providers, dict)
-        and isinstance(providers.get(provider), dict)
-    ):
-        # A deliberately selected custom provider needs its matching deployment
-        # as a global default. This exception never applies to repo registries.
-        forbidden = [key for key in forbidden if key not in {"model", "model_provider"}]
     if forbidden:
         fail(
             f"{config_path} sets client-owned thread selection: {', '.join(forbidden)}"
@@ -802,11 +788,6 @@ for item in repos:
 
 if global_config.exists():
     global_data = load_toml(global_config)
-    if "profile" in global_data:
-        fail(
-            f"global Codex config uses legacy top-level profile selector: {global_config}. "
-            "Re-run codex/scripts/sync-config.sh --apply"
-        )
     profiles = global_data.get("profiles")
     if isinstance(profiles, dict):
         fail(

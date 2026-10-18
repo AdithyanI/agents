@@ -1,8 +1,8 @@
 # Canonical portable baseline for ~/.codex/config.toml
 # Keep this focused on stable settings only.
 
-# Provider selection is machine-local; sync-config.sh applies the selected
-# provider's authentication settings from the shared profile definitions.
+# Authentication, provider, model discovery and thread selections belong to
+# the native client. Shared sync never selects a provider or model.
 
 cli_auth_credentials_store = "file"
 mcp_oauth_credentials_store = "file"
@@ -25,13 +25,6 @@ max_concurrent_threads_per_session = 100
 
 [notice.external_config_migration_prompts]
 home = true
-
-# Both machines have this provider available; each chooses its own default.
-[model_providers.azure]
-name = "Azure OpenAI"
-base_url = "https://aipodcasting-openai.openai.azure.com/openai/v1"
-env_key = "AZURE_OPENAI_API_KEY"
-wire_api = "responses"
 
 [tui]
 theme = "catppuccin-macchiato"

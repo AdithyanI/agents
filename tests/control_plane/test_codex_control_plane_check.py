@@ -248,14 +248,14 @@ class CodexControlPlaneCheckTests(TempDirTestCase):
                     self.assertNotEqual(result.returncode, 0)
                     self.assertIn("Codex profile is out of sync", result.stderr)
 
-    def test_global_selection_allows_only_a_paired_custom_provider_default(self) -> None:
+    def test_global_selection_rejects_managed_provider_and_model_defaults(self) -> None:
         root, home, adi = self._make_codex_repo_fixture()
         self._render_repo_configs(root, home)
         global_template = root / "codex/config/global.config.toml"
         custom_provider = '\n[model_providers.azure]\nname = "Azure"\n'
         paired_default = 'model = "gpt-6-astra"\nmodel_provider = "azure"\n'
         cases = (
-            ("paired custom provider", paired_default + custom_provider, True),
+            ("paired custom provider", paired_default + custom_provider, False),
             ("model alone", 'model = "gpt-6-astra"\n' + custom_provider, False),
             ("provider alone", 'model_provider = "azure"\n' + custom_provider, False),
             ("undefined provider", paired_default, False),

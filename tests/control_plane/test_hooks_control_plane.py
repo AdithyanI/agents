@@ -643,13 +643,19 @@ class HooksControlPlaneTests(TempDirTestCase):
         write_text(
             home / ".codex/config.toml",
             'model = "gpt-5.6-sol"\n'
+            'model_provider = "custom"\n'
+            'model_catalog_json = "native-selection.json"\n'
+            'notify = ["native-computer-use", "notify"]\n'
             'model_reasoning_effort = "xhigh"\n'
             'plan_mode_reasoning_effort = "max"\n'
             'service_tier = "fast"\n'
             'profile = "autofix"\n'
             '[profiles.autofix]\nmodel = "gpt-5.4"\n'
             '[profiles.autofix.features]\napps = false\n'
-            '[plugins."build-ios-apps@openai-curated"]\nenabled = true\n',
+            '[plugins."build-ios-apps@openai-curated"]\nenabled = true\n'
+            '[model_providers.custom]\nname = "Client provider"\n'
+            '[features]\nfast_mode = true\n'
+            '[desktop]\ndefault-service-tier = "fast"\n',
         )
         profile = 'model = "gpt-6-astra"\nmodel_provider = "azure"\n'
         profile_cache = '[tui.model_availability_nux]\n"gpt-6-astra" = 2\n'
@@ -687,10 +693,10 @@ class HooksControlPlaneTests(TempDirTestCase):
         )
 
         rendered_config = (home / ".codex/config.toml").read_text(encoding="utf-8")
-        self.assertNotIn('\nmodel = ', rendered_config)
+        self.assertIn('model = "gpt-5.6-sol"', rendered_config)
         self.assertIn('model_reasoning_effort = "xhigh"', rendered_config)
         self.assertIn('plan_mode_reasoning_effort = "max"', rendered_config)
-        self.assertNotIn('\nservice_tier = ', rendered_config)
+        self.assertIn('service_tier = "fast"', rendered_config)
         self.assertIn("hooks = true", rendered_config)
         self.assertIn("max_concurrent_threads_per_session = 100", rendered_config)
         self.assertIn('[plugins."computer-use@openai-bundled"]', rendered_config)
@@ -699,8 +705,13 @@ class HooksControlPlaneTests(TempDirTestCase):
             f'path = "{home}/.codex/skills/.system/plugin-creator/SKILL.md"',
             rendered_config,
         )
-        self.assertNotIn("notify =", rendered_config)
-        self.assertNotIn('profile = "autofix"', rendered_config)
+        self.assertIn('notify = ["native-computer-use", "notify"]', rendered_config)
+        self.assertIn('model_provider = "custom"', rendered_config)
+        self.assertIn('model_catalog_json = "native-selection.json"', rendered_config)
+        self.assertIn('[model_providers.custom]', rendered_config)
+        self.assertIn('fast_mode = true', rendered_config)
+        self.assertIn('default-service-tier = "fast"', rendered_config)
+        self.assertIn('profile = "autofix"', rendered_config)
         self.assertNotIn("[profiles.autofix]", rendered_config)
         self.assertEqual(
             (home / ".codex/azure-astra.config.toml").read_text(encoding="utf-8"),

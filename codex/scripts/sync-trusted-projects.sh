@@ -92,7 +92,7 @@ done
 
 if (( APPLY == 1 )) && [[ "${CODEX_CONFIG_LOCK_HELD:-}" != "$GLOBAL_CONFIG" ]]; then
   cleanup
-  exec python3 "${SCRIPT_DIR}/provider_selection.py" lock "$GLOBAL_CONFIG" bash "$0" "${ORIGINAL_ARGS[@]}"
+  exec python3 "${SCRIPT_DIR}/config_lock.py" "$GLOBAL_CONFIG" bash "$0" "${ORIGINAL_ARGS[@]}"
 fi
 
 if (( SYNC_GLOBAL == 0 )); then

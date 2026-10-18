@@ -2,436 +2,111 @@ from __future__ import annotations
 
 import importlib.util
 import json
-import os
 from pathlib import Path
+import plistlib
 import sys
-from unittest.mock import patch
 import tomllib
 
-from tests.control_plane.support import (
-    REPO_ROOT, TempDirTestCase, default_mcp_registry, make_control_plane_root,
-    run_command, write_json, write_text,
-)
-
-spec = importlib.util.spec_from_file_location("provider_selection", REPO_ROOT / "codex/scripts/provider_selection.py")
-provider = importlib.util.module_from_spec(spec)
-spec.loader.exec_module(provider)
-
-installer_spec = importlib.util.spec_from_file_location(
-    "install_codex_provider_menu", REPO_ROOT / "scripts/install-codex-provider-menu.py"
-)
-installer = importlib.util.module_from_spec(installer_spec)
-installer_spec.loader.exec_module(installer)
+from tests.control_plane.support import REPO_ROOT, TempDirTestCase, run_command, write_text
 
 
-class CodexProviderTests(TempDirTestCase):
+def load_module(name, relative):
+    spec = importlib.util.spec_from_file_location(name, REPO_ROOT / relative)
+    module = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(module)
+    return module
+
+
+retirement = load_module('retire_codex_provider', 'scripts/retire-codex-provider.py')
+installer = load_module('install_codex_cli', 'scripts/install-codex-cli.py')
+
+
+class CodexProviderRetirementTests(TempDirTestCase):
     def setUp(self):
         super().setUp()
-        self.canonical = REPO_ROOT / "codex/config"
-        self.home = self.temp_path / "home"
-        self.config = self.make_home(self.home)
+        self.home = self.temp_path / 'home'
+        self.config = write_text(self.home / '.codex/config.toml',
+            'model_provider = "azure"\nmodel = "gpt-6.1-sol"\nmodel_reasoning_effort = "xhigh"\n'
+            'model_catalog_json = "model-catalogs/azure-gpt6.json"\n'
+            'model_context_window = 400000\nmodel_auto_compact_token_limit = 350000\n'
+            'service_tier = "fast"\n[features]\nhooks = true\nstandalone_web_search = false\n'
+            '[model_providers.azure]\nenv_key = "AZURE_OPENAI_API_KEY"\n'
+            '[model_providers.custom]\nname = "Keep"\n[plugins."keep@local"]\nenabled = true\n')
+        self.env = write_text(self.home / '.codex/.env', '# generated\nAZURE_OPENAI_API_KEY=fixture-secret\nOTHER_TOKEN=keep\n')
+        self.auth = write_text(self.home / '.codex/auth.json', '{"fixture":"do not change"}\n')
+        self.cache = write_text(self.home / '.codex/models_cache.json', '{"fixture":"native cache"}\n')
+        self.state = write_text(self.home / '.local/state/codex-control-plane/provider', 'azure\n')
+        for relative in ['.codex/azure-astra.config.toml', '.codex/model-catalogs/azure-gpt6.json', '.codex/model-catalogs/azure-astra.json']:
+            write_text(self.home / relative, 'owned artifact\n')
 
-    def make_home(self, home):
-        config = write_text(home / ".codex/config.toml",
-            'model = "gpt-6-astra"\nmodel_provider = "azure"\nmodel_reasoning_effort = "xhigh"\n'
-            'model_catalog_json = "model-catalogs/azure-astra.json"\n'
-            '[features]\nstandalone_web_search = false\nhooks = true\n'
-            '[model_providers.azure]\nbase_url = "https://fixture.example/openai/v1"\nenv_key = "AZURE_OPENAI_API_KEY"\n'
-            '[plugins."example@fixture"]\nenabled = true\n[projects."/fixture"]\ntrust_level = "trusted"\n')
-        write_json(home / ".codex/models_cache.json", {
-            "fetched_at": "2026-09-22T20:00:00Z", "etag": "fixture-catalog",
-            "models": self.catalog_models(),
-        })
-        write_json(home / ".codex/model-catalogs/azure-astra.json", {"models": [{"slug": "gpt-6-astra", "use_responses_lite": False}]})
-        write_text(home / ".codex/.env", "AZURE_OPENAI_API_KEY=fixture-secret\n")
-        write_json(home / ".codex/auth.json", {"auth_mode": "chatgpt", "tokens": {"access_token": "fixture-login"}})
-        return config
-
-    @staticmethod
-    def catalog_models():
-        return [{
-            "slug": slug, "display_name": slug.upper(), "description": f"Official {slug}",
-            "visibility": "list", "supported_in_api": True, "priority": priority,
-            "default_reasoning_level": "medium",
-            "supported_reasoning_levels": [{"effort": "medium", "description": "Balanced"}],
-            "context_window": 272000, "max_context_window": 872000,
-            "shell_type": "unified_exec", "apply_patch_tool_type": "freeform",
-            "tool_mode": "code_mode_only", "use_responses_lite": True,
-            "model_messages": {"instructions_template": f"Official instructions for {slug}"},
-            "future_metadata": {"retain_exactly": [priority, slug]},
-            "service_tiers": [{"id": "priority", "name": "Fast"}] if slug == "gpt-5.6-sol" else [],
-        } for priority, slug in enumerate(provider.AZURE_MODELS)]
-
-    def catalog_path(self, config=None):
-        return (config or self.config).parent / provider.AZURE_CATALOG
-
-    def cli(self, *args, home=None):
-        return run_command([sys.executable, str(REPO_ROOT / "scripts/codex-provider.py"), *args],
-                           env={"HOME": str(home or self.home)}, check=False)
-
-    def test_desktop_cli_links_include_adjacent_code_mode_host(self):
-        resources = self.temp_path / "resources"
-        for name in ("codex", "codex-code-mode-host"):
-            write_text(resources / name, "legacy")
-        targets = installer.codex_command_targets(self.home, resources)
-        self.assertEqual(targets[self.home / "bin/codex"], resources / "codex")
-
-        current = resources / "codex-cli/bin"
-        for name in ("codex", "codex-code-mode-host"):
-            write_text(current / name, "current")
-        targets = installer.codex_command_targets(self.home, resources)
-        self.assertEqual(targets[self.home / "bin/codex"], current / "codex")
-        self.assertEqual(
-            targets[self.home / "bin/codex-code-mode-host"],
-            current / "codex-code-mode-host",
-        )
-        old_link = self.home / "bin/codex"
-        old_link.parent.mkdir(parents=True)
-        old_link.symlink_to(resources / "codex")
-        self.assertTrue(installer.codex_link_owned(old_link, targets[old_link], resources))
-        self.assertFalse(installer.link_owned(old_link, targets[old_link]))
-
-    def test_native_desktop_cli_replaces_only_owned_launcher_links(self):
-        resources = self.temp_path / "resources"
-        launchers = resources / "codex-cli/bin"
-        for name in ("codex", "codex-code-mode-host"):
-            write_text(launchers / name, "launcher")
-        native = write_text(resources / "codex-cli/CodexCLI.app/Contents/MacOS/codex", "native")
-        targets = installer.codex_command_targets(self.home, resources)
-        command = self.home / "bin/codex"
-        self.assertEqual(targets[command], native)
-        self.assertEqual(targets[self.home / "bin/codex-code-mode-host"], launchers / "codex-code-mode-host")
-
-        command.parent.mkdir(parents=True)
-        command.symlink_to(launchers / "codex")
-        self.assertTrue(installer.codex_link_owned(command, targets[command], resources))
-        self.assertFalse(installer.link_owned(command, targets[command]))
-
-        command.unlink()
-        command.symlink_to(write_text(self.temp_path / "unrelated/codex", "unrelated"))
-        self.assertFalse(installer.codex_link_owned(command, targets[command], resources))
-
-    def test_contract_dry_run_errors_and_plain(self):
+    def test_dry_run_then_apply_is_selective_and_idempotent(self):
         before = self.config.read_bytes()
-        result = self.cli("subscription", "--no-input")
-        self.assertEqual(result.returncode, 0, result.stderr)
-        data = json.loads(result.stdout)
-        self.assertEqual(set(data), {"schema_version", "command", "status", "data", "error", "meta"})
-        self.assertFalse(data["data"]["applied"])
-        self.assertEqual(data["data"]["requested"], "subscription")
+        result = retirement.retire(self.home, False)
+        self.assertTrue(result['changed_paths'])
         self.assertEqual(before, self.config.read_bytes())
-        self.assertFalse((self.home / ".local").exists())
-        self.assertIn("This Mac: azure", self.cli("status", "--plain").stdout)
-        bad = self.cli("unknown", "--no-input")
-        self.assertEqual(bad.returncode, 2)
-        self.assertEqual(json.loads(bad.stdout)["error"]["code"], "E_VALIDATION")
+        self.assertNotIn('fixture-secret', json.dumps(result))
+        retirement.retire(self.home, True)
+        config = tomllib.loads(self.config.read_text())
+        for key in ['model_provider', 'model_catalog_json', 'model_context_window', 'model_auto_compact_token_limit']:
+            self.assertNotIn(key, config)
+        self.assertEqual(config['model'], 'gpt-6.1-sol')
+        self.assertEqual(config['model_reasoning_effort'], 'xhigh')
+        self.assertEqual(config['service_tier'], 'fast')
+        self.assertEqual(config['features'], {'hooks': True})
+        self.assertEqual(config['model_providers'], {'custom': {'name': 'Keep'}})
+        self.assertEqual(config['plugins'], {'keep@local': {'enabled': True}})
+        self.assertEqual(self.env.read_text(), '# generated\nOTHER_TOKEN=keep\n')
+        self.assertEqual(self.auth.read_text(), '{"fixture":"do not change"}\n')
+        self.assertEqual(self.cache.read_text(), '{"fixture":"native cache"}\n')
+        self.assertFalse(self.state.exists())
+        backup = self.home / '.local/state/codex-control-plane/backups/retired-provider/config.toml'
+        self.assertEqual(backup.read_bytes(), before)
+        self.assertEqual(backup.stat().st_mode & 0o777, 0o600)
+        self.assertEqual(retirement.retire(self.home, True)['changed_paths'], [])
 
-    def test_round_trip_preserves_credentials_hooks_trust_and_reasoning(self):
-        before = tomllib.loads(self.config.read_text())
-        protected = {name: (self.config.parent / name).read_bytes() for name in ["auth.json", ".env", "models_cache.json"]}
-        for choice, expected in [("subscription", "openai"), ("azure", "azure")]:
-            result = self.cli(choice, "--apply", "--no-input")
-            self.assertEqual(result.returncode, 0, result.stdout)
-            data = json.loads(result.stdout)["data"]
-            self.assertEqual(data["effective_provider"], expected)
-            self.assertTrue(data["config_in_sync"])
-            after = tomllib.loads(self.config.read_text())
-            for key in ["plugins", "projects", "model_reasoning_effort", "model_providers"]:
-                self.assertEqual(after[key], before[key])
-            self.assertTrue(after["features"]["hooks"])
-            if choice == "azure":
-                self.assertEqual(after["model_catalog_json"], provider.AZURE_CATALOG)
-                self.assertEqual(after["model_context_window"], 400000)
-                self.assertEqual(after["model_auto_compact_token_limit"], 350000)
-                self.assertEqual(json.loads(self.catalog_path().read_text())["models"], self.catalog_models())
-            else:
-                self.assertNotIn("model_catalog_json", after)
-                self.assertNotIn("model_context_window", after)
-                self.assertNotIn("model_auto_compact_token_limit", after)
-            self.assertNotIn("standalone_web_search", after["features"])
-        self.assertNotIn("forced_login_method", after)
-        for name, original in protected.items():
-            self.assertEqual((self.config.parent / name).read_bytes(), original)
+    def test_subscription_selection_is_released_without_changing_native_preferences(self):
+        self.state.write_text('subscription\n')
+        self.config.write_text('model_provider = "openai"\nforced_login_method = "chatgpt"\nmodel = "chosen"\n')
+        retirement.retire(self.home, True)
+        self.assertEqual(tomllib.loads(self.config.read_text()), {'model': 'chosen'})
+        self.assertNotIn('model_provider', self.config.read_text())
 
-    def test_azure_context_overrides_are_checked_and_removed_on_subscription(self):
-        self.assertEqual(self.cli("azure", "--apply").returncode, 0)
-        self.config.write_text(provider.overlay(self.config.read_text(), {
-            "model_context_window": 512000,
-            "model_auto_compact_token_limit": 450000,
-        }))
-        self.assertFalse(json.loads(self.cli("status").stdout)["data"]["config_in_sync"])
-        self.assertEqual(self.cli("azure", "--apply").returncode, 0)
-        self.assertEqual(tomllib.loads(self.config.read_text())["model_context_window"], 400000)
-        self.assertEqual(tomllib.loads(self.config.read_text())["model_auto_compact_token_limit"], 350000)
-        self.assertEqual(self.cli("subscription", "--apply").returncode, 0)
-        after = tomllib.loads(self.config.read_text())
-        self.assertNotIn("model_context_window", after)
-        self.assertNotIn("model_auto_compact_token_limit", after)
-        self.assertTrue(json.loads(self.cli("status").stdout)["data"]["config_in_sync"])
+    def test_unmanaged_selection_and_context_are_preserved(self):
+        self.state.unlink()
+        self.config.write_text('model_provider = "openai"\nforced_login_method = "chatgpt"\nmodel_context_window = 400000\n')
+        before = self.config.read_text()
+        retirement.retire(self.home, True)
+        self.assertEqual(self.config.read_text(), before)
 
-    def test_subscription_uses_native_discovery_without_catalog_dependencies(self):
-        # An older CLI can replace the normal cache with a list missing newer
-        # models. Subscription mode must neither require nor pin that snapshot.
-        (self.config.parent / "models_cache.json").unlink()
-        (self.config.parent / "model-catalogs/azure-astra.json").unlink()
-        result = self.cli("subscription", "--apply")
-        self.assertEqual(result.returncode, 0, result.stdout)
-        self.assertNotIn("model_catalog_json", tomllib.loads(self.config.read_text()))
-        self.assertTrue(json.loads(result.stdout)["data"]["config_in_sync"])
-        self.assertNotIn("standalone_web_search", tomllib.loads(self.config.read_text())["features"])
-
-    def test_subscription_config_sync_does_not_require_complete_azure_catalog(self):
-        self.assertEqual(self.cli("subscription", "--apply").returncode, 0)
-        write_json(self.config.parent / "models_cache.json", {"models": self.catalog_models()[:1]})
-        self.catalog_path().unlink(missing_ok=True)
-        result = run_command([
-            sys.executable, str(REPO_ROOT / "codex/scripts/provider_selection.py"), "catalog",
-            str(self.canonical), str(self.config), "--apply",
-        ], env={"HOME": str(self.home)}, check=False)
-        self.assertEqual(result.returncode, 0, result.stderr)
-        self.assertFalse(self.catalog_path().exists())
-
-        with patch.dict(os.environ, {"HOME": str(self.home)}), patch.object(
-            sys, "argv", ["provider_selection.py", "catalog", str(self.canonical), str(self.config), "--apply"]
-        ), patch.object(provider, "prepare_catalog", wraps=provider.prepare_catalog) as prepare:
-            self.assertEqual(provider.main(), 0)
-        prepare.assert_called_once_with(
-            self.canonical, self.config, apply=True, refresh=False, required=False
-        )
-
-    def test_azure_selection_preserves_supported_client_models(self):
-        self.assertEqual(self.cli("azure", "--apply").returncode, 0)
-        for model in ("gpt-6.1-sol", "gpt-6-sol", "gpt-6-luna", "gpt-5.6-sol"):
-            with self.subTest(model=model):
-                self.config.write_text(provider.overlay(self.config.read_text(), {"model": model}))
-                self.assertTrue(json.loads(self.cli("status").stdout)["data"]["config_in_sync"])
-                run_command([
-                    sys.executable, str(REPO_ROOT / "codex/scripts/provider_selection.py"), "check",
-                    str(self.canonical), str(self.config),
-                ], env={"HOME": str(self.home)})
-                result = self.cli("azure", "--apply")
-                self.assertEqual(result.returncode, 0, result.stdout)
-                self.assertEqual(tomllib.loads(self.config.read_text())["model"], model)
-                self.assertTrue(json.loads(result.stdout)["data"]["config_in_sync"])
-
-    def test_azure_selection_defaults_unsupported_model_to_astra(self):
-        self.assertEqual(self.cli("azure", "--apply").returncode, 0)
-        self.config.write_text(provider.overlay(self.config.read_text(), {"model": "gpt-5.6-terra"}))
-        self.assertFalse(json.loads(self.cli("status").stdout)["data"]["config_in_sync"])
-        result = self.cli("azure", "--apply")
-        self.assertEqual(result.returncode, 0, result.stdout)
-        self.assertEqual(tomllib.loads(self.config.read_text())["model"], "gpt-6-astra")
-        self.assertTrue(json.loads(result.stdout)["data"]["config_in_sync"])
-
-    def test_azure_model_selection_sets_client_default_without_changing_provider(self):
+    def test_unrelated_app_fails_preflight_before_any_edit(self):
+        app = self.home / 'Applications/Codex Provider.app/Contents'
+        app.mkdir(parents=True)
+        (app / 'Info.plist').write_bytes(plistlib.dumps({'CFBundleIdentifier': 'unrelated'}))
         before = self.config.read_bytes()
-        dry_run = self.cli("azure", "--model", "gpt-5.6-sol")
-        self.assertEqual(dry_run.returncode, 0, dry_run.stdout)
-        self.assertEqual(json.loads(dry_run.stdout)["data"]["requested_model"], "gpt-5.6-sol")
-        self.assertEqual(self.config.read_bytes(), before)
-        result = self.cli("azure", "--model", "gpt-5.6-sol", "--apply")
-        self.assertEqual(result.returncode, 0, result.stdout)
-        self.assertEqual(tomllib.loads(self.config.read_text())["model"], "gpt-5.6-sol")
-        self.assertTrue(json.loads(result.stdout)["data"]["config_in_sync"])
-        invalid = self.cli("subscription", "--model", "gpt-5.6-sol", "--apply")
-        self.assertEqual(invalid.returncode, 2)
-        self.assertEqual(tomllib.loads(self.config.read_text())["model"], "gpt-5.6-sol")
-
-    def test_catalog_dry_run_and_apply_preserve_complete_official_metadata_and_cache(self):
-        source = self.config.parent / "models_cache.json"
-        cache = json.loads(source.read_text())
-        cache["models"].reverse()
-        write_json(source, cache)
-        cache_before = source.read_bytes()
-        config_before = self.config.read_bytes()
-        provider.prepare_catalog(self.canonical, self.config)
-        self.assertFalse(self.catalog_path().exists())
-        self.assertEqual(self.config.read_bytes(), config_before)
-        provider.prepare_catalog(self.canonical, self.config, apply=True)
-        catalog = json.loads(self.catalog_path().read_text())
-        self.assertEqual(tuple(model["slug"] for model in catalog["models"]), provider.AZURE_MODELS)
-        self.assertEqual(catalog["models"], self.catalog_models())
-        self.assertEqual(source.read_bytes(), cache_before)
-        self.assertEqual(self.config.read_bytes(), config_before)
-        self.assertFalse((self.home / ".local").exists())
-
-    def test_catalog_check_rejects_missing_requested_models(self):
-        self.assertEqual(self.cli("azure", "--apply").returncode, 0)
-        write_json(self.catalog_path(), {"models": self.catalog_models()[:2]})
-        result = run_command([
-            sys.executable, str(REPO_ROOT / "codex/scripts/provider_selection.py"), "check",
-            str(self.canonical), str(self.config),
-        ], env={"HOME": str(self.home)}, check=False)
-        self.assertNotEqual(result.returncode, 0, "validation must inspect the generated catalog")
-        self.assertEqual(json.loads(self.catalog_path().read_text())["models"], self.catalog_models()[:2])
-
-    def test_azure_switch_dry_run_does_not_create_catalog(self):
-        before = self.config.read_bytes()
-        result = self.cli("azure", "--dry-run", "--no-input")
-        self.assertEqual(result.returncode, 0, result.stdout)
-        self.assertFalse(json.loads(result.stdout)["data"]["applied"])
-        self.assertEqual(self.config.read_bytes(), before)
-        self.assertFalse(self.catalog_path().exists())
-        self.assertFalse((self.home / ".local").exists())
-
-    def test_catalog_retains_last_complete_metadata_when_normal_cache_is_unusable(self):
-        provider.prepare_catalog(self.canonical, self.config, apply=True)
-        catalog_before = self.catalog_path().read_bytes()
-        source = self.config.parent / "models_cache.json"
-        for state in ("missing", "older", "corrupt"):
-            with self.subTest(cache=state):
-                if state == "missing":
-                    source.unlink(missing_ok=True)
-                elif state == "older":
-                    old_astra = self.catalog_models()[0]
-                    old_astra["model_messages"] = {"instructions_template": "Older Astra instructions"}
-                    write_json(source, {"models": [old_astra, {"slug": "gpt-5.6-sol"}]})
-                else:
-                    source.write_text("{not-json")
-                cache_before = source.read_bytes() if source.exists() else None
-                provider.prepare_catalog(self.canonical, self.config, apply=True)
-                self.assertEqual(self.catalog_path().read_bytes(), catalog_before)
-                self.assertEqual(source.read_bytes() if source.exists() else None, cache_before)
-
-    def test_missing_complete_catalog_does_not_change_provider_or_preference(self):
-        source = self.config.parent / "models_cache.json"
-        source.write_text(json.dumps({"models": [self.catalog_models()[0]]}))
-        self.assertEqual(self.cli("subscription", "--apply").returncode, 0)
-        before = self.config.read_bytes()
-        preference = self.home / ".local/state/codex-control-plane/provider"
-        preference_before = preference.read_bytes()
         with self.assertRaises(ValueError):
-            provider.prepare_catalog(self.canonical, self.config, apply=True, refresh=False)
-        with patch.dict(os.environ, {"HOME": str(self.home)}):
-            with self.assertRaises(ValueError):
-                provider.switch(self.config, self.canonical, "azure", True, 1)
+            retirement.retire(self.home, True)
         self.assertEqual(self.config.read_bytes(), before)
-        self.assertEqual(preference.read_bytes(), preference_before)
-        self.assertFalse(self.catalog_path().exists())
+        self.assertIn('AZURE_OPENAI_API_KEY', self.env.read_text())
 
-    def test_catalog_write_failure_does_not_select_azure(self):
-        self.assertEqual(self.cli("subscription", "--apply").returncode, 0)
-        before = self.config.read_bytes()
-        preference = self.home / ".local/state/codex-control-plane/provider"
-        preference_before = preference.read_bytes()
-        original_write = provider.atomic_write
+    def test_runtime_symlink_is_not_followed(self):
+        self.env.unlink()
+        target = write_text(self.temp_path / 'other.env', 'AZURE_OPENAI_API_KEY=untouched\n')
+        self.env.symlink_to(target)
+        with self.assertRaises(ValueError):
+            retirement.retire(self.home, True)
+        self.assertEqual(target.read_text(), 'AZURE_OPENAI_API_KEY=untouched\n')
 
-        def fail_catalog(path, text):
-            if path == self.catalog_path():
-                raise OSError("fixture catalog write failure")
-            original_write(path, text)
+    def test_cli_emits_paths_without_credential_values(self):
+        result = run_command([sys.executable, str(REPO_ROOT / 'scripts/retire-codex-provider.py'), '--dry-run', '--no-input'], env={'HOME': str(self.home)})
+        self.assertEqual(json.loads(result.stdout)['status'], 'ok')
+        self.assertNotIn('fixture-secret', result.stdout + result.stderr)
 
-        with patch.dict(os.environ, {"HOME": str(self.home)}), patch.object(
-            provider, "atomic_write", side_effect=fail_catalog
-        ):
-            with self.assertRaises(OSError):
-                provider.switch(self.config, self.canonical, "azure", True, 1)
-        self.assertEqual(self.config.read_bytes(), before)
-        self.assertEqual(preference.read_bytes(), preference_before)
-        self.assertFalse(self.catalog_path().exists())
-
-    def test_subscription_detects_and_repairs_a_stale_catalog_override(self):
-        self.assertEqual(self.cli("subscription", "--apply").returncode, 0)
-        self.config.write_text('model_catalog_json = "models_cache.json"\n' + self.config.read_text())
-        self.assertFalse(json.loads(self.cli("status").stdout)["data"]["config_in_sync"])
-        self.assertEqual(self.cli("subscription", "--apply").returncode, 0)
-        self.assertNotIn("model_catalog_json", tomllib.loads(self.config.read_text()))
-
-    def test_failed_preflight_and_invalid_local_state_do_not_write(self):
-        before = self.config.read_bytes()
-        (self.config.parent / "auth.json").unlink()
-        result = self.cli("subscription", "--apply")
-        self.assertEqual(result.returncode, 3)
-        self.assertEqual(before, self.config.read_bytes())
-        self.assertFalse((self.home / ".local").exists())
-        write_text(self.home / ".local/state/codex-control-plane/provider", "typo\n")
-        self.assertEqual(self.cli("status").returncode, 2)
-        self.assertEqual(before, self.config.read_bytes())
-        self.assertEqual(self.cli("azure", "--apply").returncode, 0, "explicit selection repairs invalid preference")
-
-    def test_write_failure_rolls_back_preference(self):
-        with patch.dict(os.environ, {"HOME": str(self.home)}):
-            before = self.config.read_bytes()
-            original_write = provider.atomic_write
-            def fail_config(path, text):
-                if path == self.config:
-                    raise OSError("fixture write failure")
-                original_write(path, text)
-            with patch.object(provider, "atomic_write", side_effect=fail_config):
-                with self.assertRaises(OSError):
-                    provider.switch(self.config, self.canonical, "subscription", True, 1)
-            self.assertFalse(provider.state_path().exists())
-            self.assertEqual(before, self.config.read_bytes())
-
-    def test_switch_times_out_behind_sync_lock_without_writes(self):
-        with provider.config_lock(self.config):
-            result = self.cli("subscription", "--apply", "--timeout", "0.1")
-        self.assertEqual(result.returncode, 5)
-        self.assertEqual(json.loads(result.stdout)["error"]["code"], "E_TIMEOUT")
-        self.assertEqual(tomllib.loads(self.config.read_text())["model_provider"], "azure")
-
-    def test_shared_sync_preserves_opposite_machine_choices_and_migrates_once(self):
-        root = make_control_plane_root(self.temp_path)
-        write_json(root / "mcp/config/presets.json", default_mcp_registry())
-        write_json(root / "plugins/registry.json", {
-            "version": 1, "paths": {"github_root": str(self.temp_path)},
-            "managed_plugins": [], "unmanaged_repo_local_plugins": []})
-        for name in provider.PROFILES.values():
-            write_text(root / "codex/config" / name, (self.canonical / name).read_text())
-        other = self.temp_path / "other"
-        other_config = self.make_home(other)
-        other_config.write_text(provider.overlay(other_config.read_text(), {"model": "gpt-6-sol"}))
-        self.assertEqual(self.cli("subscription", "--apply").returncode, 0)
-        for home, choice in [(self.home, "subscription"), (other, "azure")]:
-            config = home / ".codex/config.toml"
-            source_cache = (config.parent / "models_cache.json").read_bytes()
-            # Replace the retired protocol override with the Azure-only model list.
-            write_text(config.parent / "azure-astra.config.toml",
-                       'model_catalog_json = "model-catalogs/azure-astra.json"\n'
-                       '[features]\nstandalone_web_search = false\n')
-            write_text(config.parent / "chatgpt.config.toml",
-                       'model_catalog_json = "models_cache.json"\n'
-                       '[features]\nstandalone_web_search = true\n')
-            sync_args = [str(REPO_ROOT / "codex/scripts/sync-config.sh"),
-                "--global-config", str(config), "--global-hooks", str(home / ".codex/hooks.json"),
-                "--canonical-dir", str(root / "codex/config"), "--mcp-registry", str(root / "mcp/config/presets.json"),
-                "--plugin-registry", str(root / "plugins/registry.json"), "--hooks-registry", str(root / "hooks/registry.json")]
-            before = config.read_bytes()
-            run_command(sync_args, env={"HOME": str(home)})
-            self.assertEqual(config.read_bytes(), before, "dry-run must not change provider config")
-            self.assertTrue((config.parent / "model-catalogs/azure-astra.json").exists())
-            self.assertFalse(self.catalog_path(config).exists())
-            for _ in range(2):
-                run_command([*sync_args, "--apply"], env={"HOME": str(home)})
-                data = json.loads(self.cli("status", home=home).stdout)["data"]
-                self.assertEqual(data["selected"], choice)
-                self.assertTrue(data["persisted"])
-                self.assertTrue(data["config_in_sync"])
-                if choice == "azure":
-                    self.assertEqual(tomllib.loads(config.read_text())["model_catalog_json"], provider.AZURE_CATALOG)
-                    self.assertEqual(tomllib.loads(config.read_text())["model"], "gpt-6-sol")
-                    self.assertEqual(tomllib.loads(config.read_text())["model_context_window"], 400000)
-                    self.assertEqual(tomllib.loads(config.read_text())["model_auto_compact_token_limit"], 350000)
-                else:
-                    self.assertNotIn("model_catalog_json", tomllib.loads(config.read_text()))
-                    self.assertNotIn("model_context_window", tomllib.loads(config.read_text()))
-                    self.assertNotIn("model_auto_compact_token_limit", tomllib.loads(config.read_text()))
-                self.assertNotIn("standalone_web_search", tomllib.loads(config.read_text()).get("features", {}))
-                self.assertFalse((config.parent / "model-catalogs/azure-astra.json").exists())
-                self.assertEqual((config.parent / "models_cache.json").read_bytes(), source_cache)
-                self.assertEqual(json.loads(self.catalog_path(config).read_text())["models"], self.catalog_models())
-                for name in provider.PROFILES.values():
-                    profile = tomllib.loads((config.parent / name).read_text())
-                    if name == provider.PROFILES["azure"]:
-                        self.assertEqual(profile["model_catalog_json"], provider.AZURE_CATALOG)
-                        self.assertEqual(profile["model"], "gpt-6-astra")
-                        self.assertEqual(profile["model_context_window"], 400000)
-                        self.assertEqual(profile["model_auto_compact_token_limit"], 350000)
-                    else:
-                        self.assertNotIn("model_catalog_json", profile)
-                        self.assertNotIn("model_context_window", profile)
-                        self.assertNotIn("model_auto_compact_token_limit", profile)
-                    self.assertNotIn("standalone_web_search", profile.get("features", {}))
-                run_command([sys.executable, str(REPO_ROOT / "codex/scripts/provider_selection.py"), "check",
-                             str(root / "codex/config"), str(config)], env={"HOME": str(home)})
-        self.assertEqual(json.loads(self.cli("status").stdout)["data"]["selected"], "subscription")
+    def test_desktop_cli_links_include_adjacent_code_mode_host_only(self):
+        resources = self.temp_path / 'resources'
+        for name in ['codex', 'codex-code-mode-host']:
+            write_text(resources / 'codex-cli/bin' / name, 'native companion')
+        native = write_text(resources / 'codex-cli/CodexCLI.app/Contents/MacOS/codex', 'native executable')
+        targets = installer.codex_command_targets(self.home, resources)
+        self.assertEqual(set(path.name for path in targets), {'codex', 'codex-code-mode-host'})
+        self.assertEqual(targets[self.home / 'bin/codex'], native)
+        self.assertEqual(targets[self.home / 'bin/codex-code-mode-host'], resources / 'codex-cli/bin/codex-code-mode-host')
