@@ -1,6 +1,6 @@
 # Agent Control-Plane Operations
 
-This repo manages shared guidance, skills, MCPs, lifecycle hooks, and native client configuration. Canonical source lives in `~/GitHub/agents`; `~/.agents/skills`, `~/.codex`, and `~/.claude` are runtime locations. `repos/registry.json` gives repositories stable IDs and explicitly enables each client. Claude is initially enabled only for the `agents` pilot.
+This repo manages shared guidance, skills, MCPs, lifecycle hooks, and native client configuration. Canonical source lives in `~/GitHub/agents`; `~/.agents/skills`, `~/.codex`, and `~/.claude` are runtime locations. `repos/registry.json` gives repositories stable IDs and explicitly enables each client. New enrollments enable both Codex and Claude; Claude additionally requires opt-in on each machine.
 
 ## Apply and validate
 
@@ -34,7 +34,7 @@ WIN owns its active implementation and release.
 | Command or source | Contract |
 | --- | --- |
 | `scripts/auto-apply-agent-control-planes.sh --apply` | Reconcile runtime-relevant changes since a machine-local Git revision stamp; use full bootstrap for first sync or shared-input changes |
-| `scripts/enroll-managed-repos.sh --apply` | Add direct child Git repos under `~/GitHub` to `repos/registry.json`; new entries enable Codex and leave Claude disabled |
+| `scripts/enroll-managed-repos.sh --apply` | Add direct child Git repos under `~/GitHub` to `repos/registry.json`; new entries enable both Codex and Claude |
 | `scripts/sync-skills-registry.sh` | Render global and repo skill links from `skills/registry.json` |
 | `scripts/sync-plugins-registry.sh` | Validate native plugin entries; Codex config sync renders their runtime state |
 | `scripts/sync-codex-plugin-installs.py` | Install enabled missing native plugin packages |
@@ -44,16 +44,16 @@ WIN owns its active implementation and release.
 | `claude/scripts/sync-claude.py --apply` | Reconcile owned Claude guidance, portable skills, project MCP, and selected hooks; `--check` reports drift and default is `--dry-run` |
 | `scripts/audit-agent-runtime-drift.py --plain` | Read-only machine-health report for plugin and Codex runtime drift |
 
-## Claude pilot
+## Claude machine opt-in
 
 Each machine opts in explicitly with `python3 claude/scripts/sync-claude.py --apply --enable`.
 The private opt-in and output ownership records live under
 `~/.local/state/agents-control-plane/claude/`; normal sync skips machines that
 have not opted in. `--apply --disable` removes only renderer-owned outputs and
 keys, while retaining user data. Local opt-in does not enable other machines.
-The pilot's `.claude/skills`, `.claude/settings.json`, and `.mcp.json` outputs are
-Git-ignored so repository sync cannot bypass that machine selection. Before
-enabling another repository, establish the same generated-output exclusions;
+The renderer excludes each repo's `.claude/skills`, `.claude/settings.json`, and
+`.mcp.json` outputs through that clone's `.git/info/exclude`, so repository sync
+cannot bypass machine selection. It refuses to overwrite tracked configuration;
 do not untrack a hand-written shared configuration as part of rollout.
 
 Shared orchestration skips Codex-only materialization and runtime checks when

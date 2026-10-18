@@ -9,6 +9,7 @@ ROOT_DIR="$(cd "$CONTROL_PLANE_DIR/.." && pwd)"
 APPLY=0
 SYNC_GLOBAL=1
 PLUGINS_ONLY=0
+HOOKS_ONLY=0
 GLOBAL_ONLY_REQUESTED=0
 GITHUB_ROOT="${HOME}/GitHub"
 GLOBAL_CONFIG="${HOME}/.codex/config.toml"
@@ -37,6 +38,7 @@ Options:
   --dry-run                  Show planned changes only (default)
   --global-only              Sync ~/.codex/config.toml only
   --plugins-only             Reconcile managed plugin sections in an existing config only
+  --hooks-only               Enable and render managed hooks, preserving other app settings
   --github-root <path>       Root path for workspace-write writable_roots
                              (default: ~/GitHub)
   --global-config <path>     Override global codex config target
@@ -98,6 +100,10 @@ while [[ $# -gt 0 ]]; do
       PLUGINS_ONLY=1
       shift
       ;;
+    --hooks-only)
+      HOOKS_ONLY=1
+      shift
+      ;;
     --github-root)
       GITHUB_ROOT="${2:-}"
       shift 2
@@ -146,8 +152,8 @@ while [[ $# -gt 0 ]]; do
   esac
 done
 
-if (( PLUGINS_ONLY == 1 && GLOBAL_ONLY_REQUESTED == 1 )); then
-  die "--plugins-only and --global-only are mutually exclusive"
+if (( PLUGINS_ONLY + HOOKS_ONLY + GLOBAL_ONLY_REQUESTED > 1 )); then
+  die "--plugins-only, --hooks-only and --global-only are mutually exclusive"
 fi
 
 if (( APPLY == 1 )) && [[ "${CODEX_CONFIG_LOCK_HELD:-}" != "$GLOBAL_CONFIG" ]]; then
@@ -1213,6 +1219,45 @@ sync_global() {
   cleanup_agent_role_dir "Global Agent Roles" "$GLOBAL_AGENTS_DIR"
 }
 
+sync_hooks_only() {
+  local rendered="${TMP_DIR}/hooks.config.toml"
+  local hooks_rendered="${TMP_DIR}/hooks.json"
+
+  require_readable_file "$GLOBAL_CONFIG"
+  require_readable_file "$HOOKS_REGISTRY"
+  prepare_work_file "$GLOBAL_CONFIG" "$rendered"
+  render_codex_hooks "$HOOKS_REGISTRY" "$hooks_rendered"
+  upsert_section_key "$rendered" "features" "hooks" "true"
+
+  # This component must not reconcile providers, plugins, profiles, skill
+  # preferences, credentials or the native Computer Use notification command.
+  python3 - "$GLOBAL_CONFIG" "$rendered" <<'PY'
+import sys
+import tomllib
+from pathlib import Path
+
+before, after = [tomllib.loads(Path(path).read_text()) for path in sys.argv[1:]]
+for config in (before, after):
+    features = config.get("features", {})
+    features.pop("hooks", None)
+    if not features:
+        config.pop("features", None)
+if before != after:
+    raise SystemExit("ERROR: hook component changed unrelated configuration")
+PY
+
+  log ""
+  log "=== Managed Codex Hook Enablement (${GLOBAL_CONFIG}) ==="
+  show_diff "$GLOBAL_CONFIG" "$rendered"
+  log ""
+  log "=== Global Codex Hooks (${GLOBAL_HOOKS}) ==="
+  show_diff "$GLOBAL_HOOKS" "$hooks_rendered"
+  if (( APPLY == 1 )); then
+    install_rendered_file "$hooks_rendered" "$GLOBAL_HOOKS"
+    install_rendered_file "$rendered" "$GLOBAL_CONFIG"
+  fi
+}
+
 sync_plugins_only() {
   local original="$GLOBAL_CONFIG"
   local rendered="${TMP_DIR}/plugins.config.toml"
@@ -1520,7 +1565,9 @@ else
   log "Mode: DRY-RUN (no files written)"
 fi
 
-if (( PLUGINS_ONLY == 1 )); then
+if (( HOOKS_ONLY == 1 )); then
+  sync_hooks_only
+elif (( PLUGINS_ONLY == 1 )); then
   sync_plugins_only
 elif (( SYNC_GLOBAL == 1 )); then
   catalog_args=()
@@ -1532,7 +1579,7 @@ elif (( SYNC_GLOBAL == 1 )); then
   sync_profile_configs
   cleanup_retired_azure_catalog
 fi
-if (( APPLY == 1 && PLUGINS_ONLY == 0 )); then
+if (( APPLY == 1 && PLUGINS_ONLY == 0 && HOOKS_ONLY == 0 )); then
   ensure_enabled_openai_bundled_plugins
 fi
 

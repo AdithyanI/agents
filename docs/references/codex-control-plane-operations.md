@@ -259,6 +259,31 @@ Use [Codex Control Plane Ownership](codex-control-plane-ownership.md) for the ex
 - Native Codex plugin scope and state lives separately in [`plugins/registry.json`](../../plugins/registry.json).
 - The `defaults.codex` block supplies fallback values for allowed Codex repo behavior. It must not contain model, effort, profile, Fast/service-tier, or related thread-selection keys.
 
+## Hooks On An Existing Lean Client
+
+When the app already owns working provider, plugin and model preferences, use
+the hook component to add shared turn completion without applying the full
+personal preset:
+
+```bash
+~/GitHub/agents/codex/scripts/sync-config.sh --hooks-only --apply
+~/GitHub/agents/codex/scripts/sync-hook-trust-state.py --apply \
+  --repo ~/GitHub/agents --repo ~/GitHub/scripts
+```
+
+The first command enables `features.hooks` and renders canonical global hooks.
+It preserves Computer Use notifications, plugins, model/Fast choices, profiles,
+credentials and other app settings, and installs no dependencies or schedulers.
+The second trusts the rendered global and selected repository hooks. Restart
+Codex to load newly installed hooks. Guidance, skill links, repository config and
+Git hooks still use their respective components when needed.
+
+This is intentional component setup, not full-preset convergence. The full shared
+bootstrap also reconciles global plugins/settings and installs PDF dependencies
+and the stale-thread scheduler; `--repo` only scopes its repository operations.
+Full runtime validation may report preset drift on a component-managed client.
+Review a full dry-run before choosing that broader setup.
+
 ## Automatic Cross-Machine Apply
 
 - Launchd still lives in [`~/GitHub/scripts/sync/git-auto-sync.sh`](../../../scripts/sync/git-auto-sync.sh), because scheduler ownership is part of the generic machine-ops repo.
