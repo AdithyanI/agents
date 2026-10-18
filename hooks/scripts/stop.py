@@ -992,6 +992,19 @@ def head_commit(root: str) -> str:
     return result.stdout.strip() if result.returncode == 0 else ""
 
 
+def commit_is_published(root: str, commit: str) -> bool:
+    remote = resolve_push_remote(root)
+    if not remote or not commit:
+        return False
+    result = run(
+        ["git", "for-each-ref", f"--contains={commit}", "--format=%(refname)",
+         f"refs/remotes/{remote}/"],
+        root,
+        timeout=GIT_STATUS_TIMEOUT_SEC,
+    )
+    return result.returncode == 0 and bool(result.stdout.strip())
+
+
 def unpushed_head(root: str) -> str:
     result = run(
         ["git", "rev-list", "--count", "@{upstream}..HEAD"],
@@ -1005,7 +1018,10 @@ def unpushed_head(root: str) -> str:
             return ""
     if not resolve_push_remote(root):
         return ""
-    return head_commit(root)
+    commit = head_commit(root)
+    # Release/install branches may have no tracking branch while their HEAD is
+    # already part of the upstream history. That is not unpublished work.
+    return "" if commit_is_published(root, commit) else commit
 
 
 def validate_rebased_repo(
@@ -1357,6 +1373,11 @@ def finalize_codex_repositories(
             if not status_ok:
                 failures.append(f"Repository {item.root}: could not inspect working-tree changes.")
                 continue
+            if not current_changes and item.commit and commit_is_published(item.root, item.commit):
+                # Revalidate saved retries too: older hooks could record a
+                # clean installation's existing upstream commit as unpublished.
+                item.commit = ""
+                item.phase = "pending"
             if not current_changes and not item.commit:
                 existing_unpushed = unpushed_head(item.root)
                 if not existing_unpushed:

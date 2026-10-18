@@ -1036,6 +1036,55 @@ class CodexMultiRepoStopTests(TempDirTestCase):
             "pending\n",
         )
 
+    def test_clean_shell_candidate_without_tracking_branch_is_already_published(self) -> None:
+        primary, _ = self.make_published_repo("primary")
+        candidate, _ = self.make_published_repo("installed-tool")
+        run_command(["git", "-C", str(candidate), "checkout", "-b", "stable"])
+        before = stop.head_commit(str(candidate))
+        path = primary / "change.txt"
+        path.write_text("source change\n", encoding="utf-8")
+        changes = self.changes([path])
+        changes.shell_paths = (str(candidate),)
+        with patch.dict(os.environ, {"HOME": str(self.temp_path / "home")}):
+            with patch.object(stop, "collect_codex_turn_changes", return_value=changes), patch.object(
+                stop, "push_committed_repo", wraps=stop.push_committed_repo,
+            ) as pushes:
+                output = stop.process_codex_repositories(str(primary), {"session_id": "thread"})
+        self.assertIsNone(output)
+        self.assertEqual([call.args[0] for call in pushes.call_args_list], [str(primary.resolve())])
+        self.assertEqual(stop.head_commit(str(candidate)), before)
+        self.assertFalse(stop.has_tracking_upstream(str(candidate)))
+        self.assertEqual(run_command(["git", "-C", str(candidate), "status", "--porcelain"]).stdout, "")
+
+    def test_saved_clean_commit_without_tracking_branch_is_not_retried(self) -> None:
+        primary, _ = self.make_published_repo("primary")
+        candidate, _ = self.make_published_repo("installed-tool")
+        run_command(["git", "-C", str(candidate), "checkout", "-b", "stable"])
+        with patch.dict(os.environ, {"HOME": str(self.temp_path / "home")}):
+            stop.save_codex_transaction("thread", {str(candidate): stop.RepoFinalization(
+                root=str(candidate), phase="committed", commit=stop.head_commit(str(candidate)),
+            )})
+            with patch.object(stop, "collect_codex_turn_changes", return_value=self.changes([])), patch.object(
+                stop, "push_committed_repo", side_effect=AssertionError("already-published commit was pushed"),
+            ):
+                output = stop.process_codex_repositories(str(primary), {"session_id": "thread"})
+            self.assertEqual(stop.load_codex_transaction("thread"), {})
+        self.assertIsNone(output)
+        self.assertFalse(stop.has_tracking_upstream(str(candidate)))
+
+    def test_unpublished_commit_without_tracking_branch_is_still_pushed(self) -> None:
+        repo, remote = self.make_published_repo("repo")
+        run_command(["git", "-C", str(repo), "checkout", "-b", "new-work"])
+        (repo / "new.txt").write_text("new work\n", encoding="utf-8")
+        run_command(["git", "-C", str(repo), "add", "new.txt"])
+        run_command(["git", "-C", str(repo), "commit", "-m", "new unpublished work"])
+        with patch.dict(os.environ, {"HOME": str(self.temp_path / "home")}):
+            with patch.object(stop, "collect_codex_turn_changes", return_value=self.changes([])):
+                output = stop.process_codex_repositories(str(repo), {"session_id": "thread"})
+        self.assertIsNone(output)
+        self.assertTrue(stop.has_tracking_upstream(str(repo)))
+        self.assertEqual(run_command(["git", "-C", str(remote), "show", "new-work:new.txt"]).stdout, "new work\n")
+
     def test_pushes_precommitted_primary_repo_without_attributed_files(self) -> None:
         repo, remote = self.make_published_repo("repo")
         path = repo / "already-committed.txt"

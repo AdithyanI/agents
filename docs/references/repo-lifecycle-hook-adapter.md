@@ -118,6 +118,9 @@ plain context; the shared dispatcher wraps it in event-specific JSON.
   even a read command can select a repo with pending changes. Unreferenced dirty
   siblings are untouched; clean candidates are skipped. Computed paths absent
   from command text/cwd still need explicit transaction registration.
+  A missing tracking branch alone does not prove there is unpublished work:
+  skip a clean HEAD already contained in the selected remote's history, including
+  an older saved retry that mistakenly recorded that commit for publication.
 - Read-only discovery can encounter inert Git markers: an empty `.git`
   directory in a tool cache or a worktree gitfile pointing to a missing
   metadata directory. Drop these candidates, including restored pending
