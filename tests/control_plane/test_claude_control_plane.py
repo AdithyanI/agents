@@ -5,12 +5,27 @@ import io
 import json
 import os
 from pathlib import Path
+import plistlib
 import subprocess
 import tempfile
 import unittest
 from unittest.mock import patch
 
-from claude.control_plane import ClaudeSyncError, STATE, atomic_write, probe_client, sync
+from claude.control_plane import ClaudeSyncError, STATE, atomic_write, desktop_engine, probe_client, probe_desktop, sync
+
+
+def desktop_bundle(root: Path) -> Path:
+    app = root / "Claude.app"
+    contents = app / "Contents"
+    executable = contents / "MacOS/Claude"
+    executable.parent.mkdir(parents=True)
+    executable.write_text("fixture executable; never launch")
+    executable.chmod(0o755)
+    (contents / "Info.plist").write_bytes(plistlib.dumps({
+        "CFBundleIdentifier": "com.anthropic.claudefordesktop",
+        "CFBundleExecutable": "Claude", "CFBundleShortVersionString": "2.42304.0",
+    }))
+    return app
 
 
 class ClaudeControlPlaneTests(unittest.TestCase):
@@ -216,16 +231,58 @@ class ClaudeControlPlaneTests(unittest.TestCase):
         self.assertFalse((self.home / ".claude").exists())
         self.assertFalse((self.home / STATE / "manifest.json").exists())
 
-    def test_machine_is_disabled_by_default_without_mutation(self) -> None:
+    def test_desktop_only_machine_renders_shared_local_code_configuration(self) -> None:
+        (self.home / STATE / "enabled.json").unlink()
+        app = desktop_bundle(self.home / "Applications")
+        settings = {"model": "native-choice", "permissions": {"defaultMode": "default"}}
+        self.json(self.home / ".claude/settings.json", settings)
+        self.write(self.home / ".claude/credentials.json", "native auth remains private")
+        with patch("claude.control_plane.probe_client", side_effect=probe_client), \
+                patch("claude.control_plane.shutil.which", return_value=None), \
+                patch("claude.control_plane.sys.platform", "darwin"), \
+                patch("claude.control_plane.probe_desktop", side_effect=lambda: probe_desktop((app,))), \
+                patch("claude.control_plane.desktop_engine", return_value=None):
+            self.assertEqual(0, self.run_sync())
+            self.assertEqual(0, self.run_sync("check"))
+        self.assertTrue((self.home / ".claude/CLAUDE.md").is_file())
+        self.assertTrue((self.repo / ".claude/skills/repo-helper").is_symlink())
+        self.assertTrue((self.repo / ".mcp.json").is_file())
+        self.assertEqual(settings, json.loads((self.home / ".claude/settings.json").read_text()))
+        self.assertEqual("native auth remains private", (self.home / ".claude/credentials.json").read_text())
+
+    def test_machine_is_enabled_by_default_with_readonly_check_and_idempotent_apply(self) -> None:
+        enablement = self.home / STATE / "enabled.json"
+        enablement.unlink()
+        before = {p: p.lstat().st_mtime_ns for p in self.home.rglob("*")}
+        self.assertEqual(0, self.run_sync("dry-run"))
+        self.assertEqual(1, self.run_sync("check"))
+        self.assertEqual(before, {p: p.lstat().st_mtime_ns for p in self.home.rglob("*")})
+        self.assertEqual(0, self.run_sync())
+        self.assertTrue((self.home / ".claude/CLAUDE.md").is_file())
+        self.assertTrue((self.repo / ".mcp.json").is_file())
+        self.assertFalse(enablement.exists(), "default enablement needs no persisted override")
+        self.assertEqual(0, self.run_sync("check"))
+        before = {p: p.lstat().st_mtime_ns for p in self.home.rglob("*")}
+        self.assertEqual(0, self.run_sync())
+        self.assertEqual(before, {p: p.lstat().st_mtime_ns for p in self.home.rglob("*")})
+
+    def test_fresh_machine_without_optional_cli_remains_untouched(self) -> None:
         (self.home / STATE / "enabled.json").unlink()
         before = {p: p.lstat().st_mtime_ns for p in self.home.rglob("*")}
-        for mode in ("apply", "dry-run", "check"):
-            self.assertEqual(0, self.run_sync(mode))
+        with patch("claude.control_plane.probe_client", return_value=None):
+            for mode in ("apply", "dry-run", "check"):
+                self.assertEqual(0, self.run_sync(mode))
         self.assertEqual(before, {p: p.lstat().st_mtime_ns for p in self.home.rglob("*")})
+
+    def test_explicit_disable_while_waiting_for_lock_wins_over_default_enablement(self) -> None:
+        enablement = self.home / STATE / "enabled.json"
+        enablement.unlink()
+        def disable_before_lock_returns(_stream, _operation):
+            self.json(enablement, {"enabled": False})
+        with patch("claude.control_plane.fcntl.flock", side_effect=disable_before_lock_returns):
+            self.assertEqual(0, self.run_sync())
         self.assertFalse((self.home / ".claude").exists())
-        self.assertEqual(0, self.run_sync(enable=True))
-        self.assertEqual({"enabled": True}, json.loads((self.home / STATE / "enabled.json").read_text()))
-        self.assertEqual(0, self.run_sync("check"))
+        self.assertEqual({"enabled": False}, json.loads(enablement.read_text()))
 
     def test_machine_disable_cleans_outputs_without_cli(self) -> None:
         self.run_sync()
@@ -237,6 +294,10 @@ class ClaudeControlPlaneTests(unittest.TestCase):
         self.assertEqual(0, self.run_sync("check"))
         self.assertEqual(0, self.run_sync())
         self.assertFalse((self.home / ".claude/CLAUDE.md").exists())
+        self.assertEqual(0, self.run_sync(enable=True))
+        self.assertEqual({"enabled": True}, json.loads((self.home / STATE / "enabled.json").read_text()))
+        self.assertTrue((self.home / ".claude/CLAUDE.md").is_file())
+        self.assertEqual(0, self.run_sync("check"))
 
     def test_machine_enablement_requires_apply_and_disable_is_whole_machine(self) -> None:
         with self.assertRaisesRegex(ClaudeSyncError, "require --apply"):
@@ -244,7 +305,7 @@ class ClaudeControlPlaneTests(unittest.TestCase):
         with self.assertRaisesRegex(ClaudeSyncError, "entire machine"):
             self.run_sync(selected={self.repo}, disable=True)
 
-    def test_failed_enable_does_not_opt_machine_in(self) -> None:
+    def test_failed_explicit_enable_does_not_persist_override(self) -> None:
         enablement = self.home / STATE / "enabled.json"
         enablement.unlink()
         self.write(self.home / ".claude/CLAUDE.md", "personal")
@@ -344,13 +405,71 @@ class ClaudeControlPlaneTests(unittest.TestCase):
 
 class ClaudeClientProbeTests(unittest.TestCase):
     def test_optional_missing_and_required_missing(self) -> None:
-        with patch("claude.control_plane.shutil.which", return_value=None):
+        with patch("claude.control_plane.shutil.which", return_value=None), \
+                patch("claude.control_plane.probe_desktop", return_value=None):
             self.assertIsNone(probe_client({}))
             with self.assertRaisesRegex(ClaudeSyncError, "Required Claude"):
                 probe_client({"required": True})
 
+    def test_desktop_fallback_reports_app_version_without_claiming_cli_version(self) -> None:
+        with tempfile.TemporaryDirectory() as temporary:
+            app = desktop_bundle(Path(temporary))
+            with patch("claude.control_plane.sys.platform", "darwin"):
+                label = probe_desktop((app,))
+            self.assertEqual("Desktop 2.42304.0", label)
+        with patch("claude.control_plane.shutil.which", return_value=None), \
+                patch("claude.control_plane.probe_desktop", return_value=label), \
+                patch("claude.control_plane.desktop_engine", return_value=None), \
+                patch("claude.control_plane.subprocess.run", side_effect=AssertionError("No engine means no version command")):
+            self.assertEqual(label + " (embedded Code engine version not CLI-probed)", probe_client({"required": True, "minimum_version": "999.0.0"}))
+
+    def test_existing_desktop_engine_is_discovered_by_version_and_probed_without_installing(self) -> None:
+        with tempfile.TemporaryDirectory() as temporary:
+            cache = Path(temporary)
+            for version, build in (("2.1.9", "aaaa"), ("2.1.299", "bbbb")):
+                app = cache / version / build / "claude.app"
+                executable = app / "Contents/MacOS/claude"
+                executable.parent.mkdir(parents=True)
+                executable.write_text("fixture engine; subprocess is mocked")
+                executable.chmod(0o755)
+                (app / "Contents/Info.plist").write_bytes(plistlib.dumps({
+                    "CFBundleIdentifier": "com.anthropic.claude-code", "CFBundleExecutable": "claude",
+                    "CFBundleShortVersionString": version,
+                }))
+            (cache / "2.1.999/cccc/claude.app").mkdir(parents=True)
+            expected = cache / "2.1.299/bbbb/claude.app/Contents/MacOS/claude"
+            self.assertEqual(expected, desktop_engine(cache))
+            with patch("claude.control_plane.shutil.which", return_value=None), \
+                    patch("claude.control_plane.probe_desktop", return_value="Desktop 2.42304.0"), \
+                    patch("claude.control_plane.desktop_engine", return_value=expected), \
+                    patch("claude.control_plane.subprocess.run") as run:
+                run.return_value = subprocess.CompletedProcess([], 0, "2.1.299 (Claude Code)\n", "")
+                self.assertEqual("Desktop 2.42304.0 (bundled Code 2.1.299)", probe_client({"minimum_version": "2.1.281"}))
+                run.assert_called_once_with([str(expected), "--version"], capture_output=True, text=True, timeout=15, check=False)
+                run.return_value.stdout = "2.1.275 (Claude Code)\n"
+                with self.assertRaisesRegex(ClaudeSyncError, "update Claude Desktop"):
+                    probe_client({"minimum_version": "2.1.281"})
+            self.assertIsNone(desktop_engine(cache / "absent"))
+
+    def test_desktop_probe_rejects_unrelated_bundle_and_nonexecutable_file(self) -> None:
+        with tempfile.TemporaryDirectory() as temporary, patch("claude.control_plane.sys.platform", "darwin"):
+            app = desktop_bundle(Path(temporary))
+            plist = app / "Contents/Info.plist"
+            info = plistlib.loads(plist.read_bytes())
+            info["CFBundleIdentifier"] = "unrelated"
+            plist.write_bytes(plistlib.dumps(info))
+            self.assertIsNone(probe_desktop((app,)))
+            info["CFBundleIdentifier"] = "com.anthropic.claudefordesktop"
+            plist.write_bytes(plistlib.dumps(info))
+            (app / "Contents/MacOS/Claude").chmod(0o644)
+            self.assertIsNone(probe_desktop((app,)))
+            plist.write_text("invalid plist")
+            self.assertIsNone(probe_desktop((app,)))
+
     def test_old_version_fails_and_supported_version_succeeds(self) -> None:
-        with patch("claude.control_plane.shutil.which", return_value="/usr/bin/claude"), patch("claude.control_plane.subprocess.run") as run:
+        with patch("claude.control_plane.shutil.which", return_value="/usr/bin/claude"), \
+                patch("claude.control_plane.probe_desktop", side_effect=AssertionError("CLI version must be checked when present")), \
+                patch("claude.control_plane.subprocess.run") as run:
             run.return_value = subprocess.CompletedProcess([], 0, "2.1.275 (Claude Code)\n", "")
             with self.assertRaisesRegex(ClaudeSyncError, "upgrade Claude Code"):
                 probe_client({"minimum_version": "2.1.281"})

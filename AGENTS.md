@@ -1,6 +1,6 @@
 # Agents Control-Plane Repo
 
-Shared agent guidance, skills, MCPs, repository policy, and native client adapters, reproduced across MacBook and Mac Mini. Codex and Claude Code are both enabled across enrolled repos on opted-in machines.
+Shared agent guidance, skills, MCPs, repository policy, and native client adapters, reproduced across MacBook and Mac Mini. Codex and Claude Code are both enabled across enrolled repos by default when installed; machines can explicitly disable Claude management.
 
 ## Orientation
 
@@ -10,7 +10,7 @@ For changes affecting Dobby ownership, engine/workspace boundaries, dashboard/ga
 
 | Source | Owns |
 | --- | --- |
-| `config/global.agents.md` | Shared guidance rendered to Codex and the opted-in Claude runtime |
+| `config/global.agents.md` | Shared guidance rendered to enabled Codex and Claude runtimes |
 | `repos/registry.json` | Stable repository IDs, paths, explicit client enablement, and native client config |
 | `codex/config/` | Personal Codex config and bundled-skill policy |
 | `claude/` | Native Claude guidance, skill, MCP, settings, and ownership reconciliation |
@@ -39,7 +39,7 @@ Shared bootstrap/check support exact repository paths, such as `--repo ~/GitHub/
 
 ## Contracts
 
-- Repository client enablement is explicit in `repos/registry.json`; Claude additionally requires machine-local opt-in. Claude Code requires at least `2.1.281` for native root and nested `AGENTS.md` discovery. New enrollments enable both clients.
+- Repository client enablement is explicit in `repos/registry.json`; Claude management defaults on when installed and respects an explicit machine-local opt-out. When installed, the Claude Code CLI must be at least `2.1.281` for native root and nested `AGENTS.md` discovery. Claude Desktop local Code sessions share the same config and reuse the app-managed Code engine for version checks; no separate CLI installation is needed. New enrollments enable both clients.
 - Historical retired-client cleanup is an explicit destructive migration, excluded from bootstrap and health checks. Never run it to repair current Claude setup.
 - Repo bootstrap entries define behavior such as `personality`, `model_instructions_file`, `developer_instructions`, `project_root_markers`, and `features`. Model, reasoning effort, profile, and Fast/service tier remain client-owned.
 - A repo's identity prompt is declared once as `model_instructions_file`; it reaches Codex through the generated repo config.
@@ -57,7 +57,7 @@ Shared bootstrap/check support exact repository paths, such as `--repo ~/GitHub/
 ## Hooks and Validation
 
 - Optional repo lifecycle scripts live at `scripts/hooks/session_start.py`, `scripts/hooks/user_prompt_submit.py`, and `scripts/hooks/finalize_codex_thread.py`. Follow `docs/references/repo-lifecycle-hook-adapter.md` for their contracts.
-- Claude supports the first two events plus global turn finalization on opted-in machines: `hooks/scripts/claude_tool_use.py` (PostToolUse) records touched repositories per session, and the shared `global-stop` finalizer checks, commits, rebases, and pushes them as it does for Codex.
+- Claude supports the first two events plus global turn finalization on enabled machines: `hooks/scripts/claude_tool_use.py` (PostToolUse) records touched repositories per session, and the shared `global-stop` finalizer checks, commits, rebases, and pushes them as it does for Codex.
 - Managed repos use `core.hooksPath` pointing at this repo's `hooks/git/`. Commit-time validation delegates to repo `scripts/check-fast.sh` when present. Keep it local, deterministic, and quick; slower checks belong in `scripts/check-full.sh`.
 - Skill/plugin registry changes require their sync/check in the same change.
 - MCP, bootstrap, or preview registry changes require shared bootstrap/check and inspection of affected Codex output.

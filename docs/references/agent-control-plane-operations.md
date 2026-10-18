@@ -1,6 +1,6 @@
 # Agent Control-Plane Operations
 
-This repo manages shared guidance, skills, MCPs, lifecycle hooks, and native client configuration. Canonical source lives in `~/GitHub/agents`; `~/.agents/skills`, `~/.codex`, and `~/.claude` are runtime locations. `repos/registry.json` gives repositories stable IDs and explicitly enables each client. New enrollments enable both Codex and Claude; Claude additionally requires opt-in on each machine.
+This repo manages shared guidance, skills, MCPs, lifecycle hooks, and native client configuration. Canonical source lives in `~/GitHub/agents`; `~/.agents/skills`, `~/.codex`, and `~/.claude` are runtime locations. `repos/registry.json` gives repositories stable IDs and explicitly enables each client. New enrollments enable both Codex and Claude; Claude management defaults on when the optional client is installed and respects each machine's explicit opt-out.
 
 ## Apply and validate
 
@@ -44,13 +44,16 @@ WIN owns its active implementation and release.
 | `claude/scripts/sync-claude.py --apply` | Reconcile owned Claude guidance, portable skills, project MCP, and selected hooks; `--check` reports drift and default is `--dry-run` |
 | `scripts/audit-agent-runtime-drift.py --plain` | Read-only machine-health report for plugin and Codex runtime drift |
 
-## Claude machine opt-in
+## Claude machine enablement
 
-Each machine opts in explicitly with `python3 claude/scripts/sync-claude.py --apply --enable`.
-The private opt-in and output ownership records live under
-`~/.local/state/agents-control-plane/claude/`; normal sync skips machines that
-have not opted in. `--apply --disable` removes only renderer-owned outputs and
-keys, while retaining user data. Local opt-in does not enable other machines.
+Normal bootstrap manages Claude when Desktop or the Code CLI is installed; a missing
+`enabled.json` means enabled. No machine preference file is needed for this default.
+An explicit `python3 claude/scripts/sync-claude.py --apply --disable` removes only
+renderer-owned outputs and keys, retains user data, and persists the opt-out.
+`--apply --enable` re-enables that machine. These preferences and output ownership
+records live under `~/.local/state/agents-control-plane/claude/` and do not sync
+between machines. If neither client is installed, bootstrap skips Claude without
+creating outputs.
 The renderer excludes each repo's `.claude/skills`, `.claude/settings.json`, and
 `.mcp.json` outputs through that clone's `.git/info/exclude`, so repository sync
 cannot bypass machine selection. It refuses to overwrite tracked configuration;
@@ -62,12 +65,27 @@ Installed Codex still runs its normal checks. After installing a previously
 absent client, rerun bootstrap; post-sync reconciliation tracks source revisions,
 not application installation events.
 
-Claude Code must be at least `2.1.281`. Root and nested `AGENTS.md` discovery uses
-the client's built-in support; no project instruction mirror is generated.
-The renderer preserves instruction-selection preferences and permission settings.
-After upgrading, use a fresh Claude session and verify `/context`, `/skills`, and
-`/mcp`; the first session after an older version upgrade may not load the AGENTS
-plugin yet. See [Claude instruction discovery](https://code.claude.com/docs/en/memory#agentsmd).
+Claude Desktop's **local Code sessions** and the CLI use the same guidance,
+skills, hooks and project MCP configuration; a standalone CLI is not required.
+This setup does not upload account skills or configure Cowork/cloud sessions.
+See [Desktop shared configuration](https://code.claude.com/docs/en/desktop#shared-configuration).
+
+When a CLI is available, the renderer checks that it is at least `2.1.281` for
+native root and nested `AGENTS.md` discovery. Without a standalone CLI, it validates
+the installed macOS Desktop bundle and discovers the newest complete Code engine
+already cached under `~/Library/Application Support/Claude/claude-code/`.
+It invokes that exact binary with `--version` and applies the same minimum.
+Version/build directories are discovered dynamically; no binary is copied,
+installed or linked onto PATH. Existing Code sessions are not interrupted.
+
+If Desktop has not downloaded its Code engine yet, the renderer can still prepare
+shared configuration and reports only the Desktop app version, explicitly noting
+that the embedded engine version was not CLI-probed. The app version is never
+compared with the Code minimum. Use an up-to-date Desktop and a fresh local Code
+session, then verify `/context`, `/skills` and `/mcp`.
+No project instruction mirror is generated; the renderer preserves native
+instruction-selection preferences, permissions, authentication and model choices.
+See [Claude instruction discovery](https://code.claude.com/docs/en/memory#agentsmd).
 
 Only standalone skills explicitly including `claude` in their registry `clients`
 are shared; omitted `clients` keeps existing Codex scope. Native plugins retain

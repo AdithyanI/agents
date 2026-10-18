@@ -101,7 +101,8 @@ plain context; the shared dispatcher wraps it in event-specific JSON.
 
 - Native Codex hook event, rendered as the shared global turn-end commit gate.
 - For Claude, `global-stop` and `claude-turn-attribution` render into
-  `~/.claude/settings.json` on opted-in machines, so finalization covers every
+  `~/.claude/settings.json` by default when Claude is installed, unless explicitly
+  disabled on that machine, so finalization covers every
   repository a Claude session touches, matching Codex. Claude exposes no turn
   record to query, so the PostToolUse adapter registers each Edit/Write/Notebook
   path and each Bash cwd and literal path into the session transaction as it

@@ -154,7 +154,7 @@ class HooksControlPlaneTests(TempDirTestCase):
             for repo in (None, "agents", "adi", "angie")
         }
         # Claude turn finalization is global like Codex Stop; the Claude renderer
-        # writes it to user settings only on opted-in machines.
+        # writes it to user settings unless the machine explicitly opts out.
         finalization = render_runtime_hooks(registry, "claude")
         self.assertEqual(sorted(finalization["hooks"]), ["PostToolUse", "Stop"])
         self.assertEqual(

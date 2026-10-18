@@ -13,6 +13,7 @@ import hashlib
 import json
 import os
 from pathlib import Path
+import plistlib
 import re
 import shutil
 import subprocess
@@ -45,22 +46,76 @@ def json_text(value: Any) -> str:
     return json.dumps(value, indent=2, sort_keys=True) + "\n"
 
 
+def probe_desktop(apps: tuple[Path, ...] | None = None) -> str | None:
+    """Recognize Desktop's shared local Code config without launching its engine."""
+    if sys.platform != "darwin":
+        return None
+    for app in apps or (Path("/Applications/Claude.app"), Path.home() / "Applications/Claude.app"):
+        try:
+            info = plistlib.loads((app / "Contents/Info.plist").read_bytes())
+            if not isinstance(info, dict):
+                continue
+            version = info.get("CFBundleShortVersionString")
+            executable = app / "Contents/MacOS/Claude"
+            if (info.get("CFBundleIdentifier") == "com.anthropic.claudefordesktop"
+                    and info.get("CFBundleExecutable") == "Claude"
+                    and isinstance(version, str) and re.fullmatch(r"\d+(?:\.\d+)+", version)
+                    and executable.is_file() and os.access(executable, os.X_OK)):
+                return f"Desktop {version}"
+        except (OSError, ValueError, plistlib.InvalidFileException):
+            continue
+    return None
+
+
+def desktop_engine(cache: Path | None = None) -> Path | None:
+    """Find the newest complete Code engine already managed by Desktop."""
+    cache = cache or Path.home() / "Library/Application Support/Claude/claude-code"
+    candidates = []
+    for app in cache.glob("*/*/claude.app"):
+        version, build = app.parent.parent.name, app.parent.name
+        if not re.fullmatch(r"\d+\.\d+\.\d+", version) or not re.fullmatch(r"[a-fA-F0-9]+", build):
+            continue
+        try:
+            info = plistlib.loads((app / "Contents/Info.plist").read_bytes())
+            executable = app / "Contents/MacOS/claude"
+            if (isinstance(info, dict) and info.get("CFBundleIdentifier") == "com.anthropic.claude-code"
+                    and info.get("CFBundleExecutable") == "claude"
+                    and info.get("CFBundleShortVersionString") == version
+                    and executable.is_file() and os.access(executable, os.X_OK)
+                    and executable.resolve().is_relative_to(cache.resolve())):
+                candidates.append((tuple(map(int, version.split("."))), build, executable))
+        except (OSError, ValueError, plistlib.InvalidFileException):
+            continue
+    return max(candidates)[2] if candidates else None
+
+
 def probe_client(policy: dict[str, Any]) -> str | None:
     executable = shutil.which("claude")
+    desktop = None
     if not executable:
-        if policy.get("required", False):
-            raise ClaudeSyncError("Required Claude Code CLI is missing; install Claude Code and rerun bootstrap.")
-        return None
-    result = subprocess.run([executable, "--version"], capture_output=True, text=True, timeout=15, check=False)
+        desktop = probe_desktop()
+        if desktop:
+            executable = desktop_engine()
+            if executable is None:
+                return f"{desktop} (embedded Code engine version not CLI-probed)"
+        else:
+            if policy.get("required", False):
+                raise ClaudeSyncError("Required Claude client is missing; install Claude Desktop or Claude Code CLI and rerun bootstrap.")
+            return None
+    result = subprocess.run([str(executable), "--version"], capture_output=True, text=True, timeout=15, check=False)
     match = re.search(r"\b(\d+)\.(\d+)\.(\d+)\b", result.stdout)
     minimum = policy.get("minimum_version", "2.1.281")
     if not isinstance(minimum, str) or not re.fullmatch(r"\d+\.\d+\.\d+", minimum):
         raise ClaudeSyncError("Claude policy minimum_version must be a three-part version")
     if result.returncode or not match:
+        if desktop:
+            raise ClaudeSyncError("Cannot identify Desktop's bundled Code version; update Claude Desktop and start a fresh local Code session.")
         raise ClaudeSyncError("Cannot identify Claude Code version; repair `claude --version` and rerun.")
     if tuple(map(int, match.groups())) < tuple(map(int, minimum.split("."))):
+        if desktop:
+            raise ClaudeSyncError(f"Desktop's bundled Code {match.group()} is below required {minimum}; update Claude Desktop for native AGENTS.md support.")
         raise ClaudeSyncError(f"Claude Code {match.group()} is below required {minimum}; upgrade Claude Code for native AGENTS.md support.")
-    return match.group()
+    return f"{desktop} (bundled Code {match.group()})" if desktop else match.group()
 
 
 def safe_parent(path: Path, anchor: Path) -> None:
@@ -434,7 +489,7 @@ def _sync_installed(root: Path, home: Path, *, version: str, mode: str, github_r
         if plan or manifest_changed:
             print("ERROR Claude outputs differ; run claude/scripts/sync-claude.py --apply.", file=sys.stderr)
             return 1
-        print(f"Claude Code {version}: control plane is current.")
+        print(f"Claude {version}: control plane is current.")
         return 0
     if mode == "apply" and (plan or manifest_changed or enablement_changed):
         backup_dir = home / STATE / "backups" / uuid.uuid4().hex
@@ -488,16 +543,16 @@ def sync(root: Path, home: Path, *, mode: str = "dry-run", github_root: Path | N
     safe_parent(enablement, home)
     if enablement.is_symlink():
         raise ClaudeSyncError(f"Refusing linked machine enablement: {enablement}")
-    settings = read_object(enablement) if enablement.exists() else {"enabled": False}
+    settings = read_object(enablement) if enablement.exists() else {"enabled": True}
     if set(settings) != {"enabled"} or not isinstance(settings["enabled"], bool):
         raise ClaudeSyncError(f"Invalid Claude machine enablement: {enablement}")
     machine_enabled = (settings["enabled"] or enable) and not disable
     if not machine_enabled and not disable:
-        print("SKIP Claude Code is disabled on this machine; opt in with --apply --enable.")
+        print("SKIP Claude Code is explicitly disabled on this machine; re-enable with --apply --enable.")
         return 0
     version = "disabled" if disable else probe_client(read_object(root / "claude/config/policy.json"))
     if version is None:
-        print("SKIP Claude Code is not installed (optional client).")
+        print("SKIP neither Claude Desktop nor Claude Code CLI is installed (optional client).")
         return 0
     if mode != "apply":
         return _sync_installed(root, home, version=version, mode=mode, github_root=github_root, selected=selected, machine_enabled=machine_enabled, update_enablement=False)
@@ -510,12 +565,12 @@ def sync(root: Path, home: Path, *, mode: str = "dry-run", github_root: Path | N
         fcntl.flock(stream, fcntl.LOCK_EX)
         recover_pending(home)
         # A preceding sync may have disabled this machine while we waited.
-        settings = read_object(enablement) if enablement.exists() else {"enabled": False}
+        settings = read_object(enablement) if enablement.exists() else {"enabled": True}
         if set(settings) != {"enabled"} or not isinstance(settings["enabled"], bool):
             raise ClaudeSyncError(f"Invalid Claude machine enablement: {enablement}")
         machine_enabled = (settings["enabled"] or enable) and not disable
         if not machine_enabled and not disable:
-            print("SKIP Claude Code is disabled on this machine; opt in with --apply --enable.")
+            print("SKIP Claude Code is explicitly disabled on this machine; re-enable with --apply --enable.")
             return 0
         return _sync_installed(root, home, version=version, mode=mode, github_root=github_root, selected=selected, machine_enabled=machine_enabled, update_enablement=enable or disable)
 
@@ -527,7 +582,7 @@ def main(argv: list[str] | None = None) -> int:
     modes.add_argument("--check", action="store_true")
     modes.add_argument("--dry-run", action="store_true")
     enablement = parser.add_mutually_exclusive_group()
-    enablement.add_argument("--enable", action="store_true", help="Opt this machine into Claude management (requires --apply)")
+    enablement.add_argument("--enable", action="store_true", help="Re-enable Claude management on this machine (requires --apply)")
     enablement.add_argument("--disable", action="store_true", help="Disable this machine and remove its owned outputs (requires --apply; no --repo)")
     parser.add_argument("--repo", action="append", default=[], help="Exact registered repository root; repeat to select several")
     parser.add_argument("--home", type=Path, default=Path.home(), help="Runtime home (isolated fixture support)")

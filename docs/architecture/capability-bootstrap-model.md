@@ -55,7 +55,10 @@ and private overrides remain native runtime state.
 used by Codex renderers. Shared Git-hook installation selects any enabled client;
 Codex config, hook trust, and stale-thread finalization select Codex explicitly.
 New automatically enrolled repositories enable both Codex and Claude.
-Claude additionally requires machine-local opt-in before rendering its outputs.
+Claude management defaults on when Claude Desktop or the optional Code CLI is
+installed. Desktop local Code sessions share the same generated configuration;
+a separate CLI is unnecessary. An explicit
+machine-local disable remains in effect until `--apply --enable` is requested.
 
 Capability assignments still use their established repository names or paths in
 the skills, MCP, hooks, and preview registries. Converting those references to
