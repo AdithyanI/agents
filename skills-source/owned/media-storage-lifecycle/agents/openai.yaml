@@ -1,4 +1,4 @@
 interface:
   display_name: "Media Storage Lifecycle"
-  short_description: "Choose media storage, transfers, and cleanup"
-  default_prompt: "Use $media-storage-lifecycle to keep intermediates near processing and choose explicit publication, retention, and cleanup boundaries."
+  short_description: "Choose object retention, access, and cleanup"
+  default_prompt: "Use $media-storage-lifecycle to choose cache, share, or permanent storage with explicit ownership, access, and cleanup; keep private archives private."

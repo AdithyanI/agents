@@ -1,6 +1,6 @@
 ---
 name: media-storage-lifecycle
-description: Use when adding, changing, reviewing, or cleaning media and object storage across WIN and its Modal runtime, aipodcasting, Remotion, local transcription, agent media tooling, or shared upload scripts. Covers S3 cache/share/permanent choices, Modal local/internal artifacts and persistent caches, browser uploads, provider-owned handoffs, object ownership and keys, expiry and reacquisition, replacement/deletion cleanup, orphan prevention, lifecycle rules, and storage audits.
+description: Use when adding, changing, reviewing, or cleaning media or object storage, including private conversation and recovery archives. Covers S3 cache/share/permanent lifetimes separately from public/private access, Modal artifacts and caches, browser uploads, provider-owned handoffs, ownership, expiry, reacquisition, replacement/deletion cleanup, and storage audits.
 ---
 
 # Media Storage Lifecycle
@@ -12,13 +12,23 @@ consumer, and make ownership, expiry, replacement, and deletion explicit. This
 skill is the cross-repo routing contract; implementation details remain in each
 owning repository's docs.
 
-The shared S3 provider is native Versity on ASUS, bucket `assets`, with public
-base `https://storage.aipodcast.ing/assets`. Read
-`scripts/docs/references/asus-storage-services.md` for current service ownership,
+The shared S3 provider is native Versity on ASUS. Public media uses bucket
+`assets`, with public base `https://storage.aipodcast.ing/assets`; private
+archives use their explicitly configured private bucket and scoped credentials.
+Read `scripts/docs/references/asus-storage-services.md` for service ownership,
 filesystem locations and recovery. Existing R2 originals are retained only for
-deliberate recovery, not a runtime fallback. Prefixes express ownership and
-retention intent; verify the active cleanup implementation instead of assuming
-the former R2 lifecycle rules still run on native storage.
+deliberate recovery, not a runtime fallback. Verify the active cleanup
+implementation instead of assuming the former R2 lifecycle rules still run on
+native storage.
+
+Unless Adi explicitly says otherwise, every S3 object key starts with one of
+the existing lifetime prefixes: `cache/`, `share/`, or `permanent/`. Put the
+person/product namespace beneath that prefix, not beside it. This applies to
+private archives and recovery data as well as public media; do not invent a
+parallel top-level storage scheme. Retention and access are independent:
+`permanent/` means retained bytes, not public access. Retained conversations and
+Git recovery belong under `permanent/<person>/...` in the configured private
+store, never the public media uploader.
 
 ## Required Workflow
 
@@ -33,8 +43,8 @@ the former R2 lifecycle rules still run on native storage.
    - durable product inventory; or
    - external provider that becomes authoritative.
 3. Choose the first target in the decision table that satisfies that consumer.
-4. Define an owner and stable key family for any public object. A lifecycle
-   prefix alone is not ownership.
+4. Define an owner, stable key family and access policy for every S3 object.
+   A lifecycle prefix alone establishes neither ownership nor public access.
 5. Define what happens when the object expires, is replaced, or its owner is
    deleted.
 6. Add focused proof for the selected boundary and update the owning repo's
@@ -46,9 +56,9 @@ the former R2 lifecycle rules still run on native storage.
 | --- | --- | --- |
 | Container-local file | Producer and consumer run in the same container invocation | Delete in `finally`; never serialize or return the path remotely |
 | Modal internal artifact | Another Modal container or bounded retry needs the bytes | Use typed `MediaArtifactRef`; validate capability/manifest; let the 72-hour artifact lifecycle or exact run cleanup remove it |
-| S3 `cache/` | A browser, independent caller, background job, or HTTP-only consumer needs a URL | Treat as temporary transport; persist provenance; validate before reuse and reacquire or regenerate when missing |
+| S3 `cache/` | A browser, independent caller, background job, or HTTP-only consumer needs a temporary handoff | Persist provenance; validate before reuse and reacquire or regenerate when missing; expose publicly only if the consumer requires it |
 | S3 `share/` | A deliberately time-bounded, user-facing or cross-machine deliverable must outlive ordinary cache | Require a named product owner and documented expiry; never use as an unowned processing default |
-| S3 `permanent/` | The object is canonical durable inventory or a retained product asset | Use an owner-stable key, authoritative reference, replacement cleanup, and owner-deletion cleanup |
+| S3 `permanent/` | Canonical inventory, retained product assets, conversations, or recovery evidence | Use an owner-stable key and authoritative reference; preserve intended private access; define deliberate replacement/deletion rather than cache expiry |
 | Provider-owned storage | Ghost, YouTube, Transistor, Frame.io, or another destination accepts and owns the final bytes | Upload directly where possible; persist the provider identity needed by the product; do not retain a duplicate S3 final without a separate consumer |
 
 Use local or Modal-internal storage for every intermediate in an all-Modal
@@ -71,6 +81,9 @@ deployment evidence to determine rollout status.
 
 - Generic public uploads default to `cache/`; `share/` and `permanent/` require
   an explicit owning workflow. Internal consumers use internal artifacts.
+- Lifetime prefixes apply within private buckets too. Never publish private
+  bytes merely to reuse a public helper, or skip the lifetime prefix because
+  the bucket is private.
 - Browser APIs expose purpose/upload intents, not raw lifecycle-folder choice.
 - Every durable key should identify its owner, for example
   `permanent/ads/<source_id>/...` or
