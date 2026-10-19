@@ -12,9 +12,9 @@ This is the canonical cross-repo orientation for Dobby. Use it when ownership or
 | Repo | Owns |
 | --- | --- |
 | `~/GitHub/adi`, `~/GitHub/angie` | Separate person workspaces: constitution, memory, journal, person prompts, workspace hooks, and `./bin/dobby` shim |
-| `~/GitHub/dobby-engine` | Shared CLI/engine, dashboard source, shared behavior, storage contracts, and default prompts |
-| `~/GitHub/documents` | Document corpus, catalog, extraction, authenticated API and packaged client; ASUS owns the canonical corpus at `/srv/storage/documents`, and raw documents stay outside Git |
-| `~/GitHub/photo-search` | Authenticated photo/video search API, indexed annotations and agent client on ASUS; Immich owns originals, metadata and asset authorization |
+| `~/GitHub/dobby` | Shared CLI/engine, dashboard source, shared behavior, storage contracts, and default prompts |
+| `~/GitHub/dobby/services/documents` | Document corpus, catalog, extraction, authenticated API and packaged client; ASUS owns the canonical corpus at `/srv/storage/documents`, and raw documents stay outside Git |
+| `~/GitHub/dobby/services/photo-search` | Authenticated photo/video search API, indexed annotations and agent client on ASUS; Immich owns originals, metadata and asset authorization |
 | `~/GitHub/dobby-gateway` | HTTP front door, assistant runtime routing, bearer auth, shared client contracts, and gateway service behavior |
 | `~/GitHub/dobby-ios` | iOS app, SwiftUI, and iOS build/deploy/TestFlight tooling |
 | `~/GitHub/agents` | Shared Codex configuration, skills, MCP/plugin registries, and lifecycle distribution |
@@ -37,7 +37,7 @@ This is the canonical cross-repo orientation for Dobby. Use it when ownership or
 
 ## Workspace Context When Needed
 
-For workspace shape or person-data placement, read that workspace's `docs/body-map.md`. For memory writes, use `~/GitHub/dobby-engine/docs/agent-write-recipes.md`: CLI-owned journal, Shelf, sessions, dreams, calendar, and mail writes go through `./bin/dobby`; direct files are limited to documented shapes.
+For workspace shape or person-data placement, read that workspace's `docs/body-map.md`. For memory writes, use `~/GitHub/dobby/docs/agent-write-recipes.md`: CLI-owned journal, Shelf, sessions, dreams, calendar, and mail writes go through `./bin/dobby`; direct files are limited to documented shapes.
 
 The constitution at `dobby/constitution.md` supplies identity and behavior. It is declared once as `model_instructions_file` in the shared repo registry and loaded through generated Codex config. Session-start cards are separate bounded orientation, not another constitution source; lifecycle details belong in the engine docs.
 

@@ -148,7 +148,7 @@
       "repos": [
         "adi",
         "angie",
-        "dobby-engine",
+        "dobby",
         "dobby-gateway",
         "dobby-ios"
       ],
@@ -162,8 +162,7 @@
       "scope": "repo",
       "repos": [
         "adi",
-        "documents",
-        "dobby-engine"
+        "dobby"
       ],
       "source_path": "skills-source/owned/documents-library",
       "upstream_ref": "-"

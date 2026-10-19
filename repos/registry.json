@@ -162,8 +162,8 @@
       }
     },
     {
-      "id": "dobby-engine",
-      "path": "~/GitHub/dobby-engine",
+      "id": "dobby",
+      "path": "~/GitHub/dobby",
       "clients": {
         "codex": {
           "enabled": true,
@@ -190,19 +190,6 @@
     {
       "id": "dobby-ios",
       "path": "~/GitHub/dobby-ios",
-      "clients": {
-        "codex": {
-          "enabled": true,
-          "config": {}
-        },
-        "claude": {
-          "enabled": true
-        }
-      }
-    },
-    {
-      "id": "documents",
-      "path": "~/GitHub/documents",
       "clients": {
         "codex": {
           "enabled": true,
@@ -294,19 +281,6 @@
     {
       "id": "meeting-capture",
       "path": "~/GitHub/meeting-capture",
-      "clients": {
-        "codex": {
-          "enabled": true,
-          "config": {}
-        },
-        "claude": {
-          "enabled": true
-        }
-      }
-    },
-    {
-      "id": "photo-search",
-      "path": "~/GitHub/photo-search",
       "clients": {
         "codex": {
           "enabled": true,

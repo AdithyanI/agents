@@ -5,16 +5,16 @@ description: Search, retrieve, cite, and copy-import files in Adi's Documents li
 
 # Documents Library
 
-The Documents repository owns the corpus, catalog, API, and packaged `documents`
-client. The configured HTTPS address is `https://documents.adithyan.io`. Normal
-agents use the client without SSH, a Documents checkout, or a mounted corpus.
+The documents service in the dobby repo owns the corpus, catalog, API, and packaged
+`documents` client. The configured HTTPS address is `https://documents.adithyan.io`. Normal
+agents use the client without SSH, a dobby checkout, or a mounted corpus.
 This skill supplies usage guidance; access still requires an explicitly configured
 endpoint and credential file for the current person/workspace.
 
 ## Client setup and readiness
 
 Use the installed private `documents` package, version 0.2.0 or newer. A fresh
-machine uses Documents' `scripts/install-client.py` with a local wheel and its
+machine uses the documents service's `scripts/install-client.py` with a local wheel and its
 trusted expected SHA-256. Accepted ASUS releases provide the wheel, installer,
 and revision/checksum manifest privately at
 `/srv/services/documents/current/client/`; an authorized operator delivers them
@@ -23,7 +23,7 @@ to the client machine. The default executable is
 and removal, verifies the client before activation, and leaves PATH, existing
 commands, and person configuration unchanged. There is no automatic bootstrap
 installation. Exact commands and artifact checks live in
-`~/GitHub/documents/docs/references/http-client.md`; do not invent another
+`~/GitHub/dobby/services/documents/docs/references/http-client.md`; do not invent another
 wrapper, package, or credential store.
 
 On an enrolled development peer, Scripts materializes the canonical
@@ -52,7 +52,7 @@ Within a Dobby workspace, prefer its `./bin/dobby documents` interface when
 configured. It requires workspace-owned `DOBBY_DOCUMENTS_ENDPOINT`,
 `DOBBY_DOCUMENTS_API_KEY_FILE`, and the installed client path in
 `DOBBY_DOCUMENTS_CLI`. Generic machine `DOCUMENTS_*` settings do not select a
-Dobby person's corpus. See `~/GitHub/dobby-engine/docs/references/documents.md`.
+Dobby person's corpus. See `~/GitHub/dobby/docs/references/documents.md`.
 
 ## Find, retrieve, and cite
 
@@ -95,7 +95,7 @@ processing or a new provider service merely because a search missed a document.
 HTTPS ingest accepts one regular file per call and preserves its source. It
 deduplicates by content hash, so retrying the same file after a lost response is
 safe. Directory batches, extraction jobs, rebuilds, moving, and deletion remain
-deliberate owner-repo operations; do not substitute filesystem access for an
+deliberate owning-service operations; do not substitute filesystem access for an
 unsupported HTTP operation.
 
 Read the JSON envelope's `status`, `error.code`, and `error.retryable`. Auth
