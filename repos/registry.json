@@ -175,6 +175,19 @@
       }
     },
     {
+      "id": "dobby-engine",
+      "path": "~/GitHub/dobby-engine",
+      "clients": {
+        "codex": {
+          "enabled": true,
+          "config": {}
+        },
+        "claude": {
+          "enabled": true
+        }
+      }
+    },
+    {
       "id": "dobby-gateway",
       "path": "~/GitHub/dobby-gateway",
       "clients": {
