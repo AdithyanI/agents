@@ -201,6 +201,19 @@
       }
     },
     {
+      "id": "documents",
+      "path": "~/GitHub/documents",
+      "clients": {
+        "codex": {
+          "enabled": true,
+          "config": {}
+        },
+        "claude": {
+          "enabled": true
+        }
+      }
+    },
+    {
       "id": "focus",
       "path": "~/GitHub/focus",
       "clients": {
@@ -281,6 +294,19 @@
     {
       "id": "meeting-capture",
       "path": "~/GitHub/meeting-capture",
+      "clients": {
+        "codex": {
+          "enabled": true,
+          "config": {}
+        },
+        "claude": {
+          "enabled": true
+        }
+      }
+    },
+    {
+      "id": "photo-search",
+      "path": "~/GitHub/photo-search",
       "clients": {
         "codex": {
           "enabled": true,
