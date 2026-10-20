@@ -5,7 +5,10 @@
     "claude": {}
   },
   "auto_enrollment_exclusions": [
-    "~/GitHub/modal_functions"
+    "~/GitHub/dobby-engine",
+    "~/GitHub/documents",
+    "~/GitHub/modal_functions",
+    "~/GitHub/photo-search"
   ],
   "repos": [
     {
@@ -175,19 +178,6 @@
       }
     },
     {
-      "id": "dobby-engine",
-      "path": "~/GitHub/dobby-engine",
-      "clients": {
-        "codex": {
-          "enabled": true,
-          "config": {}
-        },
-        "claude": {
-          "enabled": true
-        }
-      }
-    },
-    {
       "id": "dobby-gateway",
       "path": "~/GitHub/dobby-gateway",
       "clients": {
@@ -203,19 +193,6 @@
     {
       "id": "dobby-ios",
       "path": "~/GitHub/dobby-ios",
-      "clients": {
-        "codex": {
-          "enabled": true,
-          "config": {}
-        },
-        "claude": {
-          "enabled": true
-        }
-      }
-    },
-    {
-      "id": "documents",
-      "path": "~/GitHub/documents",
       "clients": {
         "codex": {
           "enabled": true,
@@ -307,19 +284,6 @@
     {
       "id": "meeting-capture",
       "path": "~/GitHub/meeting-capture",
-      "clients": {
-        "codex": {
-          "enabled": true,
-          "config": {}
-        },
-        "claude": {
-          "enabled": true
-        }
-      }
-    },
-    {
-      "id": "photo-search",
-      "path": "~/GitHub/photo-search",
       "clients": {
         "codex": {
           "enabled": true,

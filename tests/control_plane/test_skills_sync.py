@@ -227,6 +227,64 @@ class ManagedSkillsRegistrySyncTests(TempDirTestCase):
             transaction["repositories"],
         )
 
+    def test_leaves_excluded_recovery_checkouts_untouched(self) -> None:
+        root = make_control_plane_root(self.temp_path)
+        home = self.temp_path / "home"
+        github_root = home / "GitHub"
+        retired = init_git_repo(github_root / "dobby-engine", with_initial_commit=True)
+        stale = init_git_repo(github_root / "stale-clone", with_initial_commit=True)
+
+        make_skill_source(root / "skills-source/owned/repo-helper", "repo-helper")
+        old_source = make_skill_source(root / "skills-source/owned/old-helper", "old-helper")
+        dormant_source = make_skill_source(root / "skills-source/owned/dormant-helper", "dormant-helper")
+        for repo in (retired, stale):
+            for name, source in (("old-helper", old_source), ("dormant-helper", dormant_source)):
+                link = repo / ".agents/skills" / name
+                link.parent.mkdir(parents=True, exist_ok=True)
+                link.symlink_to(source)
+            commit_all(repo, "track generated skill links")
+
+        # A retired checkout can share its remote with the enrolled repo, so
+        # pruning it would be committed and pushed there.
+        write_json(
+            root / "repos/registry.json",
+            {"version": 1, "defaults": {}, "repos": [], "auto_enrollment_exclusions": [str(retired)]},
+        )
+        registry_path = root / "skills/registry.json"
+        write_json(
+            registry_path,
+            {
+                "managed_skills": [
+                    {
+                        "skill": "repo-helper",
+                        "origin": "owned",
+                        "scope": "repo",
+                        "repos": ["stale-clone"],
+                        "source_path": "skills-source/owned/repo-helper",
+                    },
+                    {
+                        "skill": "dormant-helper",
+                        "origin": "owned",
+                        "scope": "dormant",
+                        "repos": [],
+                        "source_path": "skills-source/owned/dormant-helper",
+                    },
+                ],
+                "paths": {"github_root": str(github_root)},
+                "unmanaged_repo_local_skills": [],
+            },
+        )
+
+        run_command(
+            ["python3", str(REPO_ROOT / "scripts/sync-skills-registry.py"), "--apply", str(registry_path)],
+            env={"HOME": str(home)},
+        )
+
+        for name in ("old-helper", "dormant-helper"):
+            self.assertTrue((retired / ".agents/skills" / name).is_symlink())
+            self.assertFalse((stale / ".agents/skills" / name).exists())
+        self.assertEqual("", run_command(["git", "status", "--porcelain"], cwd=retired).stdout)
+
     def test_rejects_missing_repo_local_skill_source_for_existing_repo(self) -> None:
         root = make_control_plane_root(self.temp_path)
         home = self.temp_path / "home"

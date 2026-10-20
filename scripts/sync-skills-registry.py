@@ -61,6 +61,18 @@ def resolve_repo_root(repo: str, github_root: Path, home: Path) -> Path:
     return (github_root / repo).resolve()
 
 
+def load_enrollment_exclusions(root_dir: Path, home: Path) -> set[Path]:
+    """Retained recovery checkouts (repos/registry.json) that sync must leave untouched."""
+    registry_file = root_dir / "repos" / "registry.json"
+    if not registry_file.is_file():
+        return set()
+    data = json.loads(registry_file.read_text(encoding="utf-8"))
+    return {
+        expand_path(str(raw), home).resolve()
+        for raw in data.get("auto_enrollment_exclusions", [])
+    }
+
+
 def repo_local_skill_source(repo_root: Path, skill: str) -> Path:
     return repo_root / ".agents" / "skills" / skill / "SKILL.md"
 
@@ -264,6 +276,7 @@ def run_sync(
 ) -> None:
     home = Path.home()
     repo_filters = repo_filters or set()
+    excluded_repos = load_enrollment_exclusions(root_dir, home)
     desired_links: dict[Path, Path] = {}
     dormant_skills: set[str] = set()
     touched_links: set[Path] = set()
@@ -300,10 +313,14 @@ def run_sync(
 
     touched_links.update(prune_obsolete_global_links(root_dir, user_skills_dir, desired_links, apply))
     touched_links.update(
-        prune_obsolete_repo_links(root_dir, github_root, desired_links, apply, repo_filters)
+        prune_obsolete_repo_links(
+            root_dir, github_root, desired_links, apply, repo_filters, excluded_repos
+        )
     )
     touched_links.update(
-        prune_dormant_repo_links(root_dir, github_root, dormant_skills, apply, repo_filters)
+        prune_dormant_repo_links(
+            root_dir, github_root, dormant_skills, apply, repo_filters, excluded_repos
+        )
     )
     if apply:
         # User-scope links are runtime state, even when a historical source
@@ -351,9 +368,11 @@ def prune_obsolete_repo_links(
     desired_links: dict[Path, Path],
     apply: bool,
     repo_filters: set[Path] | None = None,
+    excluded_repos: set[Path] | None = None,
 ) -> set[Path]:
     touched_links: set[Path] = set()
     repo_filters = repo_filters or set()
+    excluded_repos = excluded_repos or set()
     managed_source_roots = [
         (root_dir / "skills-source").resolve(),
         (root_dir / "plugins-source").resolve(),
@@ -365,6 +384,10 @@ def prune_obsolete_repo_links(
         for repo_root in github_root.iterdir():
             actual_repo = repo_git_root(repo_root)
             if actual_repo is None:
+                continue
+            if actual_repo in excluded_repos:
+                # Retained recovery checkouts may share a remote with an enrolled
+                # repo; pruning here would be committed and pushed to it.
                 continue
             if repo_filters and actual_repo not in repo_filters:
                 continue
@@ -436,11 +459,13 @@ def prune_dormant_repo_links(
     dormant_skills: set[str],
     apply: bool,
     repo_filters: set[Path] | None = None,
+    excluded_repos: set[Path] | None = None,
 ) -> set[Path]:
     if not dormant_skills:
         return set()
     touched_links: set[Path] = set()
     repo_filters = repo_filters or set()
+    excluded_repos = excluded_repos or set()
     managed_source_roots = [
         (root_dir / "skills-source").resolve(),
         (root_dir / "plugins-source").resolve(),
@@ -452,6 +477,10 @@ def prune_dormant_repo_links(
         for repo_root in github_root.iterdir():
             actual_repo = repo_git_root(repo_root)
             if actual_repo is None:
+                continue
+            if actual_repo in excluded_repos:
+                # Retained recovery checkouts may share a remote with an enrolled
+                # repo; pruning here would be committed and pushed to it.
                 continue
             if repo_filters and actual_repo not in repo_filters:
                 continue

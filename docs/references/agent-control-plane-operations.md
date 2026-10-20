@@ -26,7 +26,11 @@ Sparse machines are normal. Registry entries absent locally are skipped; existin
 `repos/registry.json` declares exact `auto_enrollment_exclusions`
 for retained recovery checkouts. The Git sync enrollment step preserves these
 directories and their history without adding them back to `repos`; it does not
-remove an existing enrollment. `~/GitHub/modal_functions` is excluded because
+remove an existing enrollment. Skill-link sync also never prunes links inside
+excluded checkouts, because a retired checkout can share its remote with the
+enrolled repo (`dobby-engine` is now `dobby`) and a pruned link would be
+committed and pushed there. List retired repos (`dobby-engine`, `documents`,
+`photo-search`) here and remove their `repos` entries. `~/GitHub/modal_functions` is excluded because
 WIN owns its active implementation and release.
 
 ## Entry points and ownership
