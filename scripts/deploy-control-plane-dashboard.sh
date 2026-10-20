@@ -267,6 +267,11 @@ mkdir -p "$TEMPORARY_RELEASE/dashboard" "$TEMPORARY_RELEASE/runtime/scripts"
 cp -R "$BUILD_WORKTREE/dashboard-app/dist/." "$TEMPORARY_RELEASE/dashboard/"
 cp "$BUILD_WORKTREE/scripts/control-plane-dashboard.py" "$TEMPORARY_RELEASE/runtime/scripts/"
 cp -R "$BUILD_WORKTREE/mcp" "$TEMPORARY_RELEASE/runtime/mcp"
+cp -R "$BUILD_WORKTREE/repos" "$TEMPORARY_RELEASE/runtime/repos"
+# Prove the packaged server imports in isolation before changing any live links.
+# Repository checks alone cannot catch omitted runtime Python dependencies.
+/usr/bin/env -i HOME="$HOME" PATH="$PATH" \
+  python3 "$TEMPORARY_RELEASE/runtime/scripts/control-plane-dashboard.py" --help >/dev/null
 printf '%s\n' "$EXPECTED_SHA" >"$TEMPORARY_RELEASE/SOURCE_SHA"
 
 git -C "$ROOT_DIR" worktree remove --force "$BUILD_WORKTREE"
