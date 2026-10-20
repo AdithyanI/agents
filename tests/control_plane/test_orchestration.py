@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import os
+import platform
 from pathlib import Path
 
 from tests.control_plane.support import (
@@ -30,6 +31,12 @@ import sys
 with Path(os.environ["LOG_FILE"]).open("a") as log:
     log.write(Path(__file__).name + "|" + " ".join(sys.argv[1:]) + "\\n")
 """
+
+
+# Shared Python deps always run; the Claude session finalizer LaunchAgent is macOS-only.
+TRAILING_BOOTSTRAP_LINES = ["install-agent-python-deps.sh|--apply"] + (
+    ["install-finalize-stale-claude-sessions-launchagent.sh|--apply"] if platform.system() == "Darwin" else []
+)
 
 
 def restored_claude_state(home: Path, repo: Path) -> dict[Path, bytes]:
@@ -82,6 +89,8 @@ class SharedBootstrapWrapperTests(AvailableCodexTestCase):
         write_text(root / "scripts/retire-agent-clients.py", "raise RuntimeError('Retirement must remain opt-in')\n")
         write_text(root / "scripts/sync-codex-previews.py", PYTHON_STUB)
         write_text(root / "claude/scripts/sync-claude.py", PYTHON_STUB)
+        write_executable(root / "claude/scripts/install-finalize-stale-claude-sessions-launchagent.sh", STUB_SCRIPT)
+        write_executable(root / "scripts/install-agent-python-deps.sh", STUB_SCRIPT)
         return root, log_path
 
     def test_apply_mode_runs_shared_bootstrap_steps_with_forwarded_args(self) -> None:
@@ -114,6 +123,7 @@ class SharedBootstrapWrapperTests(AvailableCodexTestCase):
                 f"sync-managed-git-hooks.sh|--apply --repo {repo_a} --repo {repo_b}",
                 f"bootstrap-machine-codex.sh|--apply --github-root {github_root} --repo {repo_a} --repo {repo_b}",
                 f"sync-claude.py|--apply --github-root {github_root} --repo {repo_a} --repo {repo_b}",
+                *TRAILING_BOOTSTRAP_LINES,
             ],
             log_path.read_text(encoding="utf-8").splitlines(),
         )
@@ -150,6 +160,7 @@ class SharedBootstrapWrapperTests(AvailableCodexTestCase):
             "sync-plugins-registry.sh|--apply",
             f"sync-managed-git-hooks.sh|--apply --repo {repo}",
             f"sync-claude.py|--apply --github-root {self.temp_path / 'home/GitHub'} --repo {repo}",
+            *TRAILING_BOOTSTRAP_LINES,
         ])
 
     def test_present_codex_failure_is_not_treated_as_optional(self) -> None:

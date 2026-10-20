@@ -154,6 +154,10 @@ claude_cmd=(python3 "${ROOT_DIR}/claude/scripts/sync-claude.py" "$MODE_FLAG" --g
 log "+ ${claude_cmd[*]}"
 "${claude_cmd[@]}"
 
+python_deps_cmd=("${SCRIPT_DIR}/install-agent-python-deps.sh" "$MODE_FLAG")
+log "+ ${python_deps_cmd[*]}"
+"${python_deps_cmd[@]}"
+
 # Claude sessions get the same end-of-session memory pass as Codex threads:
 # an hourly LaunchAgent finalizes idle sessions through each repo's hook.
 if [[ "$(uname -s)" == "Darwin" ]]; then
