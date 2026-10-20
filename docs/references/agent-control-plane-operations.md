@@ -114,6 +114,19 @@ the registry installs no third-party bridge or credentials. Xcode's
 `xcrun mcpbridge run-agent skills export --output-dir <path>` can export its
 current Apple-provided skill bundles for inspection before a canonical import.
 
+### Claude session finalization
+
+Claude has no App Server or archive step, so `claude/scripts/finalize-stale-claude-sessions.py`
+finalizes idle Claude Code sessions for repos that ship
+`scripts/hooks/finalize_claude_session.py`. The macOS bootstrap installs it as the
+hourly `com.<user>.claude-session-finalizer` LaunchAgent (6-hour idle cutoff, at most
+four sessions per run). A busy or recently idle `~/.claude/sessions/<pid>.json`
+handshake protects live work; the ledger
+`~/.local/state/claude-control-plane/finalized-claude-sessions.json` makes each session
+finalize once. Use `--dry-run` to inspect candidates and `--mark-only` to absorb a
+backlog. Repo policy (Dobby's remember and transcript capture) stays in the repo hook;
+see the engine's `docs/lifecycle-hooks.md`.
+
 ## Local previews and remote access
 
 `dev-servers/registry.json` owns short-lived local previews and native Run actions.

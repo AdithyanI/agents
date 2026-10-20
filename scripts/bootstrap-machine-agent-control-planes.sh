@@ -153,3 +153,15 @@ fi
 claude_cmd=(python3 "${ROOT_DIR}/claude/scripts/sync-claude.py" "$MODE_FLAG" --github-root "$GITHUB_ROOT" "${REPO_ARGS[@]}")
 log "+ ${claude_cmd[*]}"
 "${claude_cmd[@]}"
+
+# Claude sessions get the same end-of-session memory pass as Codex threads:
+# an hourly LaunchAgent finalizes idle sessions through each repo's hook.
+if [[ "$(uname -s)" == "Darwin" ]]; then
+  claude_finalizer_cmd=("${ROOT_DIR}/claude/scripts/install-finalize-stale-claude-sessions-launchagent.sh" "$MODE_FLAG")
+  log "+ ${claude_finalizer_cmd[*]}"
+  if [[ "$MODE_FLAG" == "--apply" ]]; then
+    "${claude_finalizer_cmd[@]}"
+  else
+    "${claude_finalizer_cmd[@]}" >/dev/null
+  fi
+fi
