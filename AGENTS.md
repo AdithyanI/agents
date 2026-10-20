@@ -4,7 +4,7 @@ Shared agent guidance, skills, MCPs, repository policy, and native client adapte
 
 ## Orientation
 
-For changes affecting Dobby ownership, engine/workspace boundaries, dashboard/gateway flow, or more than one Dobby repo, read `skills-source/owned/dobby-system/SKILL.md`. Keep cross-repo orientation there and control-plane contracts in this repo's docs.
+For changes affecting Dobby ownership, engine/workspace boundaries, dashboard/engine flow, or more than one Dobby repo, read `skills-source/owned/dobby-system/SKILL.md`. Keep cross-repo orientation there and control-plane contracts in this repo's docs.
 
 ## Canonical Sources
 

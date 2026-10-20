@@ -15,9 +15,9 @@ class ControlPlaneDashboardDataTests(TempDirTestCase):
         root = self.temp_path
         github_root = root / "GitHub"
         adi = github_root / "adi"
-        dobby_ios = github_root / "dobby-ios"
+        sample_ios_app = github_root / "sample-ios-app"
         adi.mkdir(parents=True)
-        dobby_ios.mkdir(parents=True)
+        sample_ios_app.mkdir(parents=True)
         write_text(root / "skills-source/owned/global-helper/SKILL.md", "# global-helper\n")
         write_text(
             root / "skills-source/owned/global-helper/agents/openai.yaml",
@@ -54,7 +54,7 @@ class ControlPlaneDashboardDataTests(TempDirTestCase):
                         "skill": "ios-debugger-agent",
                         "origin": "external",
                         "scope": "repo",
-                        "repos": ["dobby-ios"],
+                        "repos": ["sample-ios-app"],
                         "source_path": "plugins-source/external/build-ios-apps/skills/ios-debugger-agent",
                         "upstream_ref": "openai-curated/build-ios-apps@0.1.2",
                         "source_plugin": "build-ios-apps",
@@ -86,7 +86,7 @@ class ControlPlaneDashboardDataTests(TempDirTestCase):
                         "marketplace": "openai-curated",
                         "enabled": True,
                         "scope": "repo",
-                        "repos": ["dobby-ios"],
+                        "repos": ["sample-ios-app"],
                         "category": "Coding",
                     },
                 ],
@@ -137,7 +137,7 @@ class ControlPlaneDashboardDataTests(TempDirTestCase):
                         "path": str(adi),
                     },
                     {
-                        "path": str(dobby_ios),
+                        "path": str(sample_ios_app),
                     },
                 ],
             }),
@@ -211,7 +211,7 @@ class ControlPlaneDashboardDataTests(TempDirTestCase):
         openai_docs = [
             item for item in data["groups"]["mcp"] if item["name"] == "openaiDeveloperDocs"
         ][0]
-        self.assertEqual(openai_docs["repos"], ["adi", "dobby-ios"])
+        self.assertEqual(openai_docs["repos"], ["adi", "sample-ios-app"])
         self.assertTrue(openai_docs["details"]["global"])
         self.assertFalse(
             {"clients", "global_clients", "repo_clients", "targets"} & openai_docs["details"].keys()
@@ -225,7 +225,7 @@ class ControlPlaneDashboardDataTests(TempDirTestCase):
         plugin_skill = [
             item for item in data["groups"]["skills"] if item["name"] == "ios-debugger-agent"
         ][0]
-        self.assertEqual(plugin_skill["repos"], ["dobby-ios"])
+        self.assertEqual(plugin_skill["repos"], ["sample-ios-app"])
         self.assertEqual(plugin_skill["title"], "build-ios-apps:ios-debugger-agent")
         self.assertEqual(plugin_skill["details"]["source_plugin"], "build-ios-apps")
         global_skill = [

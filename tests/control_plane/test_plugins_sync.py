@@ -98,7 +98,7 @@ class CodexPluginInstallSyncTests(TempDirTestCase):
                         "marketplace": "openai-curated",
                         "enabled": True,
                         "scope": "repo",
-                        "repos": ["dobby-ios"],
+                        "repos": ["sample-ios-app"],
                         "category": "Coding",
                     },
                     {
@@ -147,7 +147,7 @@ class CodexPluginInstallSyncTests(TempDirTestCase):
                         "marketplace": "openai-curated",
                         "enabled": True,
                         "scope": "repo",
-                        "repos": ["dobby-ios"],
+                        "repos": ["sample-ios-app"],
                         "category": "Coding",
                     }
                 ],
@@ -200,7 +200,7 @@ class CodexPluginInstallSyncTests(TempDirTestCase):
                         "marketplace": "openai-curated",
                         "enabled": True,
                         "scope": "repo",
-                        "repos": ["dobby-ios"],
+                        "repos": ["sample-ios-app"],
                         "category": "Coding",
                     }
                 ],

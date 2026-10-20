@@ -5,7 +5,10 @@
     "claude": {}
   },
   "auto_enrollment_exclusions": [
+    "~/GitHub/codexclaw",
     "~/GitHub/dobby-engine",
+    "~/GitHub/dobby-gateway",
+    "~/GitHub/dobby-ios",
     "~/GitHub/documents",
     "~/GitHub/modal_functions",
     "~/GitHub/photo-search"
@@ -152,47 +155,8 @@
       }
     },
     {
-      "id": "codexclaw",
-      "path": "~/GitHub/codexclaw",
-      "clients": {
-        "codex": {
-          "enabled": true,
-          "config": {}
-        },
-        "claude": {
-          "enabled": true
-        }
-      }
-    },
-    {
       "id": "dobby",
       "path": "~/GitHub/dobby",
-      "clients": {
-        "codex": {
-          "enabled": true,
-          "config": {}
-        },
-        "claude": {
-          "enabled": true
-        }
-      }
-    },
-    {
-      "id": "dobby-gateway",
-      "path": "~/GitHub/dobby-gateway",
-      "clients": {
-        "codex": {
-          "enabled": true,
-          "config": {}
-        },
-        "claude": {
-          "enabled": true
-        }
-      }
-    },
-    {
-      "id": "dobby-ios",
-      "path": "~/GitHub/dobby-ios",
       "clients": {
         "codex": {
           "enabled": true,
