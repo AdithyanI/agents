@@ -14,7 +14,6 @@ from websockets.exceptions import ConnectionClosed
 from websockets.sync.server import unix_serve
 
 from hooks.scripts import stop_feedback_turn as feedback
-from tests.control_plane.support import REPO_ROOT
 from tests.control_plane.test_finalize_stale_codex_threads import load_thread_finalizer_module
 
 
@@ -74,9 +73,11 @@ def local_app_server(codex_home: Path, thread: dict, *, withhold_read: bool = Fa
 
 class SharedAppServerTransportTests(unittest.TestCase):
     def setUp(self) -> None:
-        # A short repo-local socket path also fits macOS's Unix socket name limit.
-        (REPO_ROOT / "tmp").mkdir(exist_ok=True)
-        self.temporary = tempfile.TemporaryDirectory(prefix="ws-", dir=REPO_ROOT / "tmp")
+        # Unix socket addresses have a kernel length limit (104 bytes on macOS).
+        # Exact-source release worktrees make repo-local paths too long, and the
+        # default macOS temp root can be long too. Only this socket-bound fixture
+        # uses short /tmp; its lifetime and cleanup remain owned by the test.
+        self.temporary = tempfile.TemporaryDirectory(prefix="agents-ws-", dir="/tmp")
         self.codex_home = Path(self.temporary.name)
         self.finalizer = load_thread_finalizer_module()
 
