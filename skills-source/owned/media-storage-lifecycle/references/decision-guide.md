@@ -18,6 +18,7 @@ the invariant; verify time-sensitive retention settings in the owning system.
 | Transistor episode audio | Modal internal artifact streamed to Transistor's authorized URL | Transistor owns the published audio and WIN needs no S3 MP3 |
 | Active ad creatives | `permanent/ads/<source_id>/...` | Durable mutable inventory with Source ownership and deletion lifecycle |
 | Shared/channel transitions and show assets | `permanent/channel-assets/<owner>/...` | Durable reusable product assets outside campaign lifecycle |
+| Site-owned public galleries and downloads | Shared ASUS S3 `assets` bucket, `permanent/sites/<hostname>/...` | The site owns durable media and links to it; Pages hosting leaves its storage lifecycle separate. Preserve existing permanent keys. |
 | Generic browser or agent upload | S3 `cache/` | No durable owner exists |
 | Remotion remote-input reuse | Modal `/cache/win-remotion-assets` | Performance-only cache; entries unused for 72 hours are pruned and redownloaded |
 | Financial invoice record | Explicit owned `permanent/` exception | Legal/financial retention is intentional, not a media-processing default |
@@ -31,6 +32,7 @@ the invariant; verify time-sensitive retention settings in the owning system.
 | `aipodcasting` | `docs/references/aip-backend-integration.md` and the consuming feature's contract |
 | `scripts` | `docs/references/media-upload.md` for the machine-local shared uploader; `docs/references/asus-storage-services.md` for storage hosting and links to completed cutover evidence |
 | `adithyan-ai-videos` | `docs/setup/cloud-render-modal.md` and `docs/references/media-storage.md` |
+| `blog-personal` | `docs/references/content-verification.md` for published media ownership and validation; `docs/architecture/site-architecture.md` for browser delivery and hosting dependencies |
 
 Always apply the active repo's `AGENTS.md` before these paths. If a referenced
 document moves, follow that repo's docs index instead of adding a duplicate copy

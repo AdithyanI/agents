@@ -1,6 +1,6 @@
 ---
 name: media-storage-lifecycle
-description: Use when adding, changing, reviewing, or cleaning media or object storage, including private conversation and recovery archives. Covers S3 cache/share/permanent lifetimes separately from public/private access, Modal artifacts and caches, browser uploads, provider-owned handoffs, ownership, expiry, reacquisition, replacement/deletion cleanup, and storage audits.
+description: Use when adding, changing, reviewing, or cleaning media or object storage, including published website media, downloads, private conversation and recovery archives. Covers S3 cache/share/permanent lifetimes separately from public/private access, Modal artifacts and caches, browser uploads, provider-owned handoffs, ownership, expiry, reacquisition, replacement/deletion cleanup, and storage audits.
 ---
 
 # Media Storage Lifecycle
@@ -79,6 +79,16 @@ deployment evidence to determine rollout status.
 
 ## Ownership And Cleanup Rules
 
+- Site-owned public media collections and downloadable files use the existing
+  ASUS-hosted S3 `assets` bucket under `permanent/`, with stable URLs in site
+  source. New site-owned keys use `permanent/sites/<hostname>/<purpose>/...`;
+  preserve established permanent keys when they already serve the consumer.
+  The site owns retention, replacement and deletion. Functional UI assets such
+  as icons, fonts and component specimens may stay with the site source.
+- Static hosting and media storage are separate choices. A move to Cloudflare
+  Pages keeps published media in S3 rather than copying it into Git or Pages
+  build output. Record the accepted dependency: Pages can serve the site during
+  a home outage while linked ASUS media remains dependent on home connectivity.
 - Generic public uploads default to `cache/`; `share/` and `permanent/` require
   an explicit owning workflow. Internal consumers use internal artifacts.
 - Lifetime prefixes apply within private buckets too. Never publish private

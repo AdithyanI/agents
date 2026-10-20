@@ -1,4 +1,4 @@
 interface:
   display_name: "Media Storage Lifecycle"
   short_description: "Choose object retention, access, and cleanup"
-  default_prompt: "Use $media-storage-lifecycle to choose cache, share, or permanent storage with explicit ownership, access, and cleanup; keep private archives private."
+  default_prompt: "Use $media-storage-lifecycle to choose cache, share, or permanent storage with explicit ownership, access, and cleanup; link published site media from permanent S3 storage and keep private archives private."
