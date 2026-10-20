@@ -2512,7 +2512,7 @@
     row.appendChild(buildConfigureTrailingCluster([action, count], voiceBtn, go));
     syncConfigureInputChrome();
 
-    if (!controlsLocked) setTimeout(() => input.focus(), 60);
+    if (!controlsLocked && !touchPrimary()) setTimeout(() => input.focus(), 60);
 
     return row;
   }
@@ -2616,7 +2616,7 @@
     row.appendChild(buildConfigureTrailingCluster([count], voiceBtn, create));
     syncInsertCreateButton(create, input);
     syncConfigureInputChrome();
-    if (!controlsLocked) setTimeout(() => input.focus(), 60);
+    if (!controlsLocked && !touchPrimary()) setTimeout(() => input.focus(), 60);
     return row;
   }
 
@@ -10592,6 +10592,11 @@ void main() {
     return true;
   }
 
+  // Programmatic focus raises the soft keyboard on touch devices (#1067).
+  function touchPrimary() {
+    return !!window.matchMedia?.('(pointer: coarse)').matches;
+  }
+
   function shouldSteerAutoFocus() {
     return shouldFocusSteerChat()
       && !steerFocusSuspended
@@ -10800,6 +10805,7 @@ void main() {
 
   function syncPageChatFocus(reason) {
     steerFocusLog('syncPageChatFocus', { reason });
+    if (touchPrimary()) return;
     if (state === 'CONFIGURING') focusConfigureInput(reason);
     else if (shouldSteerAutoFocus()) focusSteerChat(reason);
   }
@@ -10987,7 +10993,8 @@ void main() {
         file: opts?.file || '',
       });
     }
-    if (keepExpanded) focusPageChatInput('steer-error-restore');
+    if (keepExpanded && touchPrimary()) preparePageChatInputForTyping();
+    else if (keepExpanded) focusPageChatInput('steer-error-restore');
     else syncPageChatFocus('steer-unlock');
   }
 
