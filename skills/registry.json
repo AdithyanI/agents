@@ -609,6 +609,10 @@
     {
       "repo": "snipwit",
       "skill": "cognitive-revolution-editing"
+    },
+    {
+      "repo": "snipwit",
+      "skill": "cognitive-revolution-intake"
     }
   ],
   "managed_plugin_skills": []
