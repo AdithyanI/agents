@@ -557,8 +557,11 @@ def build_control_plane_data(root: Path) -> dict[str, Any]:
             continue
         name = repo_name(path)
         expanded_path = expand_repo_path(path)
-        exists = expanded_path.exists()
-        if not exists:
+        # The hosted (ASUS) dashboard reads registries from its release, not from a
+        # machine with every managed checkout, so local presence is not checked there.
+        hosted = os.environ.get("AGENTS_DASHBOARD_HOSTED") == "1"
+        exists = None if hosted else expanded_path.exists()
+        if exists is False:
             warnings.append(
                 {
                     "severity": "warning",
