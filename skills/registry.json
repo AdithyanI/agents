@@ -613,6 +613,10 @@
     {
       "repo": "snipwit",
       "skill": "cognitive-revolution-intake"
+    },
+    {
+      "repo": "snipwit",
+      "skill": "cognitive-revolution-main-editing"
     }
   ],
   "managed_plugin_skills": []
