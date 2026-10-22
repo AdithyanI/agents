@@ -11,6 +11,14 @@ from typing import Any
 
 REPO_ROOT = Path(__file__).resolve().parents[2]
 
+# The pinned scanner is an offline test dependency. Preserve its absolute path
+# when individual fixtures replace HOME; the production guard still checks its
+# release hash. The suite entry point exports it before isolating the whole HOME.
+if not os.environ.get("AGENTS_GITLEAKS_BIN"):
+    from hooks.scripts.git_secret_guard import installed_path
+    if installed_path().is_file():
+        os.environ["AGENTS_GITLEAKS_BIN"] = str(installed_path())
+
 
 def run_command(
     args: list[str],

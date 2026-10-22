@@ -54,7 +54,7 @@ and private overrides remain native runtime state.
 `repos/repo_registry.py` validates this schema and supplies the native projection
 used by Codex renderers. Shared Git-hook installation selects any enabled client;
 Codex config, hook trust, and stale-thread finalization select Codex explicitly.
-New automatically enrolled repositories enable both Codex and Claude.
+Discovery reports new repositories without enrolling them. Explicit enrollment enables both clients; exact Codex trust and reviewed shell-environment hashes live in the registry.
 Claude management defaults on when Claude Desktop or the optional Code CLI is
 installed. Desktop local Code sessions share the same generated configuration;
 a separate CLI is unnecessary. An explicit

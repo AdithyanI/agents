@@ -69,7 +69,9 @@ Import or refresh external source after changing the entry:
 
 ```bash
 cd ~/GitHub/agents
-./scripts/refresh-external-skills.sh --apply --skill <skill-name>
+./scripts/refresh-external-skills.sh --skill <skill-name> --candidate-dir tmp/skill-review
+# Review the fetched instructions and helpers before accepting their exact commit.
+./scripts/refresh-external-skills.sh --apply --skill <skill-name> --reviewed-revision <sha>
 ```
 
 ## Bootstrap Shortcut
@@ -78,8 +80,10 @@ For a `skills.sh` URL or upstream reference, prefer:
 
 ```bash
 cd ~/GitHub/agents
-./scripts/bootstrap-skill.sh <skills.sh-url-or-upstream-ref> --repo <repo> --apply
+./scripts/bootstrap-skill.sh <skills.sh-url-or-upstream-ref> --repo <repo> --apply --reviewed-revision <sha>
 ```
+
+Review upstream content at the supplied exact commit before applying. Routine agent review within an already authorized task is sufficient; do not add a separate user approval step.
 
 This parses the upstream ref, adds or updates the managed external entry,
 refreshes the source, syncs skill links, and regenerates repo bootstrap

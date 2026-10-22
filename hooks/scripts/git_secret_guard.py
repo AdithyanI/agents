@@ -114,11 +114,19 @@ def outgoing_blobs(root: str, remote: str, updates: str) -> set[tuple[str, str]]
             # locally, require a fetch rather than guessing an unsafe range.
             args.append("^" + previous)
         else:
-            # A new branch can share already-published history. Only refs for
-            # this destination are excluded; never trust another remote's refs.
-            if re.fullmatch(r"[A-Za-z0-9_.-]+", remote):
-                known = git(root, "for-each-ref", "--format=%(objectname)", "refs/remotes/" + remote + "/")
-                args.extend("^" + row for row in known.decode().splitlines() if OID.fullmatch(row))
+            # Only the actual destination's current advertisement proves
+            # history is already published there. Local tracking refs can be
+            # stale after a remote URL change and must not exempt content.
+            advertised = git(root, "ls-remote", "--refs", "--", remote)
+            for row in advertised.splitlines():
+                candidate = row.split(b"\t", 1)[0].decode("ascii")
+                if not OID.fullmatch(candidate):
+                    raise ScanError("Invalid remote object advertisement.")
+                present = subprocess.run(["git", "-C", root, "rev-parse", "--verify",
+                                          candidate + "^{commit}"], stdout=subprocess.PIPE,
+                                         stderr=subprocess.PIPE, timeout=30)
+                if present.returncode == 0:
+                    args.append("^" + present.stdout.decode().strip())
         revisions.update(git(root, *args).decode().splitlines())
     for revision in sorted(revisions):
         result.update(parse_raw(git(root, "diff-tree", "-r", "-m", "--root", "--no-commit-id",
@@ -135,13 +143,19 @@ def repository_id(root: str) -> str:
     return ""  # Unknown repositories never inherit another repo's fixture exceptions.
 
 
-def approved_fixtures(root: str) -> set[tuple[str, str, str, int]]:
+def approved_fixtures(root: str) -> set[tuple[str, str, str, str]]:
     repo_id = repository_id(root)
     policy = json.loads((CONFIG_ROOT / "secret-fixtures.json").read_text())
     if policy.get("version") != 1:
         raise ScanError("Unsupported fixture policy.")
-    return {(row["path"], row["blob_sha256"], row["rule"], row["line"])
-            for row in policy["fixtures"] if row["repo"] == repo_id and row.get("reason")}
+    result = set()
+    for row in policy["fixtures"]:
+        if row["repo"] != repo_id or not row.get("reason"):
+            continue
+        result.add(("lines", row["path"], row["source_lines_sha256"], row["rule"]))
+        if row.get("encoded_blob_sha256"):
+            result.add(("encoded-blob", row["path"], row["encoded_blob_sha256"], row["rule"]))
+    return result
 
 
 def scan_blobs(root: str, blobs: set[tuple[str, str]]) -> list[dict]:
@@ -188,6 +202,7 @@ def scan_blobs(root: str, blobs: set[tuple[str, str]]) -> list[dict]:
         result = []
         for item in findings:
             path = item.get("File")
+            embedded = path not in mapping or bool(item.get("Tags"))
             if path not in mapping:
                 # Embedded archive findings still belong to their exact blob.
                 candidates = [key for key in mapping if isinstance(path, str) and path.startswith(key + "!")]
@@ -198,9 +213,18 @@ def scan_blobs(root: str, blobs: set[tuple[str, str]]) -> list[dict]:
             rule, line = item.get("RuleID"), item.get("StartLine")
             if not isinstance(rule, str) or not re.fullmatch(r"[a-z0-9_-]+", rule) or not isinstance(line, int):
                 raise ScanError("Gitleaks returned invalid finding metadata.")
-            if (name, digest, rule, line) in approved:
+            source_lines = Path(path).read_bytes().splitlines(keepends=True)
+            end_line = item.get("EndLine")
+            line_digest = ""
+            if isinstance(end_line, int) and 1 <= line <= end_line <= len(source_lines):
+                line_digest = hashlib.sha256(b"".join(source_lines[line - 1:end_line])).hexdigest()
+            if embedded:
+                allowed = ("encoded-blob", name, digest, rule) in approved
+            else:
+                allowed = bool(line_digest) and ("lines", name, line_digest, rule) in approved
+            if allowed:
                 continue
-            result.append({"path": name, "rule": rule, "line": line, "blob_sha256": digest})
+            result.append({"path": name, "rule": rule, "line": line, "blob_sha256": digest, "source_lines_sha256": line_digest})
         return result
 
 

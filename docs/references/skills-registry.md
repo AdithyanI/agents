@@ -62,12 +62,13 @@ flowchart LR
 
 - Use only for external skills that have `upstream_ref`.
 - If an upstream repo has both raw skill source and generated provider bundles, point `upstream_ref` at the install-ready bundle for this runtime. For Codex/agents installs, prefer upstream paths like `.agents/skills/<skill>` when present, not raw template folders like `skill/` that may contain `SKILL.src.md`.
-- Run `./scripts/refresh-external-skills.sh --apply`.
+- Fetch candidates with `./scripts/refresh-external-skills.sh --skill <name> --candidate-dir tmp/skill-review`. Review the candidate instructions and executable helpers before promotion.
+- Apply one reviewed commit with `./scripts/refresh-external-skills.sh --apply --skill <name> --reviewed-revision <40-character-sha>`. Moving upstream branches cannot replace accepted instructions automatically. The accepted commit is recorded in the existing registry. Scheduled checks never promote candidates.
 - Then run sync + check again.
 
 ```mermaid
 flowchart LR
-    A[Run refresh-external-skills --apply] --> B[Updates skills-source/external/...]
+    A[Fetch and review exact upstream commit] --> B[Promote with --reviewed-revision]
     B --> C[Run sync and check]
 ```
 
@@ -75,7 +76,7 @@ flowchart LR
 
 The official `modal` skill is an external import from Modal's Python SDK source,
 linked into `win`, `agents`, and `scripts`. Refresh it through
-`scripts/refresh-external-skills.sh --apply --skill modal` and the normal shared
+`scripts/refresh-external-skills.sh --apply --skill modal --reviewed-revision <sha>` and the normal shared
 bootstrap/check flow. Do not run `modal skills install` or `modal skills update`
 against managed runtime links. This source import uses online official docs;
 it does not include the documentation bundle added by Modal's CLI installer.

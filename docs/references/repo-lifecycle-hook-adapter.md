@@ -202,6 +202,10 @@ plain context; the shared dispatcher wraps it in event-specific JSON.
   do not count; rejection preserves the working files and index. Generated media
   belongs in managed media storage, with its paths ignored before generation.
   The shared pre-commit hook also checks staged blob sizes for ordinary commits.
+- Exact staged blobs also pass the [shared Gitleaks policy](secret-publication.md)
+  in ordinary pre-commit and explicit Stop preflight. The shared pre-push scans
+  every outgoing commit, including unpublished commits saved from an earlier turn.
+  Missing or failed scanner checks stop publication without exposing matched values.
 - Before Codex preflight, the shared hook repairs extra blank lines at EOF when
   `git diff --cached --check` reports them. It honors Git whitespace configuration
   and attributes, preserves line endings and file mode, and skips binary files,

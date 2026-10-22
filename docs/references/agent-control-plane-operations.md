@@ -43,12 +43,23 @@ MCP assignments. `futureoflife-podcast` and `thoughtforms-life` are absorbed int
 the `aipodcasting-website` workspace. All three retired paths remain excluded
 from enrollment, including when a historical checkout is restored for recovery.
 
+Codex trusts only exact enrolled paths with `clients.codex.config.codex_trust: true`.
+The default is false. Reconciliation removes stale GitHub grants and broad ancestor
+grants such as `/`, the home directory and `~/GitHub`; unrelated specific user
+workspaces remain intact. `--root` selects cleanup scope and never bypasses the
+registry. Review a new repo's origin and executable instructions before explicit
+enrollment; normal work inside existing owned repos remains autonomous.
+
+Each repo may also declare `envrc_sha256` with reviewed relative `.envrc` paths.
+Scripts' [shell environment reconciler](../../../scripts/docs/references/direnv-auto-trust.md)
+applies these hashes on each machine; Git sync never accepts changed content.
+
 ## Entry points and ownership
 
 | Command or source | Contract |
 | --- | --- |
 | `scripts/auto-apply-agent-control-planes.sh --apply` | Reconcile runtime-relevant changes since a machine-local Git revision stamp; use full bootstrap for first sync or shared-input changes |
-| `scripts/enroll-managed-repos.sh --apply` | Add direct child Git repos under `~/GitHub` to `repos/registry.json`; new entries enable both Codex and Claude |
+| `scripts/enroll-managed-repos.sh --apply --repo <name-or-path>` | Enroll an explicitly reviewed direct child repo and enable both clients; without `--repo`, discovery only reports candidates |
 | `scripts/sync-skills-registry.sh` | Render global and repo skill links from `skills/registry.json` |
 | `scripts/sync-plugins-registry.sh` | Validate native plugin entries; Codex config sync renders their runtime state |
 | `scripts/sync-codex-plugin-installs.py` | Install enabled missing native plugin packages |
@@ -173,4 +184,4 @@ The migration supports `--dry-run`, `--apply`, and `--check`, plus exact `--repo
 
 Explicit thread finalization is separate from native hooks: `codex/scripts/finalize-codex-thread.py` reads thread ownership, runs optional repo `scripts/hooks/finalize_codex_thread.py`, and then archives.
 
-Stop discovers affected repositories across the turn tree and consolidates their current staged and working-tree changes. Git invokes `hooks/git/pre-commit`, which delegates to repo `scripts/check-fast.sh` when present. Tracked branches push optimistically and rebase only when the remote is ahead; new branches establish upstream tracking. Successful `main` publication sends a bounded best-effort revision notification to Mac Mini production automation. Builds remain outside the hook; periodic reconciliation recovers failed notifications. Timing lives in `~/.local/state/agents-control-plane/log/hooks-stop.log`.
+Stop discovers affected repositories across the turn tree and consolidates their current staged and working-tree changes. It explicitly runs the shared secret scanner and repo `scripts/check-fast.sh` when present before committing the validated tree. Ordinary commits use `hooks/git/pre-commit`; all ordinary pushes use `hooks/git/pre-push`. See [secret-publication.md](secret-publication.md) for the pinned scanner, false-positive policy and recovery. Tracked branches push optimistically and rebase only when the remote is ahead; new branches establish upstream tracking. Successful `main` publication sends a bounded best-effort revision notification to Mac Mini production automation. Builds remain outside the hook; periodic reconciliation recovers failed notifications. Timing lives in `~/.local/state/agents-control-plane/log/hooks-stop.log`.

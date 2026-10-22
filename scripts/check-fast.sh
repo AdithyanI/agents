@@ -11,17 +11,18 @@ cd "$(dirname "$0")/.."
 MANAGED_REPO_CHECK_ROOT="${AGENTS_MANAGED_REPO_CHECK_ROOT:-$HOME/GitHub/agents}"
 
 scripts/check-repo-hygiene.sh
-bash -n hooks/git/pre-commit scripts/sync-managed-git-hooks.sh scripts/check-agent-control-planes.sh scripts/auto-apply-agent-control-planes.sh scripts/enroll-managed-repos.sh scripts/serve-control-plane-dashboard.sh scripts/install-control-plane-dashboard-launchagent.sh scripts/deploy-control-plane-dashboard.sh scripts/local-production-source.sh
+bash -n hooks/git/pre-commit hooks/git/pre-push scripts/sync-managed-git-hooks.sh scripts/check-agent-control-planes.sh scripts/auto-apply-agent-control-planes.sh scripts/enroll-managed-repos.sh scripts/serve-control-plane-dashboard.sh scripts/install-control-plane-dashboard-launchagent.sh scripts/deploy-control-plane-dashboard.sh scripts/local-production-source.sh
 scripts/check-skills-registry.sh --staged-ok
 scripts/check-plugins-registry.sh --staged-ok
 python3 codex/scripts/sync-native-env.py --check-sources
 python3 -m unittest tests.control_plane.test_codex_hooks_component
 python3 -m unittest tests.control_plane.test_agent_session
 python3 -m unittest tests.control_plane.test_repo_registry tests.control_plane.test_claude_control_plane tests.control_plane.test_claude_stop
-python3 -m unittest tests.control_plane.test_project_archive tests.control_plane.test_skills_sync tests.control_plane.test_codex_native_env tests.control_plane.test_codex_plugin_component tests.control_plane.test_codex_provider tests.control_plane.test_codex_control_plane_check tests.control_plane.test_fast_gate_boundary tests.control_plane.test_managed_repo_enrollment
+python3 -m unittest tests.control_plane.test_project_archive tests.control_plane.test_skills_sync tests.control_plane.test_codex_native_env tests.control_plane.test_codex_plugin_component tests.control_plane.test_codex_provider tests.control_plane.test_codex_control_plane_check tests.control_plane.test_fast_gate_boundary tests.control_plane.test_managed_repo_enrollment tests.control_plane.test_external_skill_review
 python3 -m unittest \
   tests.control_plane.test_hooks_control_plane.HooksControlPlaneTests.test_codex_sync_config_preserves_picker_defaults_and_renders_global_stop_hook \
   tests.control_plane.test_git_payload_guard \
+  tests.control_plane.test_git_secret_guard \
   tests.control_plane.test_stop_whitespace \
   tests.control_plane.test_codex_multi_repo_stop.CodexMultiRepoStopTests.test_git_eof_whitespace_is_repaired_rechecked_and_published_without_feedback \
   tests.control_plane.test_codex_multi_repo_stop.CodexMultiRepoStopTests.test_git_eof_repair_does_not_bypass_a_real_failure \

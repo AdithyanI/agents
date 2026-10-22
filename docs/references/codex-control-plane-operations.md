@@ -167,7 +167,7 @@ Use [Codex Control Plane Ownership](codex-control-plane-ownership.md) for the ex
   - resolves repository scopes from the MCP registry in [`mcp/config/presets.json`](../../mcp/config/presets.json)
 - [`sync-managed-git-hooks.sh`](../../scripts/sync-managed-git-hooks.sh)
   - applies local-only `core.hooksPath` for every repo with an enabled client in [`repos/registry.json`](../../repos/registry.json)
-  - points Git at [`hooks/git/pre-commit`](../../hooks/git/pre-commit)
+  - points Git at [`hooks/git/pre-commit`](../../hooks/git/pre-commit) and the shared pre-push secret gate; see [secret-publication.md](secret-publication.md)
   - does not edit repo worktree files and does not affect GitHub Actions
 - [`check-codex-control-plane.sh`](../../codex/scripts/check-codex-control-plane.sh)
   - validates canonical `global.config.toml`, `repos/registry.json`, and `mcp/config/presets.json`

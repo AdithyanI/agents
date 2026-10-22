@@ -7,9 +7,13 @@ repo_root="$(git rev-parse --show-toplevel 2>/dev/null || pwd)"
 cd "$repo_root"
 
 python3 "$hook_root/scripts/git_payload_guard.py" check-index --repo "$repo_root"
+python3 "$hook_root/scripts/git_secret_guard.py" check-index --repo "$repo_root"
 
 if [[ -f "scripts/check-fast.sh" ]]; then
-  exec bash "scripts/check-fast.sh"
+  bash "scripts/check-fast.sh"
+  # Repo checks may change the index; scan the actual final commit payload too.
+  python3 "$hook_root/scripts/git_payload_guard.py" check-index --repo "$repo_root"
+  python3 "$hook_root/scripts/git_secret_guard.py" check-index --repo "$repo_root"
 fi
 
 exit 0

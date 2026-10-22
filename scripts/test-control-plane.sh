@@ -14,6 +14,7 @@ cleanup() {
 trap cleanup EXIT
 
 cd "$ROOT_DIR"
+export AGENTS_GITLEAKS_BIN="$(python3 -c 'from hooks.scripts.git_secret_guard import scanner_path; print(scanner_path())')"
 mkdir -p "$ROOT_DIR/tmp"
 TEST_HOME="$(mktemp -d "$ROOT_DIR/tmp/control-plane-test-home.XXXXXX")"
 HOME="$TEST_HOME" PYTHONPATH="${HOST_USER_SITE}${PYTHONPATH:+:${PYTHONPATH}}" \

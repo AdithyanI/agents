@@ -100,6 +100,10 @@ HOOKS_PATH="$(python3 -c 'from pathlib import Path; import sys; print(Path(sys.a
 [[ -r "$REGISTRY_FILE" ]] || die "Registry file is not readable: $REGISTRY_FILE"
 [[ -d "$HOOKS_PATH" ]] || die "Missing shared hooks directory: $HOOKS_PATH"
 [[ -x "$HOOKS_PATH/pre-commit" ]] || die "Missing executable shared pre-commit hook: $HOOKS_PATH/pre-commit"
+[[ -x "$HOOKS_PATH/pre-push" ]] || die "Missing executable shared pre-push hook: $HOOKS_PATH/pre-push"
+if (( APPLY == 1 || CHECK == 1 )); then
+  python3 "$ROOT_DIR/scripts/install-secret-scanner.py" --check
+fi
 
 registry_repos="$(
   PYTHONPATH="$ROOT_DIR${PYTHONPATH:+:${PYTHONPATH}}" python3 - "$REGISTRY_FILE" ${REPO_FILTERS[@]+"${REPO_FILTERS[@]}"} <<'PY'

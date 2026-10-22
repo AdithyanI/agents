@@ -131,6 +131,12 @@ if [[ -n "$CODEX_EXECUTABLE" ]]; then
   "${preview_cmd[@]}"
 fi
 
+# Install before hook configuration so a fresh clone cannot deadlock on its
+# first publication. Runtime checks never fetch dependencies.
+scanner_cmd=(python3 "${SCRIPT_DIR}/install-secret-scanner.py" "$MODE_FLAG")
+log "+ ${scanner_cmd[*]}"
+"${scanner_cmd[@]}"
+
 sync_git_hooks_cmd=(
   "$SYNC_GIT_HOOKS_SCRIPT"
   "$MODE_FLAG"

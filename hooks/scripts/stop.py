@@ -20,6 +20,7 @@ from pathlib import Path
 from typing import Any, Iterable, Iterator
 
 try:
+    from hooks.scripts import git_secret_guard
     from hooks.scripts.codex_shell_paths import command_repository_paths
     from hooks.scripts.codex_turn_changes import (
         CodexOwnerThreadUnavailableError,
@@ -28,6 +29,7 @@ try:
         collect_codex_turn_changes,
     )
 except ModuleNotFoundError:  # Direct script execution adds this directory to sys.path.
+    import git_secret_guard
     from codex_shell_paths import command_repository_paths
     from codex_turn_changes import (
         CodexOwnerThreadUnavailableError,
@@ -976,10 +978,16 @@ def repair_staged_blank_eof(root: str) -> None:
 
 
 def preflight_repo_check(item: RepoFinalization) -> tuple[str, subprocess.CompletedProcess[str] | None]:
+    repair_staged_blank_eof(item.root)
+    try:
+        git_secret_guard.check_index(item.root)
+    except (git_secret_guard.ScanError, OSError, ValueError, KeyError, subprocess.TimeoutExpired) as exc:
+        message = str(exc) if isinstance(exc, git_secret_guard.ScanError) else "Scanner dependency or metadata failure."
+        return item.root, subprocess.CompletedProcess(
+            ["git-secret-guard", "check-index"], 1, "", "git-secret-guard: " + message)
     script = Path(item.root) / "scripts/check-fast.sh"
     if not script.is_file():
         return item.root, None
-    repair_staged_blank_eof(item.root)
     return item.root, run(
         ["bash", "scripts/check-fast.sh"],
         item.root,
@@ -1513,7 +1521,7 @@ def finalize_codex_repositories(
                     if result is not None and result.returncode != 0:
                         check_failures[root] = command_failure_reason(
                             root,
-                            "scripts/check-fast.sh preflight",
+                            "secret scan / scripts/check-fast.sh preflight",
                             ["bash", "scripts/check-fast.sh"],
                             result,
                         )

@@ -423,6 +423,7 @@ def main() -> int:
         )
 
     commands_run: list[dict[str, Any]] = []
+    original_registry = registry_file.read_bytes()
     if args.apply:
         if registry_changed:
             registry_file.write_text(json.dumps(registry, indent=2) + "\n", encoding="utf-8")
@@ -455,6 +456,8 @@ def main() -> int:
                 }
             )
             if proc.returncode != 0:
+                if cmd == child_commands[0]:
+                    registry_file.write_bytes(original_registry)
                 return finish_error(
                     request_id,
                     started_at,

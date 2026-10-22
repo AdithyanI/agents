@@ -106,12 +106,13 @@ class NeutralRepoRegistryTests(TempDirTestCase):
         data = repository_registry({"repos": [{"path": str(owned), "codex_trust": True}, {"path": str(implicit)}], "auto_enrollment_exclusions": [str(excluded)]})
         registry = write_json(self.temp_path / "repos.json", data)
         config = self.temp_path / "config.toml"
-        config.write_text('model = "native-choice"\n' + "".join(f'[projects."{path}"]\ntrust_level = "trusted"\n' for path in ("/", home, github, new, excluded, implicit, "/unrelated")))
+        config.write_text('model = "native-choice"\n' + f'[projects."{owned.resolve()}"]\nreview_note = "keep owned metadata"\ntrust_level = "trusted"\n' + "".join(f'[projects."{path}"]\ntrust_level = "trusted"\n' for path in ("/", home, github, new, excluded, implicit, "/unrelated")))
         command = [str(REPO_ROOT / "codex/scripts/sync-trusted-projects.sh"), "--apply", "--registry", str(registry), "--global-config", str(config), "--root", str(github)]
         run_command(command, env={"HOME": str(home)})
         import tomllib
         projects = tomllib.loads(config.read_text())["projects"]
         self.assertEqual(set(projects), {str(owned.resolve()), "/unrelated"})
+        self.assertEqual(projects[str(owned.resolve())]["review_note"], "keep owned metadata")
         before = config.read_bytes()
         run_command(command, env={"HOME": str(home)})
         self.assertEqual(before, config.read_bytes())

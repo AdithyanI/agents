@@ -1,0 +1,7 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+hook_root="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
+repo_root="$(git rev-parse --show-toplevel 2>/dev/null || pwd)"
+# $2 is Git's actual destination, including a distinct remote.pushurl.
+exec python3 "$hook_root/scripts/git_secret_guard.py" check-push --repo "$repo_root" --remote "$2"
