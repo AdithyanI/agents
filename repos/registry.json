@@ -6,16 +6,25 @@
   },
   "auto_enrollment_exclusions": [
     "~/GitHub/aipodcasting",
+    "~/GitHub/automator-scripts",
     "~/GitHub/codexclaw",
+    "~/GitHub/codexclaw-workspaces",
+    "~/GitHub/cursor-settings",
     "~/GitHub/dobby-engine",
     "~/GitHub/dobby-gateway",
     "~/GitHub/dobby-ios",
     "~/GitHub/documents",
+    "~/GitHub/future-of-life-institute-podcast-aipodcast-ing-theme",
     "~/GitHub/futureoflife-podcast",
     "~/GitHub/modal_functions",
     "~/GitHub/photo-search",
     "~/GitHub/platform-ops",
-    "~/GitHub/thoughtforms-life"
+    "~/GitHub/podcast-website-setup",
+    "~/GitHub/symphony",
+    "~/GitHub/syncmap",
+    "~/GitHub/thoughtforms-life",
+    "~/GitHub/thoughtforms-life-theme",
+    "~/GitHub/transcription-gradio"
   ],
   "repos": [
     {
