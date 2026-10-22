@@ -1,0 +1,4 @@
+interface:
+  display_name: "UCI Booking"
+  short_description: "Book two UCI tickets with Unlimited Cards"
+  default_prompt: "Use $uci-booking to book two UCI tickets with our Unlimited Cards and an available linked payment method."
