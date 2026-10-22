@@ -13,9 +13,9 @@ storage contracts unless the task explicitly changes them.
 ## Start Here
 
 Read WIN's `AGENTS.md`, `docs/references/modal-runtime.md`, the affected function
-and its tests. Source is under `win/modal_runtime/`; the sibling
-`modal_functions` checkout retains pre-consolidation history and recovery code.
-Do new implementation in WIN. The
+and its tests. Source is under `win/modal_runtime/`; pre-consolidation history
+lives in the archived `modal_functions` GitHub repository. No retained local
+checkout is required. Do implementation and release work in WIN. The
 [archived migration](../../../../win/docs/projects/archive/modal-consolidation/tasks.md)
 records the verified ASUS-to-Modal release and recovery evidence.
 

@@ -43,7 +43,7 @@ belong to the logical shared store; follow the owning runtime's materializer and
 preserve its mutable authentication state.
 
 Typical examples:
-- `aipodcasting--mongodb-uri`
+- `win--mongodb-uri`
 - `litellm--master-key`
 - app-specific `LLM_API_KEY`
 
@@ -146,7 +146,7 @@ Typical files:
 - Shared integration family: `integration--name`
 
 Good:
-- `aipodcasting--mongodb-uri`
+- `win--mongodb-uri`
 - `github--org-admin-token`
 - `cloudflare--api-token`
 

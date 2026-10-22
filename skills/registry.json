@@ -252,15 +252,6 @@
       "upstream_ref": "-"
     },
     {
-      "skill": "show-password-setup",
-      "clients": ["codex", "claude"],
-      "origin": "owned",
-      "scope": "dormant",
-      "repos": [],
-      "source_path": "skills-source/owned/show-password-setup",
-      "upstream_ref": "-"
-    },
-    {
       "skill": "media-toolkit",
       "clients": ["codex", "claude"],
       "origin": "owned",

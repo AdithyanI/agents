@@ -1,4 +1,0 @@
-interface:
-  display_name: "Show Password Setup (Retired)"
-  short_description: "Route access changes to Cloudflare Access"
-  default_prompt: "Explain that $show-password-setup is retired. Route human access changes to the whole-app Cloudflare Access exact-email policy and customer-agent access to the scoped WIN client API."
