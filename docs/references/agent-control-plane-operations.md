@@ -38,6 +38,11 @@ assignment, and frontend preview. Its exclusion prevents a restored historical
 checkout from becoming active again. Bootstrap leaves any retained checkout's
 existing generated files and source untouched.
 
+`platform-ops` is absorbed into `scripts`, which owns the Cloudflare API and docs
+MCP assignments. `futureoflife-podcast` and `thoughtforms-life` are absorbed into
+the `aipodcasting-website` workspace. All three retired paths remain excluded
+from enrollment, including when a historical checkout is restored for recovery.
+
 ## Entry points and ownership
 
 | Command or source | Contract |
@@ -147,6 +152,12 @@ For preview servers, the renderer rejects `autoPort: true` and wraps commands
 with `scripts/run-agent-preview-server.py`, which reuses an existing listener on
 `127.0.0.1:<port>` instead of spawning another server. `{repo_root}` resolves to
 the selected checkout, including an explicitly selected worktree.
+
+The `aipodcasting-website` Run action opens its marketing site from
+`sites/aipodcasting` on port 4322. Podcast previews run from the same workspace:
+`pnpm --filter @aipodcasting/thoughtforms dev` uses port 4330, and
+`pnpm --filter @aipodcasting/futureoflife dev` uses port 4331. The retired
+standalone checkouts no longer receive preview configuration.
 
 Managed OpenSSH aliases live in `~/.ssh/config`. The scripts repo owns the SSH address, user, key, and Tailscale setup.
 

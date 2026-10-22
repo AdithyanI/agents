@@ -24,14 +24,14 @@
       "transport": "http",
       "url": "https://mcp.cloudflare.com/mcp",
       "repos": [
-        "~/GitHub/platform-ops"
+        "~/GitHub/scripts"
       ]
     },
     "cloudflare-docs": {
       "transport": "http",
       "url": "https://docs.mcp.cloudflare.com/mcp",
       "repos": [
-        "~/GitHub/platform-ops"
+        "~/GitHub/scripts"
       ]
     },
     "figma": {

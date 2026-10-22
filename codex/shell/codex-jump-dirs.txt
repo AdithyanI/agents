@@ -6,7 +6,7 @@ $HOME/GitHub/win
 $HOME/GitHub/scripts
 $HOME/GitHub/adithyan-ai-videos
 $HOME/GitHub/blog-personal
-$HOME/GitHub/platform-ops
+$HOME/GitHub/aipodcasting-website
 $HOME/GitHub/litellm
 $HOME/GitHub/stadia-macos-controller
 $HOME/GitHub/agents

@@ -11,8 +11,11 @@
     "~/GitHub/dobby-gateway",
     "~/GitHub/dobby-ios",
     "~/GitHub/documents",
+    "~/GitHub/futureoflife-podcast",
     "~/GitHub/modal_functions",
-    "~/GitHub/photo-search"
+    "~/GitHub/photo-search",
+    "~/GitHub/platform-ops",
+    "~/GitHub/thoughtforms-life"
   ],
   "repos": [
     {
@@ -182,19 +185,6 @@
       }
     },
     {
-      "id": "futureoflife-podcast",
-      "path": "~/GitHub/futureoflife-podcast",
-      "clients": {
-        "codex": {
-          "enabled": true,
-          "config": {}
-        },
-        "claude": {
-          "enabled": true
-        }
-      }
-    },
-    {
       "id": "home-automation",
       "path": "~/GitHub/home-automation",
       "clients": {
@@ -247,19 +237,6 @@
       }
     },
     {
-      "id": "platform-ops",
-      "path": "~/GitHub/platform-ops",
-      "clients": {
-        "codex": {
-          "enabled": true,
-          "config": {}
-        },
-        "claude": {
-          "enabled": true
-        }
-      }
-    },
-    {
       "id": "scripts",
       "path": "~/GitHub/scripts",
       "clients": {
@@ -288,19 +265,6 @@
     {
       "id": "stadia-macos-controller",
       "path": "~/GitHub/stadia-macos-controller",
-      "clients": {
-        "codex": {
-          "enabled": true,
-          "config": {}
-        },
-        "claude": {
-          "enabled": true
-        }
-      }
-    },
-    {
-      "id": "thoughtforms-life",
-      "path": "~/GitHub/thoughtforms-life",
       "clients": {
         "codex": {
           "enabled": true,
