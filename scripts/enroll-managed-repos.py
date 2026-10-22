@@ -96,8 +96,7 @@ def write_json(path: Path, data: dict[str, Any]) -> None:
 def parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser(
         description=(
-            "Enroll every direct child Git repo under ~/GitHub into the shared "
-            "agent repo bootstrap registry, except exact auto_enrollment_exclusions."
+            "Discover repositories without granting trust. Enroll only explicitly reviewed --repo paths."
         )
     )
     parser.add_argument("--apply", action="store_true", help="Write registry changes")
@@ -118,6 +117,7 @@ def parse_args() -> argparse.Namespace:
         default=str(DEFAULT_REGISTRY_FILE),
         help="Repo bootstrap registry path",
     )
+    parser.add_argument("--repo", action="append", default=[], help="Reviewed repository to enroll (repeatable; name or exact path)")
     return parser.parse_args()
 
 
@@ -157,6 +157,22 @@ def main() -> int:
         print("OK: all eligible discovered repos are already enrolled.")
         return 0
 
+    requested = {
+        (Path(raw).expanduser() if Path(raw).is_absolute() or raw.startswith("~/") else github_root / raw).resolve()
+        for raw in args.repo
+    }
+    discovered_roots = {candidate.repo_root for candidate in discovered}
+    if requested - discovered_roots or requested & excluded_roots:
+        print("ERROR: --repo must name an existing direct child repo outside enrollment exclusions", file=sys.stderr)
+        return 1
+    for candidate in missing:
+        if candidate.repo_root not in requested:
+            print(f"REVIEW REQUIRED {display_path(candidate.declared_path, home)}")
+    missing = [candidate for candidate in missing if candidate.repo_root in requested]
+    if not missing:
+        print("No explicit repository enrollment requested; registry unchanged.")
+        return 0
+
     used_ids = {repo["id"] for repo in repos}
     for candidate in missing:
         repo_id = candidate.declared_path.name.lower().lstrip(".")
@@ -177,7 +193,7 @@ def main() -> int:
         repos.append({
             "id": repo_id,
             "path": display_path(candidate.declared_path, home),
-            "clients": {"codex": {"enabled": True, "config": {}}, "claude": {"enabled": True}},
+            "clients": {"codex": {"enabled": True, "config": {"codex_trust": True}}, "claude": {"enabled": True}},
         })
     repos.sort(key=lambda item: repo_sort_key(item, home))
     write_json(registry_path, data)

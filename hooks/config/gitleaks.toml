@@ -1,0 +1,5 @@
+# Central policy: repository-local configs and inline ignore comments cannot
+# disable publication checks. Exact reviewed fixtures live in secret-fixtures.json.
+title = "Managed publication secret scan"
+[extend]
+useDefault = true

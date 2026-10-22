@@ -66,7 +66,7 @@ class NeutralRepoRegistryTests(TempDirTestCase):
     def test_trust_sync_revokes_disabled_codex_and_preserves_unrelated_roots(self):
         enabled = init_git_repo(self.temp_path / "enabled").resolve()
         disabled = init_git_repo(self.temp_path / "disabled").resolve()
-        data = repository_registry({"repos": [{"path": str(enabled)}, {"path": str(disabled)}]})
+        data = repository_registry({"repos": [{"path": str(enabled), "codex_trust": True}, {"path": str(disabled), "codex_trust": True}]})
         data["repos"][1]["clients"]["codex"]["enabled"] = False
         registry = write_json(self.temp_path / "repos.json", data)
         config = self.temp_path / "config.toml"
@@ -95,3 +95,24 @@ class NeutralRepoRegistryTests(TempDirTestCase):
                 self.assertNotEqual(result.returncode, 0)
                 self.assertIn("repository ID", result.stderr)
                 self.assertEqual(config.read_text(), 'model = "user-choice"\n')
+
+    def test_workspace_scan_cannot_bypass_registry_and_removes_ancestor_grants(self):
+        home = self.temp_path / "home"
+        github = home / "GitHub"
+        owned = init_git_repo(github / "owned")
+        new = init_git_repo(github / "downloaded")
+        excluded = init_git_repo(github / "excluded")
+        implicit = init_git_repo(github / "implicit")
+        data = repository_registry({"repos": [{"path": str(owned), "codex_trust": True}, {"path": str(implicit)}], "auto_enrollment_exclusions": [str(excluded)]})
+        registry = write_json(self.temp_path / "repos.json", data)
+        config = self.temp_path / "config.toml"
+        config.write_text('model = "native-choice"\n' + "".join(f'[projects."{path}"]\ntrust_level = "trusted"\n' for path in ("/", home, github, new, excluded, implicit, "/unrelated")))
+        command = [str(REPO_ROOT / "codex/scripts/sync-trusted-projects.sh"), "--apply", "--registry", str(registry), "--global-config", str(config), "--root", str(github)]
+        run_command(command, env={"HOME": str(home)})
+        import tomllib
+        projects = tomllib.loads(config.read_text())["projects"]
+        self.assertEqual(set(projects), {str(owned), "/unrelated"})
+        before = config.read_bytes()
+        run_command(command, env={"HOME": str(home)})
+        self.assertEqual(before, config.read_bytes())
+        self.assertIn('model = "native-choice"', config.read_text())

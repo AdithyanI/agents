@@ -142,6 +142,7 @@ class BootstrapSkillClientContractTests(TempDirTestCase):
                 "--registry-file",
                 str(registry),
                 "--apply",
+                "--reviewed-revision", "a" * 40,
                 "--no-input",
             ]
         )

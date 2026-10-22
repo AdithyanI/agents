@@ -23,7 +23,7 @@ class ManagedRepoEnrollmentTests(TempDirTestCase):
         write_json(registry, repository_registry({"defaults": {}, "repos": [{"path": str(active)}],
                               "auto_enrollment_exclusions": ["~/GitHub/modal_functions"]}))
         command = [str(REPO_ROOT / "scripts/enroll-managed-repos.sh"), "--apply",
-                   "--github-root", str(github_root), "--registry", str(registry)]
+                   "--github-root", str(github_root), "--registry", str(registry), "--repo", str(similar_name)]
         first = run_command(command, env={"HOME": str(home)})
         second = run_command(command, env={"HOME": str(home)})
         data = read_json(registry)
@@ -89,6 +89,7 @@ class ManagedRepoEnrollmentTests(TempDirTestCase):
                 str(github_root),
                 "--registry",
                 str(registry_path),
+                "--repo", str(new_repo),
             ]
         )
 
@@ -121,5 +122,15 @@ class ManagedRepoEnrollmentTests(TempDirTestCase):
             ]
         )
 
-        self.assertIn(f"ADD {new_repo.resolve()}", result.stdout)
+        self.assertIn(f"REVIEW REQUIRED {new_repo.resolve()}", result.stdout)
         self.assertEqual(before, registry_path.read_text(encoding="utf-8"))
+
+    def test_scheduler_apply_cannot_enroll_new_clone_without_explicit_target(self):
+        github = self.temp_path / "GitHub"
+        clone = init_git_repo(github / "downloaded")
+        registry = write_json(self.temp_path / "repos.json", repository_registry({"repos": []}))
+        before = registry.read_bytes()
+        result = run_command([str(REPO_ROOT / "scripts/enroll-managed-repos.sh"), "--apply", "--github-root", str(github), "--registry", str(registry)])
+        self.assertIn("REVIEW REQUIRED", result.stdout)
+        self.assertEqual(before, registry.read_bytes())
+        self.assertTrue(clone.is_dir())

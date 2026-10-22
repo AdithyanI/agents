@@ -4,6 +4,7 @@ from __future__ import annotations
 import argparse
 import json
 import os
+import re
 import shutil
 import subprocess
 import sys
@@ -74,9 +75,9 @@ def parse_upstream_ref(raw: str) -> UpstreamRef:
     repo = repo.strip()
     path = path.strip().strip("/")
     branch = branch.strip()
-    if not repo or "/" not in repo:
+    if not re.fullmatch(r"[A-Za-z0-9_.-]+/[A-Za-z0-9_.-]+", repo):
         raise ValueError(f"invalid repo in upstream_ref: {raw}")
-    if not path:
+    if not path or ".." in Path(path).parts:
         raise ValueError(f"invalid path in upstream_ref: {raw}")
     if not branch:
         raise ValueError(f"invalid branch in upstream_ref: {raw}")
@@ -280,7 +281,14 @@ def parse_args() -> argparse.Namespace:
         default=str(DEFAULT_REGISTRY_FILE),
         help="Path to skills registry JSON (default: <control-plane>/skills/registry.json)",
     )
-    return parser.parse_args()
+    parser.add_argument("--reviewed-revision", help="Exact 40-character upstream commit reviewed for the single selected skill")
+    parser.add_argument("--candidate-dir", type=Path, help="Copy fetched candidates here for review without changing active skill sources")
+    args = parser.parse_args()
+    if args.apply and (len(args.skill) != 1 or not re.fullmatch(r"[a-f0-9]{40}", args.reviewed_revision or "")):
+        parser.error("--apply requires one --skill and its --reviewed-revision SHA after reviewing candidate content")
+    if args.apply and args.candidate_dir:
+        parser.error("--candidate-dir is a review-only option; omit --apply")
+    return args
 
 
 def main() -> int:
@@ -342,10 +350,29 @@ def main() -> int:
                 print(f"ERROR: {exc}", file=sys.stderr)
                 continue
 
+            revision_result = _run(["git", "-C", str(checkout_dir), "rev-parse", "HEAD"])
+            revision = revision_result.stdout.strip()
+            if revision_result.returncode or not re.fullmatch(r"[a-f0-9]{40}", revision):
+                errors += 1
+                print("ERROR: cannot resolve upstream commit", file=sys.stderr)
+                continue
+            print(f"[{mode}] CANDIDATE {upstream.repo} revision={revision}")
+            if args.apply and revision != args.reviewed_revision:
+                errors += 1
+                print("ERROR: upstream moved since review; inspect the new candidate before promotion", file=sys.stderr)
+                continue
+
             for skill in payload["skills"]:
                 src = (checkout_dir / skill.upstream.path).resolve()
                 dst = skill.source_abs
                 rel_dst = rel_to(root_dir, dst)
+
+                if not inside_dir(src, checkout_dir) or any(
+                    path.is_symlink() and not inside_dir(path, src) for path in src.rglob("*")
+                ):
+                    errors += 1
+                    print(f"ERROR: external skill escapes its reviewed source tree: {skill.skill}", file=sys.stderr)
+                    continue
 
                 if not src.exists() or not src.is_dir():
                     errors += 1
@@ -363,10 +390,19 @@ def main() -> int:
                     continue
 
                 preserved = [rel for rel in PRESERVE_RELATIVE_PATHS if path_lexists(dst / rel)]
+                if args.candidate_dir:
+                    candidate = args.candidate_dir.expanduser().resolve() / skill.skill / revision
+                    replace_tree(src, candidate)
+                    print(f"[{mode}] REVIEW {candidate}")
                 if args.apply:
                     preserved = backup_preserved_paths(skill.skill, dst, preserve_root)
                     replace_tree(src, dst)
                     restore_preserved_paths(skill.skill, dst, preserve_root, preserved)
+                    registry_data = json.loads(registry_file.read_text())
+                    for entry in registry_data["managed_skills"]:
+                        if entry.get("skill") == skill.skill:
+                            entry["accepted_revision"] = revision
+                    registry_file.write_text(json.dumps(registry_data, indent=2) + "\n")
                 preserve_suffix = (
                     f" (preserved: {','.join(preserved)})" if preserved else ""
                 )

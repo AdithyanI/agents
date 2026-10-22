@@ -1,7 +1,9 @@
 {
   "version": 1,
   "defaults": {
-    "codex": {},
+    "codex": {
+      "codex_trust": false
+    },
     "claude": {}
   },
   "auto_enrollment_exclusions": [
@@ -33,7 +35,9 @@
       "clients": {
         "codex": {
           "enabled": true,
-          "config": {}
+          "config": {
+            "codex_trust": true
+          }
         },
         "claude": {
           "enabled": true
@@ -50,12 +54,16 @@
             "personality": "pragmatic",
             "model_instructions_file": "../dobby/constitution.md",
             "developer_instructions": "Tool use:\n- Use tools proactively when they materially improve grounding, correctness, leverage, or continuity.\n- For file and text search, prefer `rg` and `rg --files`.\n- For simple file inspection, prefer standard shell tools such as `sed`, `head`, `tail`, `cat`, and `nl`.\n- Do not use Python for simple file viewing, searching, or trivial text transformations when shell tools or direct edits would suffice.\n- Group related reads together. Parallelize independent retrieval when it reduces latency and does not create confusion.\n\nProgress updates:\n- Before grouped tool calls or substantial work, send a short commentary update describing what you are about to do.\n- While working, send brief progress updates at meaningful transitions, not for every trivial read.\n- Keep commentary concise, practical, and non-performative.\n\nPlanning:\n- Use `update_plan` for non-trivial multi-step tasks.\n- Keep plan steps short and concrete.\n- Keep the plan current as work progresses.\n- Do not create ceremonial plans for simple requests.\n",
-            "project_root_markers": []
+            "project_root_markers": [],
+            "codex_trust": true
           }
         },
         "claude": {
           "enabled": true
         }
+      },
+      "envrc_sha256": {
+        ".envrc": "50d33f8921404c1ddb7ff03aa35c317fbbb64646416d60bf8208a9dd31dcd4af"
       }
     },
     {
@@ -64,7 +72,9 @@
       "clients": {
         "codex": {
           "enabled": true,
-          "config": {}
+          "config": {
+            "codex_trust": true
+          }
         },
         "claude": {
           "enabled": true
@@ -77,7 +87,9 @@
       "clients": {
         "codex": {
           "enabled": true,
-          "config": {}
+          "config": {
+            "codex_trust": true
+          }
         },
         "claude": {
           "enabled": true
@@ -90,7 +102,9 @@
       "clients": {
         "codex": {
           "enabled": true,
-          "config": {}
+          "config": {
+            "codex_trust": true
+          }
         },
         "claude": {
           "enabled": true
@@ -103,7 +117,9 @@
       "clients": {
         "codex": {
           "enabled": true,
-          "config": {}
+          "config": {
+            "codex_trust": true
+          }
         },
         "claude": {
           "enabled": true
@@ -116,7 +132,9 @@
       "clients": {
         "codex": {
           "enabled": true,
-          "config": {}
+          "config": {
+            "codex_trust": true
+          }
         },
         "claude": {
           "enabled": true
@@ -133,12 +151,16 @@
             "personality": "friendly",
             "model_instructions_file": "../dobby/constitution.md",
             "project_root_markers": [],
-            "developer_instructions": "Tool use:\n- Use tools proactively when they materially improve grounding, correctness, leverage, or continuity.\n- For file and text search, prefer `rg` and `rg --files`.\n- For simple file inspection, prefer standard shell tools such as `sed`, `head`, `tail`, `cat`, and `nl`.\n- Do not use Python for simple file viewing, searching, or trivial text transformations when shell tools or direct edits would suffice.\n- Group related reads together. Parallelize independent retrieval when it reduces latency and does not create confusion.\n\nProgress updates:\n- Before grouped tool calls or substantial work, send a short commentary update describing what you are about to do.\n- While working, send brief progress updates at meaningful transitions, not for every trivial read.\n- Keep commentary concise, practical, and non-performative.\n\nPlanning:\n- Use `update_plan` for non-trivial multi-step tasks.\n- Keep plan steps short and concrete.\n- Keep the plan current as work progresses.\n- Do not create ceremonial plans for simple requests.\n"
+            "developer_instructions": "Tool use:\n- Use tools proactively when they materially improve grounding, correctness, leverage, or continuity.\n- For file and text search, prefer `rg` and `rg --files`.\n- For simple file inspection, prefer standard shell tools such as `sed`, `head`, `tail`, `cat`, and `nl`.\n- Do not use Python for simple file viewing, searching, or trivial text transformations when shell tools or direct edits would suffice.\n- Group related reads together. Parallelize independent retrieval when it reduces latency and does not create confusion.\n\nProgress updates:\n- Before grouped tool calls or substantial work, send a short commentary update describing what you are about to do.\n- While working, send brief progress updates at meaningful transitions, not for every trivial read.\n- Keep commentary concise, practical, and non-performative.\n\nPlanning:\n- Use `update_plan` for non-trivial multi-step tasks.\n- Keep plan steps short and concrete.\n- Keep the plan current as work progresses.\n- Do not create ceremonial plans for simple requests.\n",
+            "codex_trust": true
           }
         },
         "claude": {
           "enabled": true
         }
+      },
+      "envrc_sha256": {
+        ".envrc": "46b53b91c3c0d3c08cead288b18637b2d8536c48b81046a3fc464654bfd2bed4"
       }
     },
     {
@@ -147,11 +169,16 @@
       "clients": {
         "codex": {
           "enabled": true,
-          "config": {}
+          "config": {
+            "codex_trust": true
+          }
         },
         "claude": {
           "enabled": true
         }
+      },
+      "envrc_sha256": {
+        ".envrc": "50d33f8921404c1ddb7ff03aa35c317fbbb64646416d60bf8208a9dd31dcd4af"
       }
     },
     {
@@ -160,7 +187,9 @@
       "clients": {
         "codex": {
           "enabled": true,
-          "config": {}
+          "config": {
+            "codex_trust": true
+          }
         },
         "claude": {
           "enabled": true
@@ -173,7 +202,9 @@
       "clients": {
         "codex": {
           "enabled": true,
-          "config": {}
+          "config": {
+            "codex_trust": true
+          }
         },
         "claude": {
           "enabled": true
@@ -186,7 +217,9 @@
       "clients": {
         "codex": {
           "enabled": true,
-          "config": {}
+          "config": {
+            "codex_trust": true
+          }
         },
         "claude": {
           "enabled": true
@@ -199,7 +232,9 @@
       "clients": {
         "codex": {
           "enabled": true,
-          "config": {}
+          "config": {
+            "codex_trust": true
+          }
         },
         "claude": {
           "enabled": true
@@ -212,7 +247,9 @@
       "clients": {
         "codex": {
           "enabled": true,
-          "config": {}
+          "config": {
+            "codex_trust": true
+          }
         },
         "claude": {
           "enabled": true
@@ -225,7 +262,9 @@
       "clients": {
         "codex": {
           "enabled": true,
-          "config": {}
+          "config": {
+            "codex_trust": true
+          }
         },
         "claude": {
           "enabled": true
@@ -238,7 +277,9 @@
       "clients": {
         "codex": {
           "enabled": true,
-          "config": {}
+          "config": {
+            "codex_trust": true
+          }
         },
         "claude": {
           "enabled": true
@@ -251,7 +292,9 @@
       "clients": {
         "codex": {
           "enabled": true,
-          "config": {}
+          "config": {
+            "codex_trust": true
+          }
         },
         "claude": {
           "enabled": true
@@ -264,7 +307,9 @@
       "clients": {
         "codex": {
           "enabled": true,
-          "config": {}
+          "config": {
+            "codex_trust": true
+          }
         },
         "claude": {
           "enabled": true
@@ -277,7 +322,9 @@
       "clients": {
         "codex": {
           "enabled": true,
-          "config": {}
+          "config": {
+            "codex_trust": true
+          }
         },
         "claude": {
           "enabled": true
@@ -290,7 +337,9 @@
       "clients": {
         "codex": {
           "enabled": true,
-          "config": {}
+          "config": {
+            "codex_trust": true
+          }
         },
         "claude": {
           "enabled": true
@@ -303,11 +352,17 @@
       "clients": {
         "codex": {
           "enabled": true,
-          "config": {}
+          "config": {
+            "codex_trust": true
+          }
         },
         "claude": {
           "enabled": true
         }
+      },
+      "envrc_sha256": {
+        ".envrc": "e35f498bd8c952b06c2778aa2ffe335d621aae5dea3dc4a94c5081f409bcd00d",
+        "frontend/.envrc": "50d33f8921404c1ddb7ff03aa35c317fbbb64646416d60bf8208a9dd31dcd4af"
       }
     }
   ]

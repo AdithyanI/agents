@@ -44,7 +44,7 @@ def validate_registry(data: Any, *, home: Path | None = None) -> dict[str, Any]:
         scope = f"repos[{index}]"
         if not isinstance(repo, dict):
             raise ValueError(f"{scope} must be an object")
-        unknown = set(repo) - {"id", "path", "clients"}
+        unknown = set(repo) - {"id", "path", "clients", "envrc_sha256"}
         if unknown:
             raise ValueError(f"{scope} unsupported keys: {', '.join(sorted(unknown))}")
         repo_id = repo.get("id")
@@ -62,6 +62,15 @@ def validate_registry(data: Any, *, home: Path | None = None) -> dict[str, Any]:
         if path in seen_paths:
             raise ValueError(f"duplicate repo path: {raw_path}")
         seen_paths.add(path)
+        fingerprints = repo.get("envrc_sha256", {})
+        if not isinstance(fingerprints, dict):
+            raise ValueError(f"{scope}.envrc_sha256 must be an object")
+        for relative, digest in fingerprints.items():
+            target = Path(relative)
+            if target.is_absolute() or ".." in target.parts or target.name != ".envrc":
+                raise ValueError(f"{scope}.envrc_sha256 keys must be contained .envrc paths")
+            if not isinstance(digest, str) or not re.fullmatch(r"[a-f0-9]{64}", digest):
+                raise ValueError(f"{scope}.envrc_sha256 values must be SHA256 fingerprints")
         clients = repo.get("clients")
         if not isinstance(clients, dict) or set(clients) != set(CLIENTS):
             raise ValueError(f"{scope}.clients must explicitly declare codex and claude")

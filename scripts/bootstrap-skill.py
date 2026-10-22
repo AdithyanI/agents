@@ -234,7 +234,11 @@ def parse_args() -> argparse.Namespace:
         action="store_true",
         help="Accepted for agent-safe non-interactive operation; prompts are never used.",
     )
-    return parser.parse_args()
+    parser.add_argument("--reviewed-revision", help="Exact upstream commit reviewed before importing executable skill instructions")
+    args = parser.parse_args()
+    if args.apply and not re.fullmatch(r"[a-f0-9]{40}", args.reviewed_revision or ""):
+        parser.error("--apply requires --reviewed-revision SHA after reviewing upstream skill content")
+    return args
 
 
 def main() -> int:
@@ -423,7 +427,7 @@ def main() -> int:
             registry_file.write_text(json.dumps(registry, indent=2) + "\n", encoding="utf-8")
 
         child_commands = [
-            [sys.executable, "scripts/refresh-external-skills.py", "--apply", "--skill", skill],
+            [sys.executable, "scripts/refresh-external-skills.py", "--apply", "--skill", skill, "--reviewed-revision", args.reviewed_revision],
             [sys.executable, "scripts/sync-skills-registry.py", "--apply"],
             [sys.executable, "codex/scripts/sync-repo-bootstrap-registry.py"],
         ]
