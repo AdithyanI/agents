@@ -10,7 +10,7 @@ in AIPodcasting or WIN.
 
 Human browser access is one Cloudflare Access login for the complete application. The exact-email
 allowlist, policy identifiers, and operating rules live in
-`~/GitHub/aipodcasting/docs/references/access-and-client-api.md`.
+`~/GitHub/win/frontend/docs/references/access-and-client-api.md`.
 
 Do not add `PASSWORD_*`, password-session cookies, `APP_ACCESS_MODE`, or frontend external bearer
 keys. Customer agents use the separate scoped WIN `/client/v1/**` API through the `ai-podcasting`

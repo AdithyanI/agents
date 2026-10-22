@@ -31,7 +31,10 @@ excluded checkouts, because a retired checkout can share its remote with the
 enrolled repo (`dobby-engine` is now `dobby`) and a pruned link would be
 committed and pushed there. List retired repos (`dobby-engine`, `documents`,
 `photo-search`) here and remove their `repos` entries. `~/GitHub/modal_functions` is excluded because
-WIN owns its active implementation and release.
+WIN owns its active implementation and release. `~/GitHub/aipodcasting` is retained
+for recovery after its frontend moved into `win/frontend/`; WIN owns its skills,
+Figma MCP assignment, and frontend preview. Bootstrap leaves the retained
+checkout's existing generated files and source untouched.
 
 ## Entry points and ownership
 

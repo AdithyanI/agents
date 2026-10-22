@@ -6,6 +6,27 @@
   },
   "managed_dev_servers": [
     {
+      "repo": "win",
+      "servers": [
+        {
+          "name": "Frontend Preview",
+          "host": "127.0.0.1",
+          "runtimeExecutable": "pnpm",
+          "runtimeArgs": [
+            "--dir",
+            "{repo_root}/frontend",
+            "dev",
+            "--hostname",
+            "{host}",
+            "--port",
+            "{port}"
+          ],
+          "port": 3000,
+          "autoPort": false
+        }
+      ]
+    },
+    {
       "repo": "snipwit",
       "actions": [
         {

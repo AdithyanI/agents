@@ -4,7 +4,6 @@
 
 $HOME/GitHub/win
 $HOME/GitHub/scripts
-$HOME/GitHub/aipodcasting
 $HOME/GitHub/adithyan-ai-videos
 $HOME/GitHub/blog-personal
 $HOME/GitHub/platform-ops

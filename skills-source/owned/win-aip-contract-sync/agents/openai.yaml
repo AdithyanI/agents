@@ -1,4 +1,4 @@
 interface:
   display_name: "WIN AIP Contract Sync"
-  short_description: "Sync job paths automatically; keep frontend types focused."
-  default_prompt: "Use $win-aip-contract-sync to trace the WIN–AIP interface, sync job paths and needed response types locally, and avoid frontend work for backend-only changes."
+  short_description: "Sync WIN job paths and frontend types in one checkout."
+  default_prompt: "Use $win-aip-contract-sync to trace WIN's backend-to-frontend interface, sync job paths and needed response types into frontend/ locally, and avoid frontend work for backend-only changes."

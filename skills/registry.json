@@ -89,7 +89,7 @@
       "origin": "owned",
       "scope": "repo",
       "repos": [
-        "aipodcasting"
+        "win"
       ],
       "source_path": "skills-source/owned/ai-podcasting",
       "upstream_ref": "-"
@@ -100,7 +100,6 @@
       "origin": "owned",
       "scope": "repo",
       "repos": [
-        "aipodcasting",
         "win"
       ],
       "source_path": "skills-source/owned/win-aip-contract-sync",
@@ -190,7 +189,6 @@
       "origin": "owned",
       "scope": "repo",
       "repos": [
-        "aipodcasting",
         "win"
       ],
       "source_path": "skills-source/owned/modal-function-sync",
@@ -204,7 +202,6 @@
       "repos": [
         "adithyan-ai-videos",
         "agents",
-        "aipodcasting",
         "blog-personal",
         "local-transcription",
         "scripts",
@@ -324,7 +321,7 @@
       "scope": "repo",
       "repos": [
         "adithyan-ai-videos",
-        "aipodcasting"
+        "win"
       ],
       "source_path": "skills-source/external/vercel-react-best-practices",
       "upstream_ref": "vercel-labs/agent-skills:skills/react-best-practices@main"
@@ -435,7 +432,7 @@
       "origin": "owned",
       "scope": "repo",
       "repos": [
-        "aipodcasting"
+        "win"
       ],
       "source_path": "skills-source/owned/figma-use",
       "upstream_ref": "-"

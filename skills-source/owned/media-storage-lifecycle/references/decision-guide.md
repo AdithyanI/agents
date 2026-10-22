@@ -29,7 +29,7 @@ the invariant; verify time-sensitive retention settings in the owning system.
 | --- | --- |
 | `win` | `docs/architecture/media-source-identity-and-storage.md`, `docs/references/media-processing-reference.md`, `publishing-workflows-reference.md`, `ingest-orchestration-reference.md`, and `content-creation-reference.md` |
 | WIN's `modal_runtime/` | `docs/references/modal/media-transfer-policy.md`, `media-artifact-transport.md`, `modal-cache-policy.md`, and `cache-volume-consistency.md`; deployment integration is in `docs/references/modal-runtime.md` |
-| `aipodcasting` | `docs/references/aip-backend-integration.md` and the consuming feature's contract |
+| WIN's `frontend/` | `frontend/docs/references/aip-backend-integration.md` and the consuming feature's contract |
 | `scripts` | `docs/references/media-upload.md` for the machine-local shared uploader; `docs/references/asus-storage-services.md` for storage hosting and links to completed cutover evidence |
 | `adithyan-ai-videos` | `docs/setup/cloud-render-modal.md` and `docs/references/media-storage.md` |
 | `blog-personal` | `docs/references/content-verification.md` for published media ownership and validation; `docs/architecture/site-architecture.md` for browser delivery and hosting dependencies |
