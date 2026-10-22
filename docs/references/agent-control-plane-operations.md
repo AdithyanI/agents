@@ -24,17 +24,18 @@ For one repository, use an exact path with shared bootstrap/check:
 Sparse machines are normal. Registry entries absent locally are skipped; existing non-Git folders at managed paths warn because they may be broken placeholders. Machine-enrollment checks use `~/GitHub/agents` by default; override with `AGENTS_MANAGED_REPO_CHECK_ROOT` for another canonical checkout.
 
 `repos/registry.json` declares exact `auto_enrollment_exclusions`
-for retained recovery checkouts. The Git sync enrollment step preserves these
+for retired repository paths and retained recovery checkouts. The Git sync enrollment step preserves these
 directories and their history without adding them back to `repos`; it does not
 remove an existing enrollment. Skill-link sync also never prunes links inside
 excluded checkouts, because a retired checkout can share its remote with the
 enrolled repo (`dobby-engine` is now `dobby`) and a pruned link would be
 committed and pushed there. List retired repos (`dobby-engine`, `documents`,
 `photo-search`) here and remove their `repos` entries. `~/GitHub/modal_functions` is excluded because
-WIN owns its active implementation and release. `~/GitHub/aipodcasting` is retained
-for recovery after its frontend moved into `win/frontend/`; WIN owns its skills,
-Figma MCP assignment, and frontend preview. Bootstrap leaves the retained
-checkout's existing generated files and source untouched.
+WIN owns its active implementation and release. `~/GitHub/aipodcasting` is retired
+after its frontend moved into `win/frontend/`; WIN owns its skills, Figma MCP
+assignment, and frontend preview. Its exclusion prevents a restored historical
+checkout from becoming active again. Bootstrap leaves any retained checkout's
+existing generated files and source untouched.
 
 ## Entry points and ownership
 
