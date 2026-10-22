@@ -116,8 +116,8 @@ deployment evidence to determine rollout status.
 ## Repo Routing
 
 - For Modal entrypoints or artifact contracts, also use `$modal-function-sync`.
-- For WIN/AIP public job or generated frontend contracts, also use
-  `$win-aip-contract-sync`.
+- For WIN public job or generated frontend contracts, read WIN's
+  `docs/references/api-endpoint-implementation.md`.
 - Keep cross-repo decisions here; keep exact functions, schemas, paths,
   retention configuration, and commands in the owning repo docs linked from
   the decision guide.

@@ -95,17 +95,6 @@
       "upstream_ref": "-"
     },
     {
-      "skill": "win-aip-contract-sync",
-      "clients": ["codex", "claude"],
-      "origin": "owned",
-      "scope": "repo",
-      "repos": [
-        "win"
-      ],
-      "source_path": "skills-source/owned/win-aip-contract-sync",
-      "upstream_ref": "-"
-    },
-    {
       "skill": "codex-agent-loop",
       "clients": ["codex", "claude"],
       "origin": "owned",
