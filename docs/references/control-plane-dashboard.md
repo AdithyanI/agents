@@ -59,7 +59,7 @@ https://mac-mini.tail7857da.ts.net:8765/
 ```
 
 The URL uses the Mac Mini name because the dashboard runs on the Mac Mini. A
-MacBook such as `adithyans-macbook-pro.tail7857da.ts.net` is the client device,
+MacBook such as `adithyans-macbook-pro-1.tail7857da.ts.net` is the client device,
 not the host for this dashboard.
 
 Use the full `*.tail7857da.ts.net` name for HTTPS. The short MagicDNS name can

@@ -322,7 +322,7 @@ Fix:
 ### Foreign Absolute Paths In Live Config
 
 Symptom:
-- a machine under `/Users/adi` contains `/Users/dobby/...` paths, or vice versa
+- a machine under `/Users/adithyan` contains `/Users/dobby/...` paths, or vice versa
 
 Meaning:
 - machine-specific config entries were preserved from another machine
@@ -376,9 +376,9 @@ Fix:
 
 ## Machine Notes
 
-- Both current machines were aligned through this control-plane layout:
+- Current machine identities for this control-plane layout:
   - local machine under `/Users/dobby`
-  - Adi MacBook via SSH alias `adithyans-macbook-pro` under `/Users/adi`
+  - Adi's replacement MacBook via SSH alias `adithyans-macbook-pro` under `/Users/adithyan`
     - this alias is managed by `~/GitHub/scripts/setup/reconcile-ssh-machine-hosts.sh`
     - it reaches the MacBook through Tailscale with `ProxyCommand tailscale nc %h %p`
     - older references to `macbook-wan` are stale and should not be used as current setup guidance
