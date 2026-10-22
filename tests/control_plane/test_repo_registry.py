@@ -111,7 +111,7 @@ class NeutralRepoRegistryTests(TempDirTestCase):
         run_command(command, env={"HOME": str(home)})
         import tomllib
         projects = tomllib.loads(config.read_text())["projects"]
-        self.assertEqual(set(projects), {str(owned), "/unrelated"})
+        self.assertEqual(set(projects), {str(owned.resolve()), "/unrelated"})
         before = config.read_bytes()
         run_command(command, env={"HOME": str(home)})
         self.assertEqual(before, config.read_bytes())
